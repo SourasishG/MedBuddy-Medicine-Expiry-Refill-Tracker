@@ -86,7 +86,14 @@ export function Install({
             aria-label="Phone install QR code"
           >
             <div className={styles.qrBox}>
-              <QRCodeSVG value={siteUrl} size={124} bgColor="#EAF0F6" fgColor="#090C12" level="M" />
+              <QRCodeSVG
+                value={siteUrl}
+                size={124}
+                bgColor="#EAF0F6"
+                fgColor="#090C12"
+                level="M"
+                title="QR code to open MedBuddy on your phone"
+              />
             </div>
             <p className={styles.qrLabel}>Open this on your phone</p>
             <span className={styles.qrMeta}>Scan with camera to install</span>

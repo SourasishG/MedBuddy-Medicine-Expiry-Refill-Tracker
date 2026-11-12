@@ -24,7 +24,7 @@ export function Effects({ tier, isMobile, bloomEnabled }: EffectsProps) {
       <directionalLight position={[5, 1.5, -2.5]} intensity={1.1} color="#FFD6A6" />
       <pointLight position={[0, 0.2, -2.4]} intensity={1.2} color="#1F4BFF" distance={8} />
 
-      <Environment resolution={256} frames={1}>
+      <Environment resolution={64} frames={1}>
         {/* Cool left studio key */}
         <Lightformer
           form="rect"

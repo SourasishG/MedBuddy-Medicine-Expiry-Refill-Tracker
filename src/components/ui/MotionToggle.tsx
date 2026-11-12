@@ -13,12 +13,11 @@ export function MotionToggle() {
       className={styles.toggle}
       onClick={toggleMotion}
       aria-pressed={isHydrated ? motionEnabled : true}
-      aria-label={`Motion ${label}. Toggle animations and smooth scrolling.`}
+      title="Toggle animations and smooth scrolling"
       data-enabled={isHydrated ? motionEnabled : true}
     >
       <span className={styles.dot} aria-hidden="true" />
-      <span className={styles.label}>Motion</span>
-      <span className={styles.state}>{label}</span>
+      <span className={styles.label}>Motion</span> <span className={styles.state}>{label}</span>
     </button>
   );
 }

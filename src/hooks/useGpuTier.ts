@@ -12,15 +12,9 @@ export interface GpuProfile {
   ready: boolean;
 }
 
-function checkWebGLSupport(): boolean {
+function hasWebGLInterface(): boolean {
   if (typeof window === 'undefined') return false;
-  try {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-    return Boolean(gl);
-  } catch {
-    return false;
-  }
+  return 'WebGLRenderingContext' in window || 'WebGL2RenderingContext' in window;
 }
 
 function readTierOverride(): QualityTier | null {
@@ -49,8 +43,11 @@ export function useGpuTier(): GpuProfile {
     if (!isHydrated) return;
 
     let cancelled = false;
+    let idleHandle: number | undefined;
+    let timeoutHandle: number | undefined;
+
     const isMobile = window.matchMedia('(max-width: 959px)').matches;
-    const webgl = checkWebGLSupport();
+    const webgl = hasWebGLInterface();
     const override = readTierOverride();
 
     if (!motionEnabled || !webgl) {
@@ -85,35 +82,50 @@ export function useGpuTier(): GpuProfile {
       };
     }
 
-    import('detect-gpu')
-      .then(({ getGPUTier }) => getGPUTier())
-      .then((result) => {
-        if (cancelled) return;
-        let mapped: QualityTier = 'medium';
-        if (result.tier >= 3) {
-          mapped = 'high';
-        } else if (result.tier <= 1) {
-          mapped = 'low';
-        }
-        setProfile({
-          tier: mapped,
-          isMobile,
-          isWebGLAvailable: true,
-          ready: true,
+    const detectTier = () => {
+      if (cancelled) return;
+      import('detect-gpu')
+        .then(({ getGPUTier }) => getGPUTier())
+        .then((result) => {
+          if (cancelled) return;
+          let mapped: QualityTier = 'medium';
+          if (result.tier >= 3) {
+            mapped = 'high';
+          } else if (result.tier <= 1 || result.type === 'FALLBACK') {
+            mapped = 'low';
+          }
+          setProfile({
+            tier: mapped,
+            isMobile,
+            isWebGLAvailable: true,
+            ready: true,
+          });
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setProfile({
+            tier: isMobile ? 'medium' : 'high',
+            isMobile,
+            isWebGLAvailable: true,
+            ready: true,
+          });
         });
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setProfile({
-          tier: isMobile ? 'medium' : 'high',
-          isMobile,
-          isWebGLAvailable: true,
-          ready: true,
-        });
-      });
+    };
+
+    if (typeof window.requestIdleCallback === 'function') {
+      idleHandle = window.requestIdleCallback(detectTier, { timeout: 600 });
+    } else {
+      timeoutHandle = setTimeout(detectTier, 120);
+    }
 
     return () => {
       cancelled = true;
+      if (idleHandle !== undefined && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleHandle);
+      }
+      if (timeoutHandle !== undefined) {
+        clearTimeout(timeoutHandle);
+      }
     };
   }, [isHydrated, motionEnabled]);
 

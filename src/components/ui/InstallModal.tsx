@@ -264,6 +264,7 @@ export function InstallModal({ open, onClose, situation, siteUrl }: InstallModal
                       bgColor="#EAF0F6"
                       fgColor="#090C12"
                       level="M"
+                      title="QR code to open MedBuddy on your phone"
                     />
                   </div>
                   <span className={styles.qrUrl}>{siteUrl}</span>
