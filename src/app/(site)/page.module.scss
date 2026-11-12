@@ -1,0 +1,96 @@
+@use '../../styles/mixins.scss' as *;
+
+.stage {
+  position: relative;
+  min-height: 260vh;
+  background-color: var(--bg);
+  background-image: radial-gradient(
+    circle at 50% 18%,
+    rgba(31, 75, 255, 0.12),
+    transparent 55%
+  );
+}
+
+.header {
+  @include container;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.brand {
+  @include chrome-text;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.scrollReadout {
+  @include mono-label;
+  display: none;
+
+  @media (min-width: 768px) {
+    display: inline-block;
+  }
+}
+
+.main {
+  @include container;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 260vh;
+  padding-top: 140px;
+  padding-bottom: 120px;
+  border-inline: 1px solid var(--hairline);
+}
+
+.band {
+  padding-block: 48px;
+  border-top: 1px solid var(--hairline);
+}
+
+.mono {
+  @include mono-label;
+  margin-bottom: 20px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 6.5vw, 5.5rem);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  max-width: 14ch;
+  margin-bottom: 24px;
+
+  em {
+    font-style: italic;
+    color: var(--chrome);
+  }
+}
+
+.subtitle {
+  color: var(--muted);
+  max-width: 52ch;
+}
+
+.note {
+  color: var(--muted);
+  max-width: 50ch;
+}
