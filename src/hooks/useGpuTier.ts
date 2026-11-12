@@ -17,6 +17,21 @@ function hasWebGLInterface(): boolean {
   return 'WebGLRenderingContext' in window || 'WebGL2RenderingContext' in window;
 }
 
+function canCreateWebGLContext(): boolean {
+  if (typeof document === 'undefined') return false;
+  try {
+    const canvas = document.createElement('canvas');
+    const gl =
+      canvas.getContext('webgl2', { failIfMajorPerformanceCaveat: false }) ??
+      canvas.getContext('webgl', { failIfMajorPerformanceCaveat: false });
+    if (!gl) return false;
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function readTierOverride(): QualityTier | null {
   if (typeof window === 'undefined') return null;
   try {
@@ -46,16 +61,25 @@ export function useGpuTier(): GpuProfile {
     let idleHandle: number | undefined;
     let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
 
-    const isMobile = window.matchMedia('(max-width: 959px)').matches;
+    const mediaQuery = window.matchMedia('(max-width: 959px)');
+    const isMobile = mediaQuery.matches;
     const webgl = hasWebGLInterface();
     const override = readTierOverride();
+
+    const onMediaChange = () => {
+      if (cancelled) return;
+      setProfile((prev) =>
+        prev.isMobile === mediaQuery.matches ? prev : { ...prev, isMobile: mediaQuery.matches },
+      );
+    };
+    mediaQuery.addEventListener('change', onMediaChange);
 
     if (!motionEnabled || !webgl) {
       queueMicrotask(() => {
         if (!cancelled) {
           setProfile({
             tier: 'low',
-            isMobile,
+            isMobile: mediaQuery.matches,
             isWebGLAvailable: webgl,
             ready: true,
           });
@@ -63,6 +87,7 @@ export function useGpuTier(): GpuProfile {
       });
       return () => {
         cancelled = true;
+        mediaQuery.removeEventListener('change', onMediaChange);
       };
     }
 
@@ -71,7 +96,7 @@ export function useGpuTier(): GpuProfile {
         if (!cancelled) {
           setProfile({
             tier: override,
-            isMobile,
+            isMobile: mediaQuery.matches,
             isWebGLAvailable: true,
             ready: true,
           });
@@ -79,6 +104,7 @@ export function useGpuTier(): GpuProfile {
       });
       return () => {
         cancelled = true;
+        mediaQuery.removeEventListener('change', onMediaChange);
       };
     }
 
@@ -96,17 +122,18 @@ export function useGpuTier(): GpuProfile {
           }
           setProfile({
             tier: mapped,
-            isMobile,
+            isMobile: mediaQuery.matches,
             isWebGLAvailable: true,
             ready: true,
           });
         })
         .catch(() => {
           if (cancelled) return;
+          const contextOk = canCreateWebGLContext();
           setProfile({
-            tier: isMobile ? 'medium' : 'high',
-            isMobile,
-            isWebGLAvailable: true,
+            tier: contextOk ? (mediaQuery.matches ? 'medium' : 'high') : 'low',
+            isMobile: mediaQuery.matches,
+            isWebGLAvailable: contextOk,
             ready: true,
           });
         });
@@ -120,6 +147,7 @@ export function useGpuTier(): GpuProfile {
 
     return () => {
       cancelled = true;
+      mediaQuery.removeEventListener('change', onMediaChange);
       if (idleHandle !== undefined && typeof window.cancelIdleCallback === 'function') {
         window.cancelIdleCallback(idleHandle);
       }
