@@ -6,11 +6,12 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from 'react';
 
 const STORAGE_KEY = 'medbuddy-motion';
+const MOTION_EVENT = 'medbuddy-motion-change';
 
 interface MotionContextValue {
   motionEnabled: boolean;
@@ -40,46 +41,69 @@ function writeStoredPreference(enabled: boolean): void {
   }
 }
 
+function getMotionSnapshot(): boolean {
+  const stored = readStoredPreference();
+  if (stored !== null) return stored;
+  return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function getMotionServerSnapshot(): boolean {
+  return true;
+}
+
+function subscribeMotion(callback: () => void): () => void {
+  const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const onMediaChange = () => {
+    if (readStoredPreference() === null) {
+      callback();
+    }
+  };
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === null || event.key === STORAGE_KEY) {
+      callback();
+    }
+  };
+
+  mediaQuery.addEventListener('change', onMediaChange);
+  window.addEventListener('storage', onStorage);
+  window.addEventListener(MOTION_EVENT, callback);
+
+  return () => {
+    mediaQuery.removeEventListener('change', onMediaChange);
+    window.removeEventListener('storage', onStorage);
+    window.removeEventListener(MOTION_EVENT, callback);
+  };
+}
+
+const emptySubscribe = () => () => {};
+
 export function MotionProvider({ children }: { children: ReactNode }) {
-  const [motionEnabled, setMotionEnabledState] = useState<boolean>(true);
-  const [isHydrated, setIsHydrated] = useState<boolean>(false);
+  const motionEnabled = useSyncExternalStore(
+    subscribeMotion,
+    getMotionSnapshot,
+    getMotionServerSnapshot,
+  );
+  const isHydrated = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
 
   useEffect(() => {
-    const stored = readStoredPreference();
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const initial = stored !== null ? stored : !mediaQuery.matches;
-
-    setMotionEnabledState(initial);
-    document.documentElement.dataset.motion = initial ? 'on' : 'off';
-    setIsHydrated(true);
-
-    const handleMediaChange = (event: MediaQueryListEvent) => {
-      if (readStoredPreference() === null) {
-        const next = !event.matches;
-        setMotionEnabledState(next);
-        document.documentElement.dataset.motion = next ? 'on' : 'off';
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleMediaChange);
-    return () => {
-      mediaQuery.removeEventListener('change', handleMediaChange);
-    };
-  }, []);
+    document.documentElement.dataset.motion = motionEnabled ? 'on' : 'off';
+  }, [motionEnabled]);
 
   const setMotionEnabled = useCallback((enabled: boolean) => {
-    setMotionEnabledState(enabled);
     writeStoredPreference(enabled);
     document.documentElement.dataset.motion = enabled ? 'on' : 'off';
+    window.dispatchEvent(new Event(MOTION_EVENT));
   }, []);
 
   const toggleMotion = useCallback(() => {
-    setMotionEnabledState((prev) => {
-      const next = !prev;
-      writeStoredPreference(next);
-      document.documentElement.dataset.motion = next ? 'on' : 'off';
-      return next;
-    });
+    const next = !getMotionSnapshot();
+    writeStoredPreference(next);
+    document.documentElement.dataset.motion = next ? 'on' : 'off';
+    window.dispatchEvent(new Event(MOTION_EVENT));
   }, []);
 
   const value = useMemo(

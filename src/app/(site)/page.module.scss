@@ -4,11 +4,7 @@
   position: relative;
   min-height: 260vh;
   background-color: var(--bg);
-  background-image: radial-gradient(
-    circle at 50% 18%,
-    rgba(31, 75, 255, 0.12),
-    transparent 55%
-  );
+  background-image: radial-gradient(circle at 50% 18%, rgba(31, 75, 255, 0.12), transparent 55%);
 }
 
 .header {
