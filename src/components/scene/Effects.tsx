@@ -2,7 +2,6 @@
 
 import { Environment, Lightformer } from '@react-three/drei';
 import { Bloom, ChromaticAberration, EffectComposer } from '@react-three/postprocessing';
-import { BlendFunction } from 'postprocessing';
 import * as THREE from 'three';
 import type { QualityTier } from '@/hooks/useGpuTier';
 
@@ -64,12 +63,7 @@ export function Effects({ tier, isMobile, bloomEnabled }: EffectsProps) {
             intensity={0.42}
             radius={0.62}
           />
-          <ChromaticAberration
-            blendFunction={BlendFunction.NORMAL}
-            offset={CA_OFFSET}
-            radialModulation
-            modulationOffset={0.65}
-          />
+          <ChromaticAberration offset={CA_OFFSET} radialModulation modulationOffset={0.65} />
         </EffectComposer>
       )}
 
