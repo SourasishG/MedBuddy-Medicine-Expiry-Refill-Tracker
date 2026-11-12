@@ -21,6 +21,7 @@
    - `MotionProvider` syncs `data-motion="on" | "off"` on `<html>`.
    - Lenis smooth scroll is wired directly to GSAP `ScrollTrigger` via `lenis.on('scroll', ScrollTrigger.update)` and `gsap.ticker.add((t) => lenis.raf(t * 1000))` with `gsap.ticker.lagSmoothing(0)`.
    - When Motion is `off`, Lenis is not initialized (or destroyed immediately) so native scrolling and static layout apply cleanly without animation lag.
+   - Native browser scrollbar is hidden (`scrollbar-width: none`, `::-webkit-scrollbar { display: none }`) to preserve the dark gallery canvas without a grey OS scrollbar track while keeping wheel, keyboard, and touch scrolling active.
 
 5. **Linting & Formatting**
    - ESLint 9 flat config using `eslint-config-next/core-web-vitals`, `eslint-config-next/typescript`, and `eslint-config-prettier`.
