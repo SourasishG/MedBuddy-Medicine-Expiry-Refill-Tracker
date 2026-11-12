@@ -1,112 +1,94 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { sceneTargets } from '@/lib/sceneState';
 import { grainFragmentShader, grainVertexShader } from '@/shaders/grain';
 import { glitchFragmentShader, glitchVertexShader } from '@/shaders/glitch';
 
+const HALO_VERTEX = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const HALO_FRAGMENT = /* glsl */ `
+  uniform float uOpacity;
+  uniform vec3 uColor;
+  varying vec2 vUv;
+  void main() {
+    float d = length(vUv - 0.5) * 2.0;
+    float ring = exp(-pow((d - 0.62) * 3.2, 2.0));
+    float core = exp(-d * d * 2.8) * 0.45;
+    float alpha = (ring * 0.28 + core * 0.35) * uOpacity * smoothstep(1.0, 0.35, d);
+    gl_FragColor = vec4(uColor, alpha);
+  }
+`;
+
 export function RingHalo({ isMobile = false }: { isMobile?: boolean }) {
   const torusRef = useRef<THREE.Mesh>(null);
   const haloGlowRef = useRef<THREE.Mesh>(null);
-  const { size } = useThree();
 
-  const grainUniformsRef = useRef({
-    uTime: { value: 0 },
-    uResolution: { value: new THREE.Vector2(1440, 900) },
-    uBaseColor: { value: new THREE.Color('#090C12') },
-    uHaloColor: { value: new THREE.Color('#1F4BFF') },
-    uIntensity: { value: 1.0 },
-  });
-
-  const haloUniformsRef = useRef({
-    uOpacity: { value: 0.9 },
-    uColor: { value: new THREE.Color('#1F4BFF') },
-  });
-
-  const glitchUniformsRef = useRef({
-    uTime: { value: 0 },
-    uPulse: { value: 0 },
-    uAccentColor: { value: new THREE.Color('#FF4D6A') },
-  });
-
+  const grainMatRef = useRef<THREE.ShaderMaterial>(null);
+  const haloMatRef = useRef<THREE.ShaderMaterial>(null);
+  const glitchMatRef = useRef<THREE.ShaderMaterial>(null);
   const ringMatRef = useRef<THREE.MeshBasicMaterial>(null);
 
-  const grainMaterial = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        vertexShader: grainVertexShader,
-        fragmentShader: grainFragmentShader,
-        depthWrite: false,
-        uniforms: grainUniformsRef.current,
-      }),
+  const { size } = useThree();
+
+  const grainUniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uResolution: { value: new THREE.Vector2(1440, 900) },
+      uBaseColor: { value: new THREE.Color('#090C12') },
+      uHaloColor: { value: new THREE.Color('#1F4BFF') },
+      uIntensity: { value: 1.0 },
+    }),
     [],
   );
 
-  const haloDiscMaterial = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        vertexShader: /* glsl */ `
-          varying vec2 vUv;
-          void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: /* glsl */ `
-          uniform float uOpacity;
-          uniform vec3 uColor;
-          varying vec2 vUv;
-          void main() {
-            float d = length(vUv - 0.5) * 2.0;
-            float ring = exp(-pow((d - 0.62) * 3.2, 2.0));
-            float core = exp(-d * d * 2.8) * 0.45;
-            float alpha = (ring * 0.28 + core * 0.35) * uOpacity * smoothstep(1.0, 0.35, d);
-            gl_FragColor = vec4(uColor, alpha);
-          }
-        `,
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        uniforms: haloUniformsRef.current,
-      }),
+  const haloUniforms = useMemo(
+    () => ({
+      uOpacity: { value: 0.9 },
+      uColor: { value: new THREE.Color('#1F4BFF') },
+    }),
     [],
   );
 
-  const glitchMaterial = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        vertexShader: glitchVertexShader,
-        fragmentShader: glitchFragmentShader,
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        uniforms: glitchUniformsRef.current,
-      }),
+  const glitchUniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uPulse: { value: 0 },
+      uAccentColor: { value: new THREE.Color('#FF4D6A') },
+    }),
     [],
   );
 
   const ringColor = useMemo(() => new THREE.Color(2.15, 2.3, 2.55), []);
 
-  useEffect(() => {
-    return () => {
-      grainMaterial.dispose();
-      haloDiscMaterial.dispose();
-      glitchMaterial.dispose();
-    };
-  }, [grainMaterial, haloDiscMaterial, glitchMaterial]);
-
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
-    grainUniformsRef.current.uTime.value = t;
-    grainUniformsRef.current.uResolution.value.set(size.width, size.height);
-    grainUniformsRef.current.uIntensity.value = sceneTargets.haloIntensity;
 
-    haloUniformsRef.current.uOpacity.value = 0.85 * sceneTargets.haloIntensity;
+    if (grainMatRef.current) {
+      grainMatRef.current.uniforms.uTime!.value = t;
+      (grainMatRef.current.uniforms.uResolution!.value as THREE.Vector2).set(
+        size.width,
+        size.height,
+      );
+      grainMatRef.current.uniforms.uIntensity!.value = sceneTargets.haloIntensity;
+    }
 
-    glitchUniformsRef.current.uTime.value = t;
-    glitchUniformsRef.current.uPulse.value = sceneTargets.glitchPulse;
+    if (haloMatRef.current) {
+      haloMatRef.current.uniforms.uOpacity!.value = 0.85 * sceneTargets.haloIntensity;
+    }
+
+    if (glitchMatRef.current) {
+      glitchMatRef.current.uniforms.uTime!.value = t;
+      glitchMatRef.current.uniforms.uPulse!.value = sceneTargets.glitchPulse;
+    }
 
     if (ringMatRef.current) {
       ringMatRef.current.opacity = THREE.MathUtils.damp(
@@ -138,13 +120,29 @@ export function RingHalo({ isMobile = false }: { isMobile?: boolean }) {
   return (
     <group>
       {/* Background animated grain + gradient mesh plane */}
-      <mesh position={[0, 0, -6.5]} scale={[22, 14, 1]} material={grainMaterial}>
+      <mesh position={[0, 0, -6.5]} scale={[22, 14, 1]}>
         <planeGeometry args={[1, 1]} />
+        <shaderMaterial
+          ref={grainMatRef}
+          vertexShader={grainVertexShader}
+          fragmentShader={grainFragmentShader}
+          depthWrite={false}
+          uniforms={grainUniforms}
+        />
       </mesh>
 
       {/* Deep --halo ambient glow disc */}
-      <mesh ref={haloGlowRef} position={[0, 0.08, -1.65]} material={haloDiscMaterial}>
+      <mesh ref={haloGlowRef} position={[0, 0.08, -1.65]}>
         <planeGeometry args={[6.4, 6.4]} />
+        <shaderMaterial
+          ref={haloMatRef}
+          vertexShader={HALO_VERTEX}
+          fragmentShader={HALO_FRAGMENT}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          uniforms={haloUniforms}
+        />
       </mesh>
 
       {/* Glowing thin white torus halo */}
@@ -160,8 +158,17 @@ export function RingHalo({ isMobile = false }: { isMobile?: boolean }) {
       </mesh>
 
       {/* Short <300ms scan-line glitch overlay plane (inactive when uPulse == 0) */}
-      <mesh position={[0, 0.08, 1.8]} scale={[7, 5, 1]} material={glitchMaterial}>
+      <mesh position={[0, 0.08, 1.8]} scale={[7, 5, 1]}>
         <planeGeometry args={[1, 1]} />
+        <shaderMaterial
+          ref={glitchMatRef}
+          vertexShader={glitchVertexShader}
+          fragmentShader={glitchFragmentShader}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          uniforms={glitchUniforms}
+        />
       </mesh>
     </group>
   );

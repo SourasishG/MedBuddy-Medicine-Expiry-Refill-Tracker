@@ -86,23 +86,18 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
     return { chromeItems: chromeList, glassItems: glassList };
   }, [totalCount]);
 
+  const chromeMatRef = useRef<THREE.ShaderMaterial>(null);
+
   const capsuleGeometry = useMemo(() => new THREE.CapsuleGeometry(0.068, 0.16, 8, 16), []);
 
-  const chromeUniformsRef = useRef({
-    uTime: { value: 0 },
-    uKeyDir: { value: new THREE.Vector3(-4, 4, 5) },
-    uRimDir: { value: new THREE.Vector3(5, 1.5, -2) },
-  });
-
-  const chromeMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
-  if (!chromeMaterialRef.current) {
-    chromeMaterialRef.current = new THREE.ShaderMaterial({
-      vertexShader: chromeVertexShader,
-      fragmentShader: chromeFragmentShader,
-      uniforms: chromeUniformsRef.current,
-    });
-  }
-  const chromeMaterial = chromeMaterialRef.current;
+  const chromeUniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uKeyDir: { value: new THREE.Vector3(-4, 4, 5) },
+      uRimDir: { value: new THREE.Vector3(5, 1.5, -2) },
+    }),
+    [],
+  );
 
   const glassMaterial = useMemo(() => {
     if (tier === 'high') {
@@ -145,17 +140,18 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
   useEffect(() => {
     return () => {
       capsuleGeometry.dispose();
-      chromeMaterial.dispose();
       glassMaterial.dispose();
     };
-  }, [capsuleGeometry, chromeMaterial, glassMaterial]);
+  }, [capsuleGeometry, glassMaterial]);
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const tempColor = useMemo(() => new THREE.Color(), []);
 
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
-    chromeUniformsRef.current.uTime.value = t;
+    if (chromeMatRef.current) {
+      chromeMatRef.current.uniforms.uTime!.value = t;
+    }
 
     const group = groupRef.current;
     if (group) {
@@ -222,9 +218,16 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
     <group ref={groupRef} position={[0, 0.08, 0]}>
       <instancedMesh
         ref={chromeMeshRef}
-        args={[capsuleGeometry, chromeMaterial, chromeItems.length]}
+        args={[capsuleGeometry, undefined, chromeItems.length]}
         frustumCulled={false}
-      />
+      >
+        <shaderMaterial
+          ref={chromeMatRef}
+          vertexShader={chromeVertexShader}
+          fragmentShader={chromeFragmentShader}
+          uniforms={chromeUniforms}
+        />
+      </instancedMesh>
       <instancedMesh
         ref={glassMeshRef}
         args={[capsuleGeometry, glassMaterial, glassItems.length]}
