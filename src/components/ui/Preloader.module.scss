@@ -1,0 +1,104 @@
+@use '../../styles/mixins.scss' as *;
+
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  background: rgba(9, 12, 18, 0.96);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.sectionCode {
+  @include mono-label;
+}
+
+.ringWrap {
+  position: relative;
+  width: 152px;
+  height: 152px;
+  display: grid;
+  place-items: center;
+}
+
+.ring {
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(221, 230, 240, 0.2);
+  box-shadow: 0 0 36px rgba(31, 75, 255, 0.2);
+}
+
+.pill {
+  position: absolute;
+  width: 14px;
+  height: 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(221, 230, 240, 0.45);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.25), rgba(221, 230, 240, 0.72));
+
+  &:nth-child(4n) {
+    border-color: rgba(92, 242, 199, 0.7);
+  }
+}
+
+.counter {
+  font-family: var(--font-code);
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: var(--text);
+}
+
+.wordmark {
+  @include chrome-text;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  opacity: 0;
+}
+
+.scanline {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 36%;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(221, 230, 240, 0.08) 48%,
+    rgba(92, 242, 199, 0.14) 50%,
+    transparent 100%
+  );
+}
+
+.skip {
+  @include focus-ring;
+  @include mono-label;
+  position: absolute;
+  bottom: 28px;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--hairline);
+  color: var(--muted);
+  transition: color 0.25s var(--ease-gallery), border-color 0.25s var(--ease-gallery);
+
+  &:hover {
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.24);
+  }
+}

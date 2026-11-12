@@ -1,0 +1,160 @@
+@use '../../styles/mixins.scss' as *;
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 80;
+  pointer-events: none;
+}
+
+.bar {
+  @include container;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  pointer-events: auto;
+  background: linear-gradient(180deg, rgba(9, 12, 18, 0.86) 0%, rgba(9, 12, 18, 0) 100%);
+}
+
+.wordmark {
+  @include chrome-text;
+  @include focus-ring;
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  flex-shrink: 0;
+}
+
+.desktopNav {
+  display: none;
+
+  @media (min-width: 960px) {
+    @include glass-panel(var(--radius-pill));
+    display: inline-flex;
+    align-items: center;
+    padding: 0 8px;
+  }
+}
+
+.link {
+  @include focus-ring;
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 14px;
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-radius: var(--radius-pill);
+  transition: color 0.25s var(--ease-gallery);
+
+  &:hover {
+    color: var(--text);
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.installSlot {
+  display: none;
+
+  @media (min-width: 640px) {
+    display: inline-flex;
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition:
+      opacity 0.35s var(--ease-gallery),
+      transform 0.35s var(--ease-gallery);
+
+    &[data-visible='true'] {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+  }
+}
+
+.menuButton {
+  @include glass-panel(var(--radius-pill));
+  @include focus-ring;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 16px;
+  font-family: var(--font-code);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+
+  @media (min-width: 960px) {
+    display: none;
+  }
+}
+
+.drawerBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 75;
+  padding: 88px var(--gutter) 24px;
+  background: rgba(9, 12, 18, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  @media (min-width: 960px) {
+    display: none;
+  }
+}
+
+.drawer {
+  @include glass-panel(var(--radius-card));
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.drawerList {
+  display: flex;
+  flex-direction: column;
+}
+
+.drawerLink {
+  @include focus-ring;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 54px;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.drawerIndex {
+  @include mono-label;
+  color: var(--muted);
+}
+
+.drawerFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
