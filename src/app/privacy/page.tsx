@@ -9,6 +9,15 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/privacy',
   },
+  openGraph: {
+    title: 'Privacy Notice — MedBuddy',
+    description:
+      'How the MedBuddy website handles information. No accounts, no advertising trackers, and no cookies.',
+    url: '/privacy',
+    siteName: 'MedBuddy',
+    type: 'website',
+    locale: 'en_US',
+  },
 };
 
 export default function PrivacyPage() {

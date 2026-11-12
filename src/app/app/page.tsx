@@ -6,6 +6,18 @@ export const metadata: Metadata = {
   title: 'MedBuddy — Launching Soon',
   description:
     'MedBuddy is launching soon. You have installed it early, and it will update itself when the app goes live.',
+  alternates: {
+    canonical: '/app',
+  },
+  openGraph: {
+    title: 'MedBuddy — Launching Soon',
+    description:
+      'MedBuddy is launching soon. You have installed it early, and it will update itself when the app goes live.',
+    url: '/app',
+    siteName: 'MedBuddy',
+    type: 'website',
+    locale: 'en_US',
+  },
 };
 
 export default function AppShellPage() {
