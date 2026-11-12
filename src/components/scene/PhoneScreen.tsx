@@ -40,7 +40,9 @@ export function PhoneScreen({ screen = 'cabinet' }: { screen?: PhoneScreenId }) 
             <div className={`${styles.item} ${styles.itemAlert}`}>
               <div className={styles.itemTitle}>Cough Syrup</div>
               <div className={styles.itemMeta}>Bathroom · Safe disposal</div>
-              <div className={`${styles.itemStatus} ${styles.alertText}`}>× EXPIRED · 3 DAYS AGO</div>
+              <div className={`${styles.itemStatus} ${styles.alertText}`}>
+                × EXPIRED · 3 DAYS AGO
+              </div>
             </div>
           </div>
         </div>

@@ -67,7 +67,12 @@ export function createBakedScreenTexture(screen: PhoneScreenId): THREE.CanvasTex
         ['Cough Syrup', 'Bathroom · Safe disposal', 'EXPIRED · 3 DAYS AGO', '#FF4D6A'],
       ],
       reminder: [
-        ['Vitamin D3 1000 IU', '1 tablet · Stock updates on log', 'DUE NOW · TAKEN / SKIP', '#5CF2C7'],
+        [
+          'Vitamin D3 1000 IU',
+          '1 tablet · Stock updates on log',
+          'DUE NOW · TAKEN / SKIP',
+          '#5CF2C7',
+        ],
         ['Morning Dose', 'Logged at 8:12 AM · 28 left', 'COMPLETED', '#9AA6B8'],
         ['Evening Schedule', 'Reminder active at 8:00 PM', 'ON SCHEDULE', '#5CF2C7'],
       ],

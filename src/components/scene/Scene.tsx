@@ -18,12 +18,7 @@ export interface SceneProps {
   onFallbackToPoster?: () => void;
 }
 
-export default function Scene({
-  initialTier,
-  isMobile,
-  onReady,
-  onFallbackToPoster,
-}: SceneProps) {
+export default function Scene({ initialTier, isMobile, onReady, onFallbackToPoster }: SceneProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [tier, setTier] = useState<QualityTier>(initialTier);
   const [bloomEnabled, setBloomEnabled] = useState(initialTier === 'high');

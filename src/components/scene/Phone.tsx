@@ -116,7 +116,12 @@ export function Phone({ useBakedScreen = false, isMobile = false }: PhoneProps) 
   return (
     <group ref={groupRef} position={[0, 0.08, 0]}>
       {/* Main Graphite Chrome Body */}
-      <RoundedBox args={[1.48, 2.98, 0.16]} radius={0.19} smoothness={5} material={chassisMaterial} />
+      <RoundedBox
+        args={[1.48, 2.98, 0.16]}
+        radius={0.19}
+        smoothness={5}
+        material={chassisMaterial}
+      />
 
       {/* Front Dark Glass Bezel */}
       <RoundedBox
