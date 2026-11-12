@@ -152,23 +152,6 @@ export function SafeHtmlTransform({
   const zMin = zIndexRange[1];
 
   useEffect(() => {
-    const canvasEl = gl.domElement;
-    const prevZIndex = canvasEl.style.zIndex;
-    const prevPosition = canvasEl.style.position;
-    const prevPointerEvents = canvasEl.style.pointerEvents;
-
-    canvasEl.style.zIndex = `${Math.floor(zMax / 2)}`;
-    canvasEl.style.position = 'absolute';
-    canvasEl.style.pointerEvents = 'none';
-
-    return () => {
-      canvasEl.style.zIndex = prevZIndex;
-      canvasEl.style.position = prevPosition;
-      canvasEl.style.pointerEvents = prevPointerEvents;
-    };
-  }, [gl, zMax]);
-
-  useEffect(() => {
     if (!target) return;
 
     scene.updateMatrixWorld();

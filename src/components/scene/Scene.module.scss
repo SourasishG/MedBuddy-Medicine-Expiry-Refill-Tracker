@@ -3,4 +3,10 @@
   inset: 0;
   z-index: 1;
   pointer-events: none;
+
+  canvas {
+    position: absolute;
+    z-index: 8388635;
+    pointer-events: none;
+  }
 }
