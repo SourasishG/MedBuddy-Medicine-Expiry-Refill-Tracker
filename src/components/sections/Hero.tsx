@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PillButton } from '@/components/ui/PillButton';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { ensureGsapRegistered, gsap, loadGsapPlugins } from '@/lib/gsap';
+import { loadGsapPlugins } from '@/lib/gsap';
 import styles from './Hero.module.scss';
 
 export interface HeroProps {
@@ -35,7 +35,7 @@ export function Hero({
     let cancelled = false;
     let cleanup: (() => void) | undefined;
 
-    void loadGsapPlugins().then(({ SplitText }) => {
+    void loadGsapPlugins().then(({ gsap, SplitText }) => {
       if (cancelled || !headlineRef.current) return;
       const split = SplitText.create(headlineRef.current, {
         type: 'lines',
@@ -73,30 +73,41 @@ export function Hero({
     const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
     if (!finePointer.matches) return;
 
-    ensureGsapRegistered();
-    const xTo = gsap.quickTo(poster, 'x', { duration: 1.1, ease: 'power3.out' });
-    const yTo = gsap.quickTo(poster, 'y', { duration: 1.1, ease: 'power3.out' });
+    let cancelled = false;
+    let cleanupListeners: (() => void) | undefined;
 
-    const onMove = (event: PointerEvent) => {
-      const rect = section.getBoundingClientRect();
-      const nx = (event.clientX - rect.left) / rect.width - 0.5;
-      const ny = (event.clientY - rect.top) / rect.height - 0.5;
-      xTo(nx * -18);
-      yTo(ny * -14);
-    };
+    void import('@/lib/gsap').then(({ ensureGsapRegistered, gsap }) => {
+      if (cancelled) return;
+      ensureGsapRegistered();
+      const xTo = gsap.quickTo(poster, 'x', { duration: 1.1, ease: 'power3.out' });
+      const yTo = gsap.quickTo(poster, 'y', { duration: 1.1, ease: 'power3.out' });
 
-    const onLeave = () => {
-      xTo(0);
-      yTo(0);
-    };
+      const onMove = (event: PointerEvent) => {
+        const rect = section.getBoundingClientRect();
+        const nx = (event.clientX - rect.left) / rect.width - 0.5;
+        const ny = (event.clientY - rect.top) / rect.height - 0.5;
+        xTo(nx * -18);
+        yTo(ny * -14);
+      };
 
-    section.addEventListener('pointermove', onMove, { passive: true });
-    section.addEventListener('pointerleave', onLeave);
+      const onLeave = () => {
+        xTo(0);
+        yTo(0);
+      };
+
+      section.addEventListener('pointermove', onMove, { passive: true });
+      section.addEventListener('pointerleave', onLeave);
+
+      cleanupListeners = () => {
+        section.removeEventListener('pointermove', onMove);
+        section.removeEventListener('pointerleave', onLeave);
+        gsap.set(poster, { x: 0, y: 0 });
+      };
+    });
 
     return () => {
-      section.removeEventListener('pointermove', onMove);
-      section.removeEventListener('pointerleave', onLeave);
-      gsap.set(poster, { x: 0, y: 0 });
+      cancelled = true;
+      cleanupListeners?.();
     };
   }, [hasCanvas, isHydrated, motionEnabled]);
 

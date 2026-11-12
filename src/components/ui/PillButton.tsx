@@ -8,7 +8,6 @@ import {
   type ReactNode,
 } from 'react';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { ensureGsapRegistered, gsap } from '@/lib/gsap';
 import styles from './PillButton.module.scss';
 
 type BaseProps = {
@@ -42,31 +41,42 @@ export function PillButton(props: PillButtonProps) {
     const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
     if (!finePointer.matches) return;
 
-    ensureGsapRegistered();
-    const xTo = gsap.quickTo(el, 'x', { duration: 0.45, ease: 'power3.out' });
-    const yTo = gsap.quickTo(el, 'y', { duration: 0.45, ease: 'power3.out' });
+    let cancelled = false;
+    let cleanupListeners: (() => void) | undefined;
 
-    const handleMove = (event: PointerEvent) => {
-      if (event.pointerType !== 'mouse') return;
-      const rect = el.getBoundingClientRect();
-      const relX = (event.clientX - rect.left) / rect.width - 0.5;
-      const relY = (event.clientY - rect.top) / rect.height - 0.5;
-      xTo(relX * 12);
-      yTo(relY * 8);
-    };
+    void import('@/lib/gsap').then(({ ensureGsapRegistered, gsap }) => {
+      if (cancelled) return;
+      ensureGsapRegistered();
+      const xTo = gsap.quickTo(el, 'x', { duration: 0.45, ease: 'power3.out' });
+      const yTo = gsap.quickTo(el, 'y', { duration: 0.45, ease: 'power3.out' });
 
-    const handleLeave = () => {
-      xTo(0);
-      yTo(0);
-    };
+      const handleMove = (event: PointerEvent) => {
+        if (event.pointerType !== 'mouse') return;
+        const rect = el.getBoundingClientRect();
+        const relX = (event.clientX - rect.left) / rect.width - 0.5;
+        const relY = (event.clientY - rect.top) / rect.height - 0.5;
+        xTo(relX * 12);
+        yTo(relY * 8);
+      };
 
-    el.addEventListener('pointermove', handleMove);
-    el.addEventListener('pointerleave', handleLeave);
+      const handleLeave = () => {
+        xTo(0);
+        yTo(0);
+      };
+
+      el.addEventListener('pointermove', handleMove);
+      el.addEventListener('pointerleave', handleLeave);
+
+      cleanupListeners = () => {
+        el.removeEventListener('pointermove', handleMove);
+        el.removeEventListener('pointerleave', handleLeave);
+        gsap.set(el, { x: 0, y: 0 });
+      };
+    });
 
     return () => {
-      el.removeEventListener('pointermove', handleMove);
-      el.removeEventListener('pointerleave', handleLeave);
-      gsap.set(el, { x: 0, y: 0 });
+      cancelled = true;
+      cleanupListeners?.();
     };
   }, [isHydrated, motionEnabled]);
 

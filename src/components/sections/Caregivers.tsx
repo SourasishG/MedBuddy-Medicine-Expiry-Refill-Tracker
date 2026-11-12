@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { m } from 'framer-motion';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { gsap } from '@/lib/gsap';
 import { sceneTargets } from '@/lib/sceneState';
 import styles from './Caregivers.module.scss';
 
@@ -18,12 +17,14 @@ export function Caregivers() {
     setDoseMissed(true);
     setPulseKey((k) => k + 1);
     if (motionEnabled) {
-      gsap.killTweensOf(sceneTargets, 'glitchPulse');
-      gsap.fromTo(
-        sceneTargets,
-        { glitchPulse: 0.85 },
-        { glitchPulse: 0, duration: 0.26, ease: 'power2.out' },
-      );
+      void import('@/lib/gsap').then(({ gsap }) => {
+        gsap.killTweensOf(sceneTargets, 'glitchPulse');
+        gsap.fromTo(
+          sceneTargets,
+          { glitchPulse: 0.85 },
+          { glitchPulse: 0, duration: 0.26, ease: 'power2.out' },
+        );
+      });
     }
   };
 

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { ensureGsapRegistered, gsap } from '@/lib/gsap';
 import styles from './Preloader.module.scss';
 
 const SESSION_KEY = 'medbuddy-preloader-seen';
@@ -41,77 +40,89 @@ export function Preloader() {
   useEffect(() => {
     if (!active) return;
 
-    ensureGsapRegistered();
+    let cancelled = false;
+    let killTimeline: (() => void) | undefined;
+
     markVisited();
 
-    const root = rootRef.current;
-    const counterEl = counterRef.current;
-    const wordmarkEl = wordmarkRef.current;
-    const scanlineEl = scanlineRef.current;
-    if (!root || !counterEl || !wordmarkEl || !scanlineEl) return;
+    void import('@/lib/gsap').then(({ ensureGsapRegistered, gsap }) => {
+      if (cancelled) return;
+      ensureGsapRegistered();
 
-    const pills = root.querySelectorAll('[data-preloader-pill]');
-    const state = { value: 0 };
+      const root = rootRef.current;
+      const counterEl = counterRef.current;
+      const wordmarkEl = wordmarkRef.current;
+      const scanlineEl = scanlineRef.current;
+      if (!root || !counterEl || !wordmarkEl || !scanlineEl) return;
 
-    const tl = gsap.timeline({
-      onComplete: () => {
-        setDismissed(true);
-      },
-    });
+      const pills = root.querySelectorAll('[data-preloader-pill]');
+      const state = { value: 0 };
 
-    tl.fromTo(
-      pills,
-      {
-        opacity: 0,
-        scale: 0.4,
-        y: (i: number) => (i % 2 === 0 ? -24 : 24),
-      },
-      {
-        opacity: 1,
-        scale: 1,
-        y: 0,
-        duration: 0.65,
-        stagger: 0.035,
-        ease: 'power3.out',
-      },
-      0,
-    )
-      .to(
-        state,
+      const tl = gsap.timeline({
+        onComplete: () => {
+          setDismissed(true);
+        },
+      });
+
+      tl.fromTo(
+        pills,
         {
-          value: 100,
-          duration: 1.05,
-          ease: 'power2.out',
-          onUpdate: () => {
-            counterEl.textContent = String(Math.round(state.value)).padStart(3, '0');
-          },
+          opacity: 0,
+          scale: 0.4,
+          y: (i: number) => (i % 2 === 0 ? -24 : 24),
+        },
+        {
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          duration: 0.65,
+          stagger: 0.035,
+          ease: 'power3.out',
         },
         0,
       )
-      .fromTo(
-        wordmarkEl,
-        { opacity: 0, y: 8 },
-        { opacity: 1, y: 0, duration: 0.35, ease: 'power3.out' },
-        0.95,
-      )
-      .fromTo(
-        scanlineEl,
-        { opacity: 0, yPercent: -100 },
-        { opacity: 0.7, yPercent: 120, duration: 0.24, ease: 'none' },
-        1.05,
-      )
-      .to(
-        root,
-        {
-          opacity: 0,
-          duration: 0.35,
-          ease: 'power3.out',
-        },
-        1.4,
-      );
+        .to(
+          state,
+          {
+            value: 100,
+            duration: 1.05,
+            ease: 'power2.out',
+            onUpdate: () => {
+              counterEl.textContent = String(Math.round(state.value)).padStart(3, '0');
+            },
+          },
+          0,
+        )
+        .fromTo(
+          wordmarkEl,
+          { opacity: 0, y: 8 },
+          { opacity: 1, y: 0, duration: 0.35, ease: 'power3.out' },
+          0.95,
+        )
+        .fromTo(
+          scanlineEl,
+          { opacity: 0, yPercent: -100 },
+          { opacity: 0.7, yPercent: 120, duration: 0.24, ease: 'none' },
+          1.05,
+        )
+        .to(
+          root,
+          {
+            opacity: 0,
+            duration: 0.35,
+            ease: 'power3.out',
+          },
+          1.4,
+        );
+
+      killTimeline = () => {
+        tl.kill();
+      };
+    });
 
     return () => {
-      tl.kill();
+      cancelled = true;
+      killTimeline?.();
     };
   }, [active]);
 

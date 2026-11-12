@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { ensureGsapRegistered, gsap } from '@/lib/gsap';
 import styles from './Cursor.module.scss';
 
 export function Cursor() {
@@ -17,36 +16,47 @@ export function Cursor() {
     const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
     if (!finePointer.matches) return;
 
-    ensureGsapRegistered();
-    const ring = ringRef.current;
-    if (!ring) return;
+    let cancelled = false;
+    let cleanupListeners: (() => void) | undefined;
 
-    const xTo = gsap.quickTo(ring, 'x', { duration: 0.32, ease: 'power3.out' });
-    const yTo = gsap.quickTo(ring, 'y', { duration: 0.32, ease: 'power3.out' });
+    void import('@/lib/gsap').then(({ ensureGsapRegistered, gsap }) => {
+      if (cancelled) return;
+      ensureGsapRegistered();
+      const ring = ringRef.current;
+      if (!ring) return;
 
-    const onPointerMove = (event: PointerEvent) => {
-      if (event.pointerType !== 'mouse') return;
-      setIsVisible(true);
-      xTo(event.clientX);
-      yTo(event.clientY);
+      const xTo = gsap.quickTo(ring, 'x', { duration: 0.32, ease: 'power3.out' });
+      const yTo = gsap.quickTo(ring, 'y', { duration: 0.32, ease: 'power3.out' });
 
-      const target = event.target as HTMLElement | null;
-      const interactive = Boolean(
-        target?.closest('a, button, [role="button"], input, summary, [data-cursor="interactive"]'),
-      );
-      setIsActive(interactive);
-    };
+      const onPointerMove = (event: PointerEvent) => {
+        if (event.pointerType !== 'mouse') return;
+        setIsVisible(true);
+        xTo(event.clientX);
+        yTo(event.clientY);
 
-    const onPointerLeave = () => {
-      setIsVisible(false);
-    };
+        const target = event.target as HTMLElement | null;
+        const interactive = Boolean(
+          target?.closest('a, button, [role="button"], input, summary, [data-cursor="interactive"]'),
+        );
+        setIsActive(interactive);
+      };
 
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
-    document.addEventListener('mouseleave', onPointerLeave);
+      const onPointerLeave = () => {
+        setIsVisible(false);
+      };
+
+      window.addEventListener('pointermove', onPointerMove, { passive: true });
+      document.addEventListener('mouseleave', onPointerLeave);
+
+      cleanupListeners = () => {
+        window.removeEventListener('pointermove', onPointerMove);
+        document.removeEventListener('mouseleave', onPointerLeave);
+      };
+    });
 
     return () => {
-      window.removeEventListener('pointermove', onPointerMove);
-      document.removeEventListener('mouseleave', onPointerLeave);
+      cancelled = true;
+      cleanupListeners?.();
     };
   }, [isHydrated, motionEnabled]);
 
