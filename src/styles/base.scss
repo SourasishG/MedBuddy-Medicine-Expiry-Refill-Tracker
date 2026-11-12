@@ -108,8 +108,12 @@ canvas {
   transition: top 0.2s var(--ease-gallery);
 
   &:focus {
-    top: 16px;
+    top: calc(16px + env(safe-area-inset-top));
   }
+}
+
+section[id] {
+  scroll-margin-top: calc(84px + env(safe-area-inset-top));
 }
 
 .sr-only {

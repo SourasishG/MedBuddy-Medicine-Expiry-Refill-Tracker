@@ -115,8 +115,10 @@ export function InstallModal({ open, onClose, situation, siteUrl }: InstallModal
   const { motionEnabled } = useMotionPreference();
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [copied, setCopied] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
+  const copyTimerRef = useRef<number | null>(null);
 
   const isIosGuide = situation === 'ios-safari' || situation === 'ios-non-safari';
   const steps: GuideStep[] =
@@ -136,13 +138,51 @@ export function InstallModal({ open, onClose, situation, siteUrl }: InstallModal
 
   useEffect(() => {
     if (!open) return;
-    openerRef.current = document.activeElement as HTMLElement | null;
+    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const focusTimer = window.setTimeout(() => {
       closeBtnRef.current?.focus();
     }, 30);
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+
+      const focusables = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => el.offsetParent !== null);
+
+      if (focusables.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (!first || !last) return;
+
+      const active = document.activeElement;
+      if (!dialog.contains(active)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+        return;
+      }
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => {
@@ -151,6 +191,14 @@ export function InstallModal({ open, onClose, situation, siteUrl }: InstallModal
       openerRef.current?.focus();
     };
   }, [open, onClose]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!open || !isIosGuide || !motionEnabled) return;
@@ -164,7 +212,13 @@ export function InstallModal({ open, onClose, situation, siteUrl }: InstallModal
     try {
       await navigator.clipboard.writeText(siteUrl);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current);
+      }
+      copyTimerRef.current = window.setTimeout(() => {
+        setCopied(false);
+        copyTimerRef.current = null;
+      }, 2000);
     } catch {
       // Clipboard blocked in non-HTTPS contexts
     }
@@ -185,6 +239,8 @@ export function InstallModal({ open, onClose, situation, siteUrl }: InstallModal
           transition={{ duration: motionEnabled ? 0.25 : 0.001 }}
         >
           <m.div
+            ref={dialogRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-labelledby="install-modal-title"
