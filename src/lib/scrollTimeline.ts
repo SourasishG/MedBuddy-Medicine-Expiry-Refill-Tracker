@@ -33,10 +33,16 @@ export function initScrollChoreography({
   ensureGsapRegistered();
   gsap.registerPlugin(ScrollTrigger);
 
-  const isDesktop = window.matchMedia('(min-width: 960px)').matches;
+  const mm = gsap.matchMedia();
 
-  const ctx = gsap.context(() => {
-    const heroEl = document.getElementById('hero');
+  mm.add(
+    {
+      isDesktop: '(min-width: 960px)',
+      isMobile: '(max-width: 959px)',
+    },
+    (context) => {
+      const isDesktop = Boolean(context.conditions?.isDesktop);
+      const heroEl = document.getElementById('hero');
     const problemEl = document.getElementById('problem');
     const howEl = document.getElementById('how-it-works');
     const howPinEl = howEl?.querySelector<HTMLElement>('[data-how-pin]');
@@ -282,12 +288,13 @@ export function initScrollChoreography({
         },
       });
     }
-  });
+    },
+  );
 
   ScrollTrigger.refresh();
 
   return () => {
-    ctx.revert();
+    mm.revert();
     resetSceneTargets();
   };
 }
