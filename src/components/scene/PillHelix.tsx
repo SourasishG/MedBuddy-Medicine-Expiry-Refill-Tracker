@@ -154,8 +154,9 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
     }
 
     const group = groupRef.current;
+    const ringMode = sceneTargets.helixRingMode;
     if (group) {
-      const targetRotY = t * 0.16 + state.pointer.x * 0.24 + deviceTiltRef.current.x;
+      const targetRotY = state.pointer.x * 0.24 + deviceTiltRef.current.x;
       const targetRotX = state.pointer.y * 0.14 + deviceTiltRef.current.y;
       group.rotation.y = THREE.MathUtils.damp(group.rotation.y, targetRotY, 4, delta);
       group.rotation.x = THREE.MathUtils.damp(group.rotation.x, targetRotX, 4, delta);
@@ -165,7 +166,6 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
     const baseHeight = isMobile ? 2.5 : 3.5;
     const baseY = isMobile ? 0.62 : 0.28;
     const spread = sceneTargets.helixSpread;
-    const ringMode = sceneTargets.helixRingMode;
     const statusBlend = sceneTargets.helixStatusBlend;
     const lockedCount = sceneTargets.lockedPills;
     const phoneX = sceneTargets.phoneX;
@@ -182,7 +182,7 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
       if (!mesh) return;
       for (let idx = 0; idx < items.length; idx++) {
         const item = items[idx]!;
-        const helixAngle = item.t * Math.PI * 3.4 + item.strand * Math.PI + t * 0.12;
+        const helixAngle = item.t * Math.PI * 3.4 + item.strand * Math.PI + t * 0.26;
         const helixY = (item.t - 0.5) * baseHeight + baseY;
         const radius = baseRadius + spread * 1.35;
 

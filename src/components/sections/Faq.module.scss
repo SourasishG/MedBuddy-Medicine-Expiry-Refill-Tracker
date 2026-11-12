@@ -1,0 +1,138 @@
+@use '../../styles/mixins.scss' as *;
+
+.section {
+  position: relative;
+  padding-block: 112px;
+  border-top: 1px solid var(--hairline);
+
+  @media (min-width: 960px) {
+    padding-block: 144px;
+  }
+}
+
+.inner {
+  @include container;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 36px;
+
+  @media (min-width: 960px) {
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 56px;
+    align-items: start;
+  }
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.monoLabel {
+  @include mono-label;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 5vw, 4.1rem);
+  font-weight: 400;
+  line-height: 1.03;
+  letter-spacing: -0.02em;
+  color: var(--text);
+
+  em {
+    font-style: italic;
+    color: var(--chrome);
+  }
+}
+
+.lead {
+  color: var(--muted);
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+.accordion {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card-lg);
+  background: rgba(14, 19, 28, 0.84);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  overflow: hidden;
+}
+
+.row {
+  border-bottom: 1px solid var(--hairline);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.trigger {
+  width: 100%;
+  min-height: 68px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  text-align: left;
+  transition: background-color 0.25s var(--ease-gallery);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  @include focus-ring;
+
+  @media (min-width: 960px) {
+    padding: 22px 30px;
+  }
+}
+
+.question {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.plusIcon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  font-family: var(--font-code);
+  font-size: 1.125rem;
+  transition:
+    transform 0.35s var(--ease-gallery),
+    border-color 0.35s var(--ease-gallery),
+    color 0.35s var(--ease-gallery);
+
+  &[data-open='true'] {
+    transform: rotate(45deg);
+    border-color: var(--ok);
+    color: var(--ok);
+  }
+}
+
+.answerWrap {
+  overflow: hidden;
+}
+
+.answerInner {
+  padding: 0 24px 22px;
+  color: var(--muted);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+
+  @media (min-width: 960px) {
+    padding: 0 30px 26px;
+  }
+}

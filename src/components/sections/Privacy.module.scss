@@ -1,0 +1,133 @@
+@use '../../styles/mixins.scss' as *;
+
+.section {
+  position: relative;
+  padding-block: 112px;
+  border-top: 1px solid var(--hairline);
+
+  @media (min-width: 960px) {
+    padding-block: 144px;
+  }
+}
+
+.inner {
+  @include container;
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 680px;
+}
+
+.monoLabel {
+  @include mono-label;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 5vw, 4.1rem);
+  font-weight: 400;
+  line-height: 1.03;
+  letter-spacing: -0.02em;
+  color: var(--text);
+
+  em {
+    font-style: italic;
+    color: var(--chrome);
+  }
+}
+
+.lead {
+  color: var(--muted);
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+.specGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card-lg);
+  background: rgba(14, 19, 28, 0.84);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  overflow: hidden;
+
+  @media (min-width: 960px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.specCol {
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  border-bottom: 1px solid var(--hairline);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  @media (min-width: 960px) {
+    padding: 36px 32px;
+    border-bottom: 0;
+    border-right: 1px solid var(--hairline);
+
+    &:last-child {
+      border-right: 0;
+    }
+  }
+}
+
+.colHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.colIndex {
+  @include mono-label;
+  color: var(--ok);
+}
+
+.colTitle {
+  @include mono-label;
+  color: var(--text);
+}
+
+.colNever {
+  color: var(--alert);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.itemTitle {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.itemCopy {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--muted);
+}

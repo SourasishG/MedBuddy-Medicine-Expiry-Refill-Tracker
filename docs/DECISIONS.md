@@ -71,3 +71,17 @@
 
 2. **Content & Honesty Alignment**
    - Problem statements (`01`–`03`) and all 8 feature cards stay strictly within listed product capabilities without invented metrics or medical claims.
+
+## Phase 4: Sections 04 to 08 and Footer
+
+1. **Interactive Demos (`04 CabinetDemo` & `05 Caregivers`)**
+   - `CabinetDemo` (`#cabinet-demo`) implements an accessible `0`–`90` `"Days from today"` slider and quick-jump day presets (`Today`, `+14d`, `+45d`, `+90d`), driving live `In date` (>30d), `Use soon` (1–30d), and `Expired` (<=0d, with `--alert` glow & safe-disposal callout) bottle statuses plus Framer Motion layout re-sorting in the `"Use these first"` priority list.
+   - `Caregivers` (`#family`) links an illustrative parent phone and caregiver phone via a glowing thread with both automatic scroll-in playback and a manual `"Simulate missed dose"` / `"Reset to dose taken"` control. Triggering the missed-dose event dims the parent card, animates the `--alert` signal node along the connecting thread (respecting Motion On/Off), triggers a single `<300ms` `glitchPulse` (`0.26s`), and surfaces the caregiver alert without invented statistics.
+
+2. **Trust, FAQ, Early-Access Install & Footer (`06 Privacy`, `07 Faq`, `08 Install`, `Footer`)**
+   - `Privacy` (`#privacy`) lays out three mono-headed spec columns (`WHAT MEDBUDDY DOES`, `WHAT IT NEVER DOES`, `YOUR CONTROLS`), staying strictly within product facts.
+   - `Faq` (`#faq`) implements a 7-item Framer Motion accordion (`AnimatePresence`) covering sign-in, cross-platform installation, family visibility, non-medical boundary, deletion controls, direct web install, and early-access behavior.
+   - `Install` (`#install`) centers the OUI-scale chrome `MEDBUDDY` wordmark above the platform-aware early-access install card and desktop QR preview slot, while the semantic `<footer>` carries anchor navigation, privacy/contact placeholders, and the verbatim required disclaimer.
+
+3. **3D Scene Handoff & Ring Re-formation**
+   - Extended `scrollTimeline.ts` so the helix recolours by status (`helixStatusBlend: 1`) while the ring and phone recede quietly behind Sections 04–07, then returns the phone to center with the re-formed forward-facing pill ring (`helixRingMode: 1`) and brightened halo at Section 08. Also removed redundant continuous Y-axis group rotation in `PillHelix.tsx` so the re-formed Install ring always faces the camera.

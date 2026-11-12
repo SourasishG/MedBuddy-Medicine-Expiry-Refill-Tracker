@@ -39,6 +39,10 @@ export function initScrollChoreography({
     const howEl = document.getElementById('how-it-works');
     const howPinEl = howEl?.querySelector<HTMLElement>('[data-how-pin]');
     const featuresEl = document.getElementById('features');
+    const demoEl = document.getElementById('cabinet-demo');
+    const familyEl = document.getElementById('family');
+    const privacyEl = document.getElementById('privacy');
+    const installEl = document.getElementById('install');
 
     // 1. Hero -> 01 Problem: helix loosens and drifts apart, ring dims, phone tilts back
     if (heroEl && problemEl) {
@@ -176,6 +180,103 @@ export function initScrollChoreography({
           start: 'top bottom',
           end: 'top 25%',
           scrub: 0.85,
+        },
+      });
+    }
+
+    // 4. 04 Cabinet Demo & 05 Caregivers: helix recolours by status as phone hands off to DOM demos
+    if (demoEl) {
+      gsap.to(sceneTargets, {
+        phoneX: isDesktop ? 2.8 : 0,
+        phoneY: isDesktop ? -0.35 : -1.8,
+        phoneZ: -3.2,
+        phoneRotX: 0.12,
+        phoneRotY: 0.28,
+        phoneRotZ: 0,
+        phoneScale: isDesktop ? 0.44 : 0.36,
+        helixSpread: 0.85,
+        helixRingMode: 0,
+        helixStatusBlend: 1,
+        tilesLift: 0.15,
+        ringOpacity: 0.04,
+        haloIntensity: 0.42,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: demoEl,
+          start: 'top bottom',
+          end: 'top 30%',
+          scrub: 0.85,
+        },
+      });
+    }
+
+    if (familyEl) {
+      gsap.to(sceneTargets, {
+        phoneX: isDesktop ? -2.8 : 0,
+        phoneY: isDesktop ? -0.35 : -1.9,
+        phoneZ: -3.4,
+        phoneScale: isDesktop ? 0.42 : 0.34,
+        phoneRotY: -0.24,
+        helixStatusBlend: 1,
+        ringOpacity: 0.04,
+        haloIntensity: 0.38,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: familyEl,
+          start: 'top bottom',
+          end: 'top 30%',
+          scrub: 0.85,
+        },
+      });
+    }
+
+    // 5. 06 Privacy & 07 FAQ: quiet background state to keep spec columns & accordion foregrounded
+    if (privacyEl) {
+      gsap.to(sceneTargets, {
+        phoneX: 0,
+        phoneY: -2.2,
+        phoneZ: -3.6,
+        phoneScale: 0.34,
+        helixSpread: 0.95,
+        helixStatusBlend: 0.35,
+        tilesLift: 0,
+        ringOpacity: 0.03,
+        haloIntensity: 0.34,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: privacyEl,
+          start: 'top bottom',
+          end: 'top 35%',
+          scrub: 0.85,
+        },
+      });
+    }
+
+    // 6. 08 Install: phone returns to centre, helix re-forms into a ring around it, halo brightens
+    if (installEl) {
+      gsap.to(sceneTargets, {
+        phoneX: 0,
+        phoneY: isDesktop ? 0.14 : 0.22,
+        phoneZ: 0.1,
+        phoneRotX: 0.04,
+        phoneRotY: -0.1,
+        phoneRotZ: 0,
+        phoneScale: isDesktop ? 0.92 : 0.78,
+        helixSpread: 0,
+        helixRingMode: 1,
+        helixStatusBlend: 0.28,
+        tilesLift: 0,
+        lockedPills: 0,
+        ringOpacity: 1,
+        ringScale: 1.06,
+        haloIntensity: 1.05,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: installEl,
+          start: 'top 80%',
+          end: 'top 18%',
+          scrub: 0.9,
+          onEnter: () => setActivePhoneScreen('cabinet'),
         },
       });
     }

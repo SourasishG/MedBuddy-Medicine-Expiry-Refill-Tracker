@@ -2,9 +2,14 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { SceneLoader } from '@/components/scene/SceneLoader';
+import { CabinetDemo } from '@/components/sections/CabinetDemo';
+import { Caregivers } from '@/components/sections/Caregivers';
+import { Faq } from '@/components/sections/Faq';
 import { Features } from '@/components/sections/Features';
 import { Hero } from '@/components/sections/Hero';
 import { HowItWorks } from '@/components/sections/HowItWorks';
+import { Footer, Install } from '@/components/sections/Install';
+import { Privacy } from '@/components/sections/Privacy';
 import { Problem } from '@/components/sections/Problem';
 import { Cursor } from '@/components/ui/Cursor';
 import { GrainOverlay } from '@/components/ui/GrainOverlay';
@@ -40,8 +45,15 @@ export function LandingStage({ children }: { children?: ReactNode }) {
         <Problem />
         <HowItWorks activeStep={howStep} onSelectStep={setHowStep} />
         <Features />
+        <CabinetDemo />
+        <Caregivers />
+        <Privacy />
+        <Faq />
+        <Install />
         {children}
       </main>
+
+      <Footer />
     </div>
   );
 }
