@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { PillButton } from '@/components/ui/PillButton';
 import type { InstallSituation } from '@/hooks/useInstallPrompt';
 import styles from './Install.module.scss';
@@ -143,10 +144,10 @@ export function Footer() {
       </p>
 
       <div className={styles.footerBottom}>
-        <span>© {new Date().getFullYear()} MedBuddy · Early-access site</span>
+        <span>© {new Date().getFullYear()} MedBuddy · Sourasish Ghosh</span>
         <div className={styles.legalLinks}>
-          <a href="#privacy">Privacy notice (placeholder)</a>
-          <span>hello@medbuddy.example (placeholder)</span>
+          <Link href="/privacy">Privacy notice</Link>
+          <a href="mailto:ghoshsourasish1@gmail.com">ghoshsourasish1@gmail.com</a>
         </div>
       </div>
     </footer>
