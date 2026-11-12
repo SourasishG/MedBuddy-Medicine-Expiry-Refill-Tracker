@@ -26,6 +26,14 @@ export default function Scene({ initialTier, isMobile, onReady, onFallbackToPost
   const [isVisible, setIsVisible] = useState(true);
   const [isTabActive, setIsTabActive] = useState(true);
   const declineCountRef = useRef(0);
+  const isUnmountedRef = useRef(false);
+
+  useEffect(() => {
+    isUnmountedRef.current = false;
+    return () => {
+      isUnmountedRef.current = true;
+    };
+  }, []);
 
   useEffect(() => {
     const onVisibilityChange = () => {
@@ -102,7 +110,9 @@ export default function Scene({ initialTier, isMobile, onReady, onFallbackToPost
             'webglcontextlost',
             (e) => {
               e.preventDefault();
-              onFallbackToPoster?.();
+              if (!isUnmountedRef.current) {
+                onFallbackToPoster?.();
+              }
             },
             { once: true },
           );
