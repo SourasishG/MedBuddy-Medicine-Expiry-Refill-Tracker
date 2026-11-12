@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { PillButton } from '@/components/ui/PillButton';
 import type { InstallSituation } from '@/hooks/useInstallPrompt';
+import { SITE_URL } from '@/lib/site';
 import styles from './Install.module.scss';
 
 const QRCodeSVG = dynamic(() => import('qrcode.react').then((mod) => mod.QRCodeSVG), {
@@ -29,7 +30,7 @@ export function Install({
   onInstallClick,
   installLabel = 'Install MedBuddy',
   installHref,
-  siteUrl = 'https://medbuddy.app',
+  siteUrl = SITE_URL,
   justInstalled = false,
   situation = 'desktop-qr',
 }: InstallProps) {

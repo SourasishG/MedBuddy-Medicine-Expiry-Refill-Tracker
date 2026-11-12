@@ -40,7 +40,7 @@ Every route (`/:path*`) serves the following headers configured in [next.config.
 ## 3. Environment & Repository Hygiene
 
 - [.gitignore](file:///d:/MedBuddy/.gitignore) excludes all `.env*` files while explicitly allowing an untracked template `!.env.example`.
-- The only environment variable referenced in application code is `NEXT_PUBLIC_SITE_URL`, which is a non-sensitive public canonical origin (`https://medbuddy.app` fallback). Never place private API keys or secrets inside `NEXT_PUBLIC_*` variables.
+- The only environment variable referenced in application code is `NEXT_PUBLIC_SITE_URL`, which is a non-sensitive public canonical origin (`https://medbuddy-s7ven.vercel.app` fallback). Never place private API keys or secrets inside `NEXT_PUBLIC_*` variables.
 
 ---
 
