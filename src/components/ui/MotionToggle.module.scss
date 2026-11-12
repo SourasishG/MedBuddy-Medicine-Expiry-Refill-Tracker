@@ -1,0 +1,51 @@
+@use '../../styles/mixins.scss' as *;
+
+.toggle {
+  @include glass-panel(var(--radius-pill));
+  @include focus-ring;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 16px;
+  font-family: var(--font-code);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+  transition:
+    border-color 0.3s var(--ease-gallery),
+    background-color 0.3s var(--ease-gallery);
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.09);
+  }
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 10px rgba(92, 242, 199, 0.6);
+  transition:
+    background-color 0.3s var(--ease-gallery),
+    box-shadow 0.3s var(--ease-gallery);
+}
+
+.toggle[data-enabled='false'] .dot {
+  background: var(--muted);
+  box-shadow: none;
+}
+
+.label {
+  color: var(--muted);
+}
+
+.state {
+  color: var(--text);
+  min-width: 24px;
+  text-align: left;
+}

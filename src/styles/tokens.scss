@@ -1,0 +1,52 @@
+:root {
+  /* Palette */
+  --bg: #090c12;
+  --surface: #0e131c;
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-blur: 24px;
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --hairline: rgba(255, 255, 255, 0.08);
+  --text: #eaf0f6;
+  --muted: #9aa6b8;
+  --chrome: #dde6f0;
+  --ok: #5cf2c7;
+  --warn: #ffb347;
+  --alert: #ff4d6a;
+  --halo: #1f4bff;
+
+  /* Typography */
+  --font-display: var(--font-serif), Georgia, 'Times New Roman', serif;
+  --font-body: var(--font-sans), system-ui, -apple-system, sans-serif;
+  --font-code: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --text-base: 1.125rem; /* 18px minimum */
+  --leading-base: 1.6;
+
+  /* Surfaces & Radii */
+  --radius-card: 24px;
+  --radius-card-sm: 20px;
+  --radius-card-lg: 28px;
+  --radius-pill: 9999px;
+
+  /* Layout */
+  --gutter: 16px;
+  --max-width: 1360px;
+
+  /* Motion */
+  --ease-gallery: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-reveal: 1s;
+
+  color-scheme: dark;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 32px;
+  }
+}
+
+@media (min-width: 1200px) {
+  :root {
+    --gutter: 48px;
+  }
+}

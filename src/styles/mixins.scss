@@ -1,0 +1,59 @@
+@mixin glass-panel($radius: var(--radius-card)) {
+  background: var(--glass);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: $radius;
+}
+
+@mixin pill {
+  border-radius: var(--radius-pill);
+}
+
+@mixin hairline-border($side: all) {
+  @if $side == all {
+    border: 1px solid var(--hairline);
+  } @else if $side == top {
+    border-top: 1px solid var(--hairline);
+  } @else if $side == bottom {
+    border-bottom: 1px solid var(--hairline);
+  } @else if $side == left {
+    border-left: 1px solid var(--hairline);
+  } @else if $side == right {
+    border-right: 1px solid var(--hairline);
+  }
+}
+
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--ok);
+    outline-offset: 3px;
+  }
+}
+
+@mixin container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+@mixin mono-label {
+  font-family: var(--font-code);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+@mixin chrome-text {
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    var(--chrome) 45%,
+    rgba(154, 166, 184, 0.78) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
