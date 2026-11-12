@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useIsHydrated } from './useIsHydrated';
 
 export interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -16,8 +17,6 @@ export type InstallSituation =
   | 'ios-non-safari'
   | 'desktop-qr'
   | 'unsupported';
-
-const emptySubscribe = () => () => {};
 
 function isBeforeInstallPromptEvent(event: Event): event is BeforeInstallPromptEvent {
   return 'prompt' in event && typeof event.prompt === 'function' && 'userChoice' in event;
@@ -88,11 +87,7 @@ function detectPlatformSituation(
 
 export function useInstallPrompt() {
   const router = useRouter();
-  const isClient = useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false,
-  );
+  const isClient = useIsHydrated();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [installedStandalone, setInstalledStandalone] = useState<boolean>(false);
   const [isDesktopViewport, setIsDesktopViewport] = useState<boolean>(true);

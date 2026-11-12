@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { setActivePhoneScreen, type PhoneScreenId } from '@/lib/sceneState';
 import styles from './HowItWorks.module.scss';
 
-export interface HowItWorksStep {
+interface HowItWorksStep {
   step: string;
   title: string;
   description: string;
@@ -12,7 +12,7 @@ export interface HowItWorksStep {
   screenSummary: string;
 }
 
-export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
+const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
   {
     step: '01',
     title: 'Add a medicine',

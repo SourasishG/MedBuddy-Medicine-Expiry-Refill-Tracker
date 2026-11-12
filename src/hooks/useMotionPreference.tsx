@@ -9,6 +9,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
+import { useIsHydrated } from './useIsHydrated';
 
 const STORAGE_KEY = 'medbuddy-motion';
 const MOTION_EVENT = 'medbuddy-motion-change';
@@ -75,19 +76,13 @@ function subscribeMotion(callback: () => void): () => void {
   };
 }
 
-const emptySubscribe = () => () => {};
-
 export function MotionProvider({ children }: { children: ReactNode }) {
   const motionEnabled = useSyncExternalStore(
     subscribeMotion,
     getMotionSnapshot,
     getMotionServerSnapshot,
   );
-  const isHydrated = useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false,
-  );
+  const isHydrated = useIsHydrated();
 
   useEffect(() => {
     document.documentElement.dataset.motion = motionEnabled ? 'on' : 'off';

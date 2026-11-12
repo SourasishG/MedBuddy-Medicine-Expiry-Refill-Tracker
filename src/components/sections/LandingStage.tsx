@@ -16,6 +16,7 @@ import { Cursor } from '@/components/ui/Cursor';
 import { GrainOverlay } from '@/components/ui/GrainOverlay';
 import { Nav } from '@/components/ui/Nav';
 import { Preloader } from '@/components/ui/Preloader';
+import { SmoothScrollProvider } from '@/components/ui/SmoothScrollProvider';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import styles from './LandingStage.module.scss';
@@ -67,52 +68,54 @@ export function LandingStage({ children }: { children?: ReactNode }) {
   };
 
   return (
-    <div id="top" className={styles.page}>
-      <Preloader />
-      <SceneLoader onSceneReadyChange={setSceneReady} />
-      <GrainOverlay />
-      <Cursor />
-      <Nav
-        onInstallClick={onTriggerInstall}
-        installLabel={situation === 'standalone' ? 'Open MedBuddy' : 'Install'}
-        installHref={ctaHref}
-      />
-
-      <main id="main-content" className={styles.main}>
-        <Hero
-          hasCanvas={sceneReady}
+    <SmoothScrollProvider>
+      <div id="top" className={styles.page}>
+        <Preloader />
+        <SceneLoader onSceneReadyChange={setSceneReady} />
+        <GrainOverlay />
+        <Cursor />
+        <Nav
           onInstallClick={onTriggerInstall}
-          installLabel={ctaLabel}
+          installLabel={situation === 'standalone' ? 'Open MedBuddy' : 'Install'}
           installHref={ctaHref}
         />
-        <Problem />
-        <HowItWorks activeStep={howStep} onSelectStep={setHowStep} />
-        <Features />
-        <CabinetDemo />
-        <Caregivers />
-        <Privacy />
-        <Faq />
-        <Install
-          onInstallClick={onTriggerInstall}
-          installLabel={ctaLabel}
-          installHref={ctaHref}
-          siteUrl={siteUrl}
-          justInstalled={justInstalled}
-          situation={situation}
-        />
-        {children}
-      </main>
 
-      <Footer />
+        <main id="main-content" className={styles.main}>
+          <Hero
+            hasCanvas={sceneReady}
+            onInstallClick={onTriggerInstall}
+            installLabel={ctaLabel}
+            installHref={ctaHref}
+          />
+          <Problem />
+          <HowItWorks activeStep={howStep} onSelectStep={setHowStep} />
+          <Features />
+          <CabinetDemo />
+          <Caregivers />
+          <Privacy />
+          <Faq />
+          <Install
+            onInstallClick={onTriggerInstall}
+            installLabel={ctaLabel}
+            installHref={ctaHref}
+            siteUrl={siteUrl}
+            justInstalled={justInstalled}
+            situation={situation}
+          />
+          {children}
+        </main>
 
-      {(modalMounted || modalOpen) && (
-        <InstallModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          situation={situation}
-          siteUrl={siteUrl}
-        />
-      )}
-    </div>
+        <Footer />
+
+        {(modalMounted || modalOpen) && (
+          <InstallModal
+            open={modalOpen}
+            onClose={() => setModalOpen(false)}
+            situation={situation}
+            siteUrl={siteUrl}
+          />
+        )}
+      </div>
+    </SmoothScrollProvider>
   );
 }

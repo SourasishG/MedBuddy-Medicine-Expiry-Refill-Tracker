@@ -16,7 +16,7 @@ export interface ChoreographyOptions {
   onStepChange?: (stepIndex: number) => void;
 }
 
-export function resetSceneTargets(): void {
+function resetSceneTargets(): void {
   Object.assign(sceneTargets, defaultSceneTargets);
   setActivePhoneScreen('cabinet');
 }
