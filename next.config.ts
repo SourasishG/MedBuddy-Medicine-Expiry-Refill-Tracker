@@ -1,11 +1,42 @@
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import withSerwistInit from '@serwist/next';
 import type { NextConfig } from 'next';
+
+function hashFile(relPath: string): string {
+  try {
+    return crypto
+      .createHash('sha256')
+      .update(fs.readFileSync(path.join(process.cwd(), relPath)))
+      .digest('hex')
+      .slice(0, 12);
+  } catch {
+    return 'v1';
+  }
+}
+
+const offlineShellRevision = `${hashFile('src/app/layout.tsx')}-${hashFile('src/app/offline/page.tsx')}-${hashFile('src/app/app/page.tsx')}`;
 
 const withSerwist = withSerwistInit({
   swSrc: 'src/app/sw.ts',
   swDest: 'public/sw.js',
   disable: process.env.NODE_ENV !== 'production',
   reloadOnOnline: true,
+  manifestTransforms: [
+    async (entries) => {
+      const normalized = entries.map((entry) => ({
+        ...entry,
+        url: entry.url.replace(/\\/g, '/'),
+      }));
+      for (const url of ['/offline', '/app']) {
+        if (!normalized.some((entry) => entry.url === url)) {
+          normalized.push({ url, revision: offlineShellRevision, size: 0 });
+        }
+      }
+      return { manifest: normalized, warnings: [] };
+    },
+  ],
 });
 
 const securityHeaders = [
