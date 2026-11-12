@@ -62,7 +62,6 @@ export function useGpuTier(): GpuProfile {
     let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
 
     const mediaQuery = window.matchMedia('(max-width: 959px)');
-    const isMobile = mediaQuery.matches;
     const webgl = hasWebGLInterface();
     const override = readTierOverride();
 
