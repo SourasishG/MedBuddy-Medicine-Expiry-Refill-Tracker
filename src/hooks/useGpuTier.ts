@@ -85,7 +85,7 @@ export function useGpuTier(): GpuProfile {
     const detectTier = () => {
       if (cancelled) return;
       import('detect-gpu')
-        .then(({ getGPUTier }) => getGPUTier())
+        .then(({ getGPUTier }) => getGPUTier({ benchmarksURL: '/benchmarks' }))
         .then((result) => {
           if (cancelled) return;
           let mapped: QualityTier = 'medium';
