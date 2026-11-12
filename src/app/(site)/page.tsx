@@ -5,19 +5,21 @@ export default function LandingPage() {
   return (
     <LandingStage>
       <section
-        id="how-it-works"
+        id="family"
         className={styles.placeholderSection}
-        aria-label="Upcoming sections"
+        aria-label="Upcoming sections 04 through 08"
       >
         <div className={styles.placeholderInner}>
-          <p className={styles.mono}>PHASE 02 / 3D SCENE STAGE</p>
+          <p className={styles.mono}>PHASE 03 / SECTIONS 01–03 &amp; CHOREOGRAPHY COMPLETE</p>
           <p className={styles.copy}>
-            Sections 01 through 08 and the scrubbed ScrollTrigger timeline will wire into this
-            persistent 3D stage in Phases 3 and 4.
+            Sections 04 through 08 (Live Cabinet Demo, Caregiver Thread, Privacy Spec Sheet, FAQ,
+            Install Panel, and Footer) will be added in Phase 4.
           </p>
         </div>
       </section>
 
+      <div id="privacy" aria-hidden="true" />
+      <div id="faq" aria-hidden="true" />
       <div id="install" aria-hidden="true" />
     </LandingStage>
   );

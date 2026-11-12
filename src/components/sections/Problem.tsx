@@ -62,15 +62,20 @@ export function Problem() {
   }, [isHydrated, motionEnabled]);
 
   return (
-    <section id="problem" ref={sectionRef} className={styles.section} aria-labelledby="problem-label">
+    <section
+      id="problem"
+      ref={sectionRef}
+      className={styles.section}
+      aria-labelledby="problem-label"
+    >
       <div className={styles.container}>
         <header className={styles.header}>
           <p id="problem-label" className={styles.sectionCode}>
             01 / THE PROBLEM
           </p>
           <p className={styles.intro}>
-            Medicine cabinets grow quiet and confusing over time. Three small gaps cause most of
-            the stress.
+            Medicine cabinets grow quiet and confusing over time. Three small gaps cause most of the
+            stress.
           </p>
         </header>
 

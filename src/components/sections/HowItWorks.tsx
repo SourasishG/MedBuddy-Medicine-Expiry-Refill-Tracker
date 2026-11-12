@@ -27,7 +27,8 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
     description:
       'Choose simple daily dose times for mornings, meals, or bedtime. Switch on large-text mode whenever needed.',
     screen: 'reminder',
-    screenSummary: 'Evening Dose card shows Vitamin D3 1000 IU with one-tap Taken, Snooze, and Skip.',
+    screenSummary:
+      'Evening Dose card shows Vitamin D3 1000 IU with one-tap Taken, Snooze, and Skip.',
   },
   {
     step: '03',
@@ -67,11 +68,7 @@ export function HowItWorks({ activeStep: controlledStep, onSelectStep }: HowItWo
   };
 
   return (
-    <section
-      id="how-it-works"
-      className={styles.section}
-      aria-labelledby="how-heading"
-    >
+    <section id="how-it-works" className={styles.section} aria-labelledby="how-heading">
       <div className={styles.pinStage} data-how-pin>
         <div className={styles.container}>
           <div className={styles.leftCol}>

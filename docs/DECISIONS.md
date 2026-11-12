@@ -60,3 +60,14 @@
    - **Medium**: Drops transmission and chromatic aberration, halves capsule count, lighter bloom.
    - **Low / WebGL failure / Motion Off**: Unmounts 3D canvas and displays the static poster with CSS parallax (`Motion On`) or static layout (`Motion Off`).
    - Pauses rendering (`frameloop="never"`) when the tab is hidden or canvas is off-screen, clamps DPR (`[1, 1.75]` desktop / `[1, 1.25]` mobile), and steps down quality via `PerformanceMonitor`.
+
+## Phase 3: Scroll Choreography & Sections 01–03
+
+1. **Master ScrollTrigger Choreography (`src/lib/scrollTimeline.ts`)**
+   - Uses a single `gsap.context` timeline mutating `sceneTargets` (`src/lib/sceneState.ts`) so 60fps R3F `useFrame` reads remain decoupled from React state.
+   - **Hero → 01 Problem**: Loosens capsule helix (`helixSpread: 0.92`), dims halo ring (`ringOpacity: 0.28`), tilts and offsets the phone right on desktop so the oversized statement list stays unobstructed.
+   - **02 How It Works**: Pins `#how-it-works` on desktop when Motion is enabled, scrubs through 4 steps (`cabinet → reminder → refill → family`), updates the DOM step indicator, and locks 1 chrome capsule per step (`lockedPills: 1 → 4`) around the phone. On mobile or with Motion Off, renders as a static vertical story stack with clickable step previews.
+   - **03 Features**: Centers and recesses the phone (`tilesLift: 1`) while the 8 expandable `GlassCard` features frame it in depth-layered columns.
+
+2. **Content & Honesty Alignment**
+   - Problem statements (`01`–`03`) and all 8 feature cards stay strictly within listed product capabilities without invented metrics or medical claims.
