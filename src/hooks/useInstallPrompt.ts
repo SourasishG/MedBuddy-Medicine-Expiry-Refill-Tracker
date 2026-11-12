@@ -19,10 +19,17 @@ export type InstallSituation =
 
 const emptySubscribe = () => () => {};
 
+function isBeforeInstallPromptEvent(event: Event): event is BeforeInstallPromptEvent {
+  return 'prompt' in event && typeof event.prompt === 'function' && 'userChoice' in event;
+}
+
 function detectStandalone(): boolean {
   if (typeof window === 'undefined') return false;
   const mediaStandalone = window.matchMedia('(display-mode: standalone)').matches;
-  const navStandalone = Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+  const navStandalone =
+    'standalone' in navigator && typeof navigator.standalone === 'boolean'
+      ? navigator.standalone
+      : false;
   return mediaStandalone || navStandalone;
 }
 
@@ -46,7 +53,11 @@ function readPreviewOverride(): InstallSituation | null {
   return null;
 }
 
-function detectPlatformSituation(hasNativePrompt: boolean, standalone: boolean): InstallSituation {
+function detectPlatformSituation(
+  hasNativePrompt: boolean,
+  standalone: boolean,
+  isDesktopViewport: boolean,
+): InstallSituation {
   const override = readPreviewOverride();
   if (override) return override;
   if (standalone) return 'standalone';
@@ -67,7 +78,6 @@ function detectPlatformSituation(hasNativePrompt: boolean, standalone: boolean):
   }
 
   const isMobileAndroid = /Android/i.test(ua);
-  const isDesktopViewport = window.matchMedia('(min-width: 960px)').matches;
 
   if (!isMobileAndroid && isDesktopViewport) {
     return 'desktop-qr';
@@ -85,19 +95,26 @@ export function useInstallPrompt() {
   );
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [installedStandalone, setInstalledStandalone] = useState<boolean>(false);
+  const [isDesktopViewport, setIsDesktopViewport] = useState<boolean>(true);
   const [justInstalled, setJustInstalled] = useState<boolean>(false);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const media = window.matchMedia('(display-mode: standalone)');
+    const desktopQuery = window.matchMedia('(min-width: 960px)');
     const syncStandalone = () => {
       setInstalledStandalone(detectStandalone());
     };
+    const syncDesktop = () => {
+      setIsDesktopViewport(desktopQuery.matches);
+    };
     syncStandalone();
+    syncDesktop();
 
     const onBeforeInstallPrompt = (event: Event) => {
+      if (!isBeforeInstallPromptEvent(event)) return;
       event.preventDefault();
-      setDeferredPrompt(event as BeforeInstallPromptEvent);
+      setDeferredPrompt(event);
     };
 
     const onAppInstalled = () => {
@@ -107,18 +124,20 @@ export function useInstallPrompt() {
     };
 
     media.addEventListener('change', syncStandalone);
+    desktopQuery.addEventListener('change', syncDesktop);
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
     window.addEventListener('appinstalled', onAppInstalled);
 
     return () => {
       media.removeEventListener('change', syncStandalone);
+      desktopQuery.removeEventListener('change', syncDesktop);
       window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
       window.removeEventListener('appinstalled', onAppInstalled);
     };
   }, []);
 
   const situation: InstallSituation = isClient
-    ? detectPlatformSituation(Boolean(deferredPrompt), installedStandalone)
+    ? detectPlatformSituation(Boolean(deferredPrompt), installedStandalone, isDesktopViewport)
     : 'desktop-qr';
 
   const siteUrl = isClient ? window.location.origin : 'https://medbuddy.app';

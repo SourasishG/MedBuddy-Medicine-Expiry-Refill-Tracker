@@ -106,7 +106,8 @@ export function SafeHtmlTransform({
   const visibleRef = useRef(true);
   const mountedRef = useRef<MountedPortal | null>(null);
 
-  const target = (events.connected as HTMLElement | null) || gl.domElement.parentElement;
+  const connectedEl = events.connected instanceof HTMLElement ? events.connected : null;
+  const target = connectedEl ?? gl.domElement.parentElement;
 
   const outerStyle = useMemo<CSSProperties>(
     () => ({
@@ -250,8 +251,8 @@ export function SafeHtmlTransform({
 
     const occlusionMesh = occlusionMeshRef.current;
     if (occlusionMesh && !isMeshSizeSetRef.current && portal.outer) {
-      const innerEl = portal.outer.children[0] as HTMLElement | undefined;
-      if (innerEl && innerEl.clientWidth && innerEl.clientHeight) {
+      const innerEl = portal.outer.children[0];
+      if (innerEl instanceof HTMLElement && innerEl.clientWidth && innerEl.clientHeight) {
         if (isOrtho) {
           occlusionMesh.scale.setScalar(1 / scale);
         } else {

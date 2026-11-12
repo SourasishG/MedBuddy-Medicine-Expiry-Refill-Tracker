@@ -55,7 +55,9 @@ export function Nav({ onInstallClick, installLabel = 'Install', installHref }: N
     if (!menuOpen) return;
 
     const focusTimer = window.setTimeout(() => {
-      const firstLink = drawerRef.current?.querySelector<HTMLElement>('a[href], button:not([disabled])');
+      const firstLink = drawerRef.current?.querySelector<HTMLElement>(
+        'a[href], button:not([disabled])',
+      );
       firstLink?.focus();
     }, 30);
 
@@ -75,10 +77,7 @@ export function Nav({ onInstallClick, installLabel = 'Install', installHref }: N
           'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
         ),
       );
-      const focusables = [
-        ...(menuBtnRef.current ? [menuBtnRef.current] : []),
-        ...drawerFocusables,
-      ];
+      const focusables = [...(menuBtnRef.current ? [menuBtnRef.current] : []), ...drawerFocusables];
       if (focusables.length === 0) return;
 
       const first = focusables[0];
@@ -86,10 +85,7 @@ export function Nav({ onInstallClick, installLabel = 'Install', installHref }: N
       if (!first || !last) return;
 
       const active = document.activeElement;
-      if (
-        active !== menuBtnRef.current &&
-        !(active instanceof Node && drawer.contains(active))
-      ) {
+      if (active !== menuBtnRef.current && !(active instanceof Node && drawer.contains(active))) {
         event.preventDefault();
         (event.shiftKey ? last : first).focus();
         return;

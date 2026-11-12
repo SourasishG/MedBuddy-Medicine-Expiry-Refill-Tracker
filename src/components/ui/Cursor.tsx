@@ -34,7 +34,7 @@ export function Cursor() {
         xTo(event.clientX);
         yTo(event.clientY);
 
-        const target = event.target as HTMLElement | null;
+        const target = event.target instanceof Element ? event.target : null;
         const interactive = Boolean(
           target?.closest(
             'a, button, [role="button"], input, summary, [data-cursor="interactive"]',

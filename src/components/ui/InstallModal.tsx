@@ -138,7 +138,8 @@ export function InstallModal({ open, onClose, situation, siteUrl }: InstallModal
 
   useEffect(() => {
     if (!open) return;
-    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    openerRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const focusTimer = window.setTimeout(() => {
       closeBtnRef.current?.focus();
     }, 30);

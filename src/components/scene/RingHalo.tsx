@@ -28,6 +28,11 @@ const HALO_FRAGMENT = /* glsl */ `
   }
 `;
 
+function setFloatUniform(material: THREE.ShaderMaterial | null, key: string, value: number) {
+  const uniform = material?.uniforms[key];
+  if (uniform) uniform.value = value;
+}
+
 export function RingHalo({ isMobile = false }: { isMobile?: boolean }) {
   const torusRef = useRef<THREE.Mesh>(null);
   const haloGlowRef = useRef<THREE.Mesh>(null);
@@ -73,22 +78,17 @@ export function RingHalo({ isMobile = false }: { isMobile?: boolean }) {
     const t = state.clock.elapsedTime;
 
     if (grainMatRef.current) {
-      grainMatRef.current.uniforms.uTime!.value = t;
-      (grainMatRef.current.uniforms.uResolution!.value as THREE.Vector2).set(
-        size.width,
-        size.height,
-      );
-      grainMatRef.current.uniforms.uIntensity!.value = sceneTargets.haloIntensity;
+      setFloatUniform(grainMatRef.current, 'uTime', t);
+      const resUniform = grainMatRef.current.uniforms['uResolution'];
+      if (resUniform?.value instanceof THREE.Vector2) {
+        resUniform.value.set(size.width, size.height);
+      }
+      setFloatUniform(grainMatRef.current, 'uIntensity', sceneTargets.haloIntensity);
     }
 
-    if (haloMatRef.current) {
-      haloMatRef.current.uniforms.uOpacity!.value = 0.36 * sceneTargets.haloIntensity;
-    }
-
-    if (glitchMatRef.current) {
-      glitchMatRef.current.uniforms.uTime!.value = t;
-      glitchMatRef.current.uniforms.uPulse!.value = sceneTargets.glitchPulse;
-    }
+    setFloatUniform(haloMatRef.current, 'uOpacity', 0.36 * sceneTargets.haloIntensity);
+    setFloatUniform(glitchMatRef.current, 'uTime', t);
+    setFloatUniform(glitchMatRef.current, 'uPulse', sceneTargets.glitchPulse);
 
     if (ringMatRef.current) {
       ringMatRef.current.opacity = THREE.MathUtils.damp(
