@@ -1,0 +1,10 @@
+.page {
+  position: relative;
+  min-height: 100dvh;
+  background-color: var(--bg);
+}
+
+.main {
+  position: relative;
+  z-index: 2;
+}

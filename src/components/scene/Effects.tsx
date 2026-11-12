@@ -55,7 +55,25 @@ export function Effects({ tier, isMobile, bloomEnabled }: EffectsProps) {
         />
       </Environment>
 
-      {bloomEnabled && (
+      {bloomEnabled && showChromatic && (
+        <EffectComposer multisampling={0}>
+          <Bloom
+            mipmapBlur
+            luminanceThreshold={1.0}
+            luminanceSmoothing={0.25}
+            intensity={0.42}
+            radius={0.62}
+          />
+          <ChromaticAberration
+            blendFunction={BlendFunction.NORMAL}
+            offset={CA_OFFSET}
+            radialModulation
+            modulationOffset={0.65}
+          />
+        </EffectComposer>
+      )}
+
+      {bloomEnabled && !showChromatic && (
         <EffectComposer multisampling={0}>
           <Bloom
             mipmapBlur
@@ -64,16 +82,6 @@ export function Effects({ tier, isMobile, bloomEnabled }: EffectsProps) {
             intensity={tier === 'high' ? 0.42 : 0.28}
             radius={0.62}
           />
-          {showChromatic ? (
-            <ChromaticAberration
-              blendFunction={BlendFunction.NORMAL}
-              offset={CA_OFFSET}
-              radialModulation
-              modulationOffset={0.65}
-            />
-          ) : (
-            <></>
-          )}
         </EffectComposer>
       )}
     </>

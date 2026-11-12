@@ -41,3 +41,22 @@
    - `Nav` renders wordmark left, anchor links centered, `Install` pill (revealing via `IntersectionObserver` once scrolled past `#hero`), `MotionToggle`, and a Framer Motion mobile drawer under 960px.
    - `Cursor` runs GSAP `quickTo` strictly on fine pointers when Motion is enabled.
    - `PillButton` uses GSAP `quickTo` for subtle magnetic hover on desktop; `GlassCard` uses Framer Motion `AnimatePresence` exclusively for expand/collapse (never mixing GSAP and Framer Motion on the same element).
+
+## Phase 2: 3D Scene & Fallback Tiers
+
+1. **Deferred Dynamic Loading (`ssr: false`)**
+   - `SceneLoader` uses `next/dynamic` (`ssr: false`) triggered after first `requestAnimationFrame` paint, keeping the Three.js/R3F chunk completely out of the initial JS payload while `hero-poster.svg` renders immediately as the LCP element.
+
+2. **Procedural 3D Objects & Custom GLSL Shaders**
+   - **Phone (`Phone.tsx` + `PhoneScreen.tsx` + `bakedPhoneTexture.ts`)**: Dark graphite chrome `RoundedBox` (`metalness: 1, roughness: 0.2, clearcoat: 1`), camera bump, side buttons, and four React UI screens (`cabinet`, `reminder`, `refill`, `family`) rendered via drei `<Html transform occlude="blending">`, with automatic fallback to procedural `CanvasTexture` (`createBakedScreenTexture`) on FPS decline.
+   - **RingHalo (`RingHalo.tsx`)**: Emissive white torus (`toneMapped: false`) caught by Bloom, additive `#1F4BFF` halo disc, animated background grain/gradient-mesh shader (`src/shaders/grain.ts`), and `<300ms` scan-line glitch plane (`src/shaders/glitch.ts`).
+   - **PillHelix (`PillHelix.tsx`)**: Dual instanced capsule meshes (80 total on High desktop, 40 on High mobile / 44 Medium desktop, 24 Medium mobile) alternating physical iridescent glass and custom GLSL Fresnel-iridescence chrome (`src/shaders/chrome.ts`), reacting to pointer and `DeviceOrientationEvent`.
+   - **FloatingTiles (`FloatingTiles.tsx`)**: Orbiting frosted-glass depth tiles + single-frame `<ContactShadows frames={1}>`.
+   - **Effects (`Effects.tsx`)**: Procedural `<Environment>` with `<Lightformer>` studio panels (no external HDR download), cool left key / warm right rim lights, `Bloom`, and desktop High-tier `ChromaticAberration`.
+
+3. **Fallback Tiers & Performance Controls**
+   - `useGpuTier` runs `detect-gpu` asynchronously (with optional `?tier=high|medium|low` inspection override), checks WebGL support, and respects `useMotionPreference`.
+   - **High**: Full scene with transmission, iridescence, bloom, and desktop chromatic aberration.
+   - **Medium**: Drops transmission and chromatic aberration, halves capsule count, lighter bloom.
+   - **Low / WebGL failure / Motion Off**: Unmounts 3D canvas and displays the static poster with CSS parallax (`Motion On`) or static layout (`Motion Off`).
+   - Pauses rendering (`frameloop="never"`) when the tab is hidden or canvas is off-screen, clamps DPR (`[1, 1.75]` desktop / `[1, 1.25]` mobile), and steps down quality via `PerformanceMonitor`.
