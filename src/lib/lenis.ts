@@ -12,9 +12,10 @@ export async function createLenisController(): Promise<LenisController> {
   const { gsap, ScrollTrigger } = await loadGsapPlugins();
 
   const lenis = new Lenis({
-    duration: 1.2,
-    easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    lerp: 0.085,
     smoothWheel: true,
+    wheelMultiplier: 0.92,
+    anchors: { offset: -72 },
   });
 
   const onScroll = () => {

@@ -69,6 +69,7 @@ export function FloatingTiles({ isMobile = false }: { isMobile?: boolean }) {
   }, [glassMaterial]);
 
   useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
     const t = state.clock.elapsedTime;
     const lift = sceneTargets.tilesLift;
     const mobileScale = isMobile ? 0.78 : 1;
@@ -82,9 +83,9 @@ export function FloatingTiles({ isMobile = false }: { isMobile?: boolean }) {
       const ty = THREE.MathUtils.lerp(spec.basePos[1], spec.liftPos[1], lift) + bob;
       const tz = THREE.MathUtils.lerp(spec.basePos[2], spec.liftPos[2], lift);
 
-      ref.position.x = THREE.MathUtils.damp(ref.position.x, tx, 4, delta);
-      ref.position.y = THREE.MathUtils.damp(ref.position.y, ty, 4, delta);
-      ref.position.z = THREE.MathUtils.damp(ref.position.z, tz, 4, delta);
+      ref.position.x = THREE.MathUtils.damp(ref.position.x, tx, 5, dt);
+      ref.position.y = THREE.MathUtils.damp(ref.position.y, ty, 5, dt);
+      ref.position.z = THREE.MathUtils.damp(ref.position.z, tz, 5, dt);
     });
   });
 

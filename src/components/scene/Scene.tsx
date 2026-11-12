@@ -86,7 +86,7 @@ export default function Scene({ initialTier, isMobile, onReady, onFallbackToPost
   }, []);
 
   const isActive = isVisible && isTabActive;
-  const dpr: [number, number] = isMobile ? [1, 1.25] : [1, 1.75];
+  const dpr: [number, number] = isMobile ? [1, 1.25] : [1, 1.5];
 
   return (
     <div

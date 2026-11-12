@@ -28,7 +28,6 @@ const InstallModal = dynamic(
 
 export function LandingStage({ children }: { children?: ReactNode }) {
   const [sceneReady, setSceneReady] = useState(false);
-  const [howStep, setHowStep] = useState(0);
   const [modalMounted, setModalMounted] = useState(false);
   const { motionEnabled, isHydrated } = useMotionPreference();
   const {
@@ -52,7 +51,6 @@ export function LandingStage({ children }: { children?: ReactNode }) {
       if (cancelled) return;
       cleanup = initScrollChoreography({
         motionEnabled,
-        onStepChange: setHowStep,
       });
     });
 
@@ -88,7 +86,7 @@ export function LandingStage({ children }: { children?: ReactNode }) {
             installHref={ctaHref}
           />
           <Problem />
-          <HowItWorks activeStep={howStep} onSelectStep={setHowStep} />
+          <HowItWorks />
           <Features />
           <CabinetDemo />
           <Caregivers />

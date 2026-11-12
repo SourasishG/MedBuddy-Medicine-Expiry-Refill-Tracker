@@ -155,6 +155,7 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
   const tempColor = useMemo(() => new THREE.Color(), []);
 
   useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
     const t = state.clock.elapsedTime;
     if (chromeMatRef.current) {
       chromeMatRef.current.uniforms.uTime!.value = t;
@@ -165,8 +166,8 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
     if (group) {
       const targetRotY = state.pointer.x * 0.24 + deviceTiltRef.current.x;
       const targetRotX = state.pointer.y * 0.14 + deviceTiltRef.current.y;
-      group.rotation.y = THREE.MathUtils.damp(group.rotation.y, targetRotY, 4, delta);
-      group.rotation.x = THREE.MathUtils.damp(group.rotation.x, targetRotX, 4, delta);
+      group.rotation.y = THREE.MathUtils.damp(group.rotation.y, targetRotY, 4.5, dt);
+      group.rotation.x = THREE.MathUtils.damp(group.rotation.x, targetRotX, 4.5, dt);
     }
 
     const baseRadius = isMobile ? 1.08 : 1.54;

@@ -70,7 +70,7 @@ export function initScrollChoreography({
             trigger: problemEl,
             start: 'top bottom',
             end: 'top 25%',
-            scrub: 0.8,
+            scrub: 0.45,
           },
         });
 
@@ -119,7 +119,7 @@ export function initScrollChoreography({
             pin: isDesktop ? howPinEl : false,
             start: 'top top',
             end: isDesktop ? '+=2200' : 'bottom center',
-            scrub: 0.75,
+            scrub: 0.45,
             anticipatePin: isDesktop ? 1 : 0,
             onUpdate: (self) => {
               updateStep(self.progress);
@@ -187,7 +187,7 @@ export function initScrollChoreography({
             trigger: featuresEl,
             start: 'top bottom',
             end: 'top 25%',
-            scrub: 0.85,
+            scrub: 0.45,
           },
         });
       }
@@ -213,7 +213,7 @@ export function initScrollChoreography({
             trigger: demoEl,
             start: 'top bottom',
             end: 'top 30%',
-            scrub: 0.85,
+            scrub: 0.45,
           },
         });
       }
@@ -233,7 +233,7 @@ export function initScrollChoreography({
             trigger: familyEl,
             start: 'top bottom',
             end: 'top 30%',
-            scrub: 0.85,
+            scrub: 0.45,
           },
         });
       }
@@ -255,7 +255,7 @@ export function initScrollChoreography({
             trigger: privacyEl,
             start: 'top bottom',
             end: 'top 35%',
-            scrub: 0.85,
+            scrub: 0.45,
           },
         });
       }
@@ -283,7 +283,7 @@ export function initScrollChoreography({
             trigger: installEl,
             start: 'top 80%',
             end: 'top 18%',
-            scrub: 0.9,
+            scrub: 0.5,
             onEnter: () => setActivePhoneScreen('cabinet'),
           },
         });

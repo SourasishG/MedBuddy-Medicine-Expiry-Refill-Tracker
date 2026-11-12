@@ -75,6 +75,7 @@ export function RingHalo({ isMobile = false }: { isMobile?: boolean }) {
   const ringColor = useMemo(() => new THREE.Color(2.15, 2.3, 2.55), []);
 
   useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
     const t = state.clock.elapsedTime;
 
     if (grainMatRef.current) {
@@ -94,8 +95,8 @@ export function RingHalo({ isMobile = false }: { isMobile?: boolean }) {
       ringMatRef.current.opacity = THREE.MathUtils.damp(
         ringMatRef.current.opacity,
         sceneTargets.ringOpacity,
-        5,
-        delta,
+        6,
+        dt,
       );
     }
 
@@ -104,7 +105,7 @@ export function RingHalo({ isMobile = false }: { isMobile?: boolean }) {
     const baseScale = isMobile ? 0.66 : 0.88;
     if (torus) {
       const targetScale = sceneTargets.ringScale * baseScale;
-      const nextScale = THREE.MathUtils.damp(torus.scale.x, targetScale, 5, delta);
+      const nextScale = THREE.MathUtils.damp(torus.scale.x, targetScale, 6, dt);
       torus.scale.setScalar(nextScale);
       torus.position.y = baseY;
       torus.rotation.z = t * 0.08;
