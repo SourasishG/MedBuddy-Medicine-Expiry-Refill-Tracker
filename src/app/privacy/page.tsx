@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { OG_IMAGE } from '@/lib/site';
 import styles from './privacy.module.scss';
 
 export const metadata: Metadata = {
@@ -17,6 +18,14 @@ export const metadata: Metadata = {
     siteName: 'MedBuddy',
     type: 'website',
     locale: 'en_US',
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Privacy Notice — MedBuddy',
+    description:
+      'How the MedBuddy website handles information. No accounts, no advertising trackers, and no cookies.',
+    images: [OG_IMAGE.url],
   },
 };
 

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { PillButton } from '@/components/ui/PillButton';
+import { OG_IMAGE } from '@/lib/site';
 import styles from './app.module.scss';
 
 export const metadata: Metadata = {
@@ -17,6 +18,14 @@ export const metadata: Metadata = {
     siteName: 'MedBuddy',
     type: 'website',
     locale: 'en_US',
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'MedBuddy — Launching Soon',
+    description:
+      'MedBuddy is launching soon. You have installed it early, and it will update itself when the app goes live.',
+    images: [OG_IMAGE.url],
   },
 };
 

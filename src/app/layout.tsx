@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Instrument_Serif, JetBrains_Mono, Manrope } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { MotionProvider } from '@/hooks/useMotionPreference';
-import { SITE_URL } from '@/lib/site';
+import { OG_IMAGE, SITE_URL } from '@/lib/site';
 import '@/styles/base.scss';
 
 const instrumentSerif = Instrument_Serif({
@@ -48,12 +48,14 @@ export const metadata: Metadata = {
     siteName: 'MedBuddy',
     type: 'website',
     locale: 'en_US',
+    images: [OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'MedBuddy — Every dose. Every expiry. Every loved one.',
     description:
       'Track expiry dates, opened-bottle countdowns, dose reminders, refills, and shared family adherence.',
+    images: [OG_IMAGE.url],
   },
   robots: {
     index: true,
