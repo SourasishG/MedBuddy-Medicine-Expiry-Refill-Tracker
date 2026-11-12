@@ -1,0 +1,235 @@
+.screen {
+  width: 266px;
+  height: 556px;
+  padding: 18px 16px 16px;
+  border-radius: 32px;
+  background: linear-gradient(180deg, #0e1420 0%, #090c12 100%);
+  color: #eaf0f6;
+  font-family: var(--font-body);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  user-select: none;
+  pointer-events: none;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dynamicIsland {
+  width: 78px;
+  height: 18px;
+  margin: 0 auto 10px;
+  border-radius: 999px;
+  background: #04060a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.topMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.appLabel {
+  font-family: var(--font-code);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: #9aa6b8;
+}
+
+.illustrative {
+  font-family: var(--font-code);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9aa6b8;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: 25px;
+  line-height: 1.05;
+  color: #eaf0f6;
+}
+
+.sub {
+  font-size: 11px;
+  color: #9aa6b8;
+  margin-bottom: 4px;
+}
+
+.chips {
+  display: flex;
+  gap: 6px;
+}
+
+.chip {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.ok {
+  background: rgba(92, 242, 199, 0.12);
+  border-color: rgba(92, 242, 199, 0.35);
+  color: #eaf0f6;
+}
+
+.warn {
+  background: rgba(255, 179, 71, 0.12);
+  border-color: rgba(255, 179, 71, 0.35);
+  color: #eaf0f6;
+}
+
+.alert {
+  background: rgba(255, 77, 106, 0.14);
+  border-color: rgba(255, 77, 106, 0.45);
+  color: #eaf0f6;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item,
+.focusCard {
+  padding: 10px 12px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.focusCard {
+  padding: 13px 12px;
+  gap: 7px;
+}
+
+.itemWarn {
+  border-color: rgba(255, 179, 71, 0.32);
+}
+
+.itemAlert {
+  background: rgba(255, 77, 106, 0.08);
+  border-color: rgba(255, 77, 106, 0.42);
+}
+
+.itemTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #eaf0f6;
+}
+
+.itemMeta {
+  font-size: 10.5px;
+  color: #9aa6b8;
+}
+
+.itemStatus {
+  margin-top: 3px;
+  font-family: var(--font-code);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.okText {
+  color: #5cf2c7;
+}
+
+.warnText {
+  color: #ffb347;
+  font-family: var(--font-code);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.alertText {
+  color: #ff4d6a;
+}
+
+.focusBadge {
+  align-self: flex-start;
+  font-family: var(--font-code);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5cf2c7;
+}
+
+.focusTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #eaf0f6;
+}
+
+.focusNote {
+  font-size: 11px;
+  color: #9aa6b8;
+  line-height: 1.4;
+}
+
+.actionRow {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.actionPrimary {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #5cf2c7;
+  color: #090c12;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.actionGhost {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  font-size: 10.5px;
+  color: #eaf0f6;
+}
+
+.dock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dockPrimary {
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: #eaf0f6;
+  color: #090c12;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dockSecondary {
+  padding: 8px 16px;
+  font-size: 11px;
+  color: #eaf0f6;
+}
