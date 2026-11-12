@@ -6,9 +6,9 @@
   z-index: 120;
   display: grid;
   place-items: center;
-  background: rgba(9, 12, 18, 0.96);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: rgba(9, 12, 18, 0.985);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   overflow: hidden;
 }
 
@@ -39,17 +39,23 @@
   box-shadow: 0 0 36px rgba(31, 75, 255, 0.2);
 }
 
-.pill {
+.pillOrbit {
   position: absolute;
-  width: 14px;
-  height: 6px;
+  display: grid;
+  place-items: center;
+}
+
+.pill {
+  display: block;
+  width: 6px;
+  height: 14px;
   border-radius: 999px;
   border: 1px solid rgba(221, 230, 240, 0.45);
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.25), rgba(221, 230, 240, 0.72));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(221, 230, 240, 0.72));
+}
 
-  &:nth-child(4n) {
-    border-color: rgba(92, 242, 199, 0.7);
-  }
+.pillOrbit:nth-child(4n) .pill {
+  border-color: rgba(92, 242, 199, 0.75);
 }
 
 .counter {

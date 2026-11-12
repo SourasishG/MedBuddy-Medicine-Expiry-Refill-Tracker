@@ -36,7 +36,7 @@ export function PillButton(props: PillButtonProps) {
   const { motionEnabled, isHydrated } = useMotionPreference();
 
   useEffect(() => {
-    const el = elementRef.current;
+    const el: HTMLElement | null = elementRef.current;
     if (!el || !isHydrated || !motionEnabled) return;
 
     const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');

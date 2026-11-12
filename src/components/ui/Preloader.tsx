@@ -135,12 +135,13 @@ export function Preloader() {
             return (
               <span
                 key={index}
-                data-preloader-pill
-                className={styles.pill}
+                className={styles.pillOrbit}
                 style={{
-                  transform: `rotate(${angle}deg) translateY(-56px) rotate(90deg)`,
+                  transform: `rotate(${angle}deg) translateY(-58px)`,
                 }}
-              />
+              >
+                <span data-preloader-pill className={styles.pill} />
+              </span>
             );
           })}
           <span ref={counterRef} className={styles.counter}>
