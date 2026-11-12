@@ -8,7 +8,7 @@ This document describes the security controls, HTTP headers, client data boundar
 
 - **Zero accounts or server-side user data:** The website has no authentication, databases, user forms, server actions, or API routes. All pages (`/`, `/app`, `/privacy`, `/offline`) are pre-rendered static documents.
 - **Zero third-party origins or trackers:** All typography (`Instrument Serif`, `Manrope`, `JetBrains Mono` via `next/font`), GPU benchmark metadata (`public/benchmarks/`), QR SVGs (`qrcode.react`), and WebGL/shader assets are self-hosted or generated strictly client-side.
-- **Zero cookies:** The website sets `0` HTTP or JS cookies. Only optional UI preferences (`localStorage['medbuddy-motion']`) and session intro state (`sessionStorage['medbuddy-preloader-seen']`) are stored locally in the visitor's browser, wrapped in defensive `try/catch` blocks.
+- **Zero cookies:** The website sets `0` HTTP or JS cookies. Only optional session intro state (`sessionStorage['medbuddy-preloader-seen']`) is stored locally in the visitor's browser, wrapped in defensive `try/catch` blocks.
 - **No unsafe DOM execution:** Zero uses of `dangerouslySetInnerHTML`, `innerHTML`, `eval`, or `new Function`. Query-string preview parameters (`?tier=...`, `?installPreview=...`) are strictly validated against allowlisted enum literals.
 - **Zero production source maps:** `.next/static` emits `0` `.map` files in production builds.
 

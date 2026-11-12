@@ -62,7 +62,7 @@ All copy lives directly inside each section component under `src/components/sect
 | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | Brand palette, typography, type ramp & layout tokens                         | `src/styles/tokens.scss`, `src/styles/base.scss`                                    |
 | SEO metadata, Open Graph & Twitter card text                                 | `src/app/layout.tsx`, `src/app/opengraph-image.tsx`                                 |
-| Navigation links & Motion toggle                                             | `src/components/ui/Nav.tsx`, `src/components/ui/MotionToggle.tsx`                   |
+| Navigation links & mobile drawer                                             | `src/components/ui/Nav.tsx`                                                         |
 | `00` Hero headline, cards, spec sheet & CTAs                                 | `src/components/sections/Hero.tsx`                                                  |
 | `01` Problem statements                                                      | `src/components/sections/Problem.tsx`                                               |
 | `02` How It Works 4-step walkthrough                                         | `src/components/sections/HowItWorks.tsx`                                            |

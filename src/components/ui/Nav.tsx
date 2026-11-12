@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { MotionToggle } from './MotionToggle';
 import { PillButton } from './PillButton';
 import styles from './Nav.module.scss';
 
@@ -139,8 +138,6 @@ export function Nav({ onInstallClick, installLabel = 'Install', installHref }: N
                 </PillButton>
               )}
             </div>
-
-            <MotionToggle />
 
             <button
               ref={menuBtnRef}

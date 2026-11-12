@@ -48,21 +48,21 @@
 
 ## Before vs. After Summary (Phase 0 vs. Phase 3)
 
-| Metric / Check                              | Before (Phase 0)                            | After (Phase 3)                                                   | Change                |
-| ------------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------- | --------------------- |
-| **Lighthouse Mobile Performance**           | `74` (FCP `2.6 s`, LCP `2.6 s`, TBT `810 ms`, TTI `5.0 s`, CLS `0.004`) | **`79`** (FCP `2.4 s`, LCP `2.4 s`, TBT `590 ms`, TTI `4.6 s`, CLS `0.004`) | **`+5` pts** (`-220 ms` TBT) |
-| **Lighthouse Accessibility / BP / SEO**     | `100` / `100` / `100`                       | **`100` / `100` / `100`**                                         | Preserved             |
-| **HTTP Security Headers (`next.config.ts`)**| `0` custom headers (only `X-Powered-By` off)| **6 headers** (`CSP`, `HSTS`, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`) | Hardened (Verified live) |
-| **Console Errors / Exceptions / Failed Req**| `0` / `0` / `0`                             | **`0` / `0` / `0`**                                               | Clean                 |
-| **Console Warnings**                        | `1` on `/` (`THREE.Clock`), `0` elsewhere   | `1` on `/` (`THREE.Clock` upstream R3F), `0` elsewhere            | Unchanged upstream    |
-| **Route JS Gzipped — `/` (full loaded)**    | `669.7 KB` (`27` chunks)                    | `669.5 KB` (`25` chunks)                                          | `-0.2 KB` (`-2` chunks) |
-| **Route JS Gzipped — `/` (pre-3D initial)** | `177.0 KB`                                  | `179.9 KB` (`noModule` excluded)                                  | `+2.9 KB` (Under `200 KB`) |
-| **Route JS Gzipped — `/app`**               | `272.1 KB` (`15` chunks)                    | **`162.6 KB`** (`9` chunks)                                       | **`-109.5 KB` (`-40.2%`)** |
-| **Route JS Gzipped — `/privacy`**           | `298.8 KB` (`17` chunks)                    | **`180.3 KB`** (`9` chunks)                                       | **`-118.5 KB` (`-39.7%`)** |
-| **Route JS Gzipped — `/offline`**           | `272.4 KB` (`15` chunks)                    | **`162.8 KB`** (`9` chunks)                                       | **`-109.6 KB` (`-40.2%`)** |
-| **TypeScript / ESLint / Prettier / Build**  | `0` errors / `1` `eslint-disable`           | **`0` errors / `0` `eslint-disable`**                             | Clean                 |
-| **Viewport Overflow (`360`–`1920`)**        | `false` across 5 breakpoints                | **`false` across 5 breakpoints** (`360×800` to `1920×1080`)       | Verified              |
-| **Interactive & Keyboard Verification**     | Missing modal/drawer Tab traps & backdrop click | **Tab traps, first-link focus, backdrop close, Escape, slider, alerts verified** | Fixed & verified      |
+| Metric / Check                               | Before (Phase 0)                                                        | After (Phase 3)                                                                                      | Change                       |
+| -------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------- |
+| **Lighthouse Mobile Performance**            | `74` (FCP `2.6 s`, LCP `2.6 s`, TBT `810 ms`, TTI `5.0 s`, CLS `0.004`) | **`79`** (FCP `2.4 s`, LCP `2.4 s`, TBT `590 ms`, TTI `4.6 s`, CLS `0.004`)                          | **`+5` pts** (`-220 ms` TBT) |
+| **Lighthouse Accessibility / BP / SEO**      | `100` / `100` / `100`                                                   | **`100` / `100` / `100`**                                                                            | Preserved                    |
+| **HTTP Security Headers (`next.config.ts`)** | `0` custom headers (only `X-Powered-By` off)                            | **6 headers** (`CSP`, `HSTS`, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`) | Hardened (Verified live)     |
+| **Console Errors / Exceptions / Failed Req** | `0` / `0` / `0`                                                         | **`0` / `0` / `0`**                                                                                  | Clean                        |
+| **Console Warnings**                         | `1` on `/` (`THREE.Clock`), `0` elsewhere                               | `1` on `/` (`THREE.Clock` upstream R3F), `0` elsewhere                                               | Unchanged upstream           |
+| **Route JS Gzipped — `/` (full loaded)**     | `669.7 KB` (`27` chunks)                                                | `669.5 KB` (`25` chunks)                                                                             | `-0.2 KB` (`-2` chunks)      |
+| **Route JS Gzipped — `/` (pre-3D initial)**  | `177.0 KB`                                                              | `179.9 KB` (`noModule` excluded)                                                                     | `+2.9 KB` (Under `200 KB`)   |
+| **Route JS Gzipped — `/app`**                | `272.1 KB` (`15` chunks)                                                | **`162.6 KB`** (`9` chunks)                                                                          | **`-109.5 KB` (`-40.2%`)**   |
+| **Route JS Gzipped — `/privacy`**            | `298.8 KB` (`17` chunks)                                                | **`180.3 KB`** (`9` chunks)                                                                          | **`-118.5 KB` (`-39.7%`)**   |
+| **Route JS Gzipped — `/offline`**            | `272.4 KB` (`15` chunks)                                                | **`162.8 KB`** (`9` chunks)                                                                          | **`-109.6 KB` (`-40.2%`)**   |
+| **TypeScript / ESLint / Prettier / Build**   | `0` errors / `1` `eslint-disable`                                       | **`0` errors / `0` `eslint-disable`**                                                                | Clean                        |
+| **Viewport Overflow (`360`–`1920`)**         | `false` across 5 breakpoints                                            | **`false` across 5 breakpoints** (`360×800` to `1920×1080`)                                          | Verified                     |
+| **Interactive & Keyboard Verification**      | Missing modal/drawer Tab traps & backdrop click                         | **Tab traps, first-link focus, backdrop close, Escape, slider, alerts verified**                     | Fixed & verified             |
 
 ### Phase 2 Remediations Applied
 
