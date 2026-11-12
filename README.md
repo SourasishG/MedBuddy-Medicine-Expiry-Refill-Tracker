@@ -48,7 +48,7 @@ npm run start
 3. Leave Build Command (`npm run build`) and Output Directory (`.next`) as defaults.
 4. Set the optional environment variable so canonical URLs and Open Graph metadata point to your domain:
    - `NEXT_PUBLIC_SITE_URL=https://your-domain.vercel.app`
-5. Deploy. Vercel serves HTTPS automatically, which enables Android/Chrome `beforeinstallprompt`, iPhone Safari *Add to Home Screen*, and the Serwist service worker.
+5. Deploy. Vercel serves HTTPS automatically, which enables Android/Chrome `beforeinstallprompt`, iPhone Safari _Add to Home Screen_, and the Serwist service worker.
 
 > **PWA preview helpers:** Append `?installPreview=ios-safari`, `?installPreview=ios-non-safari`, `?installPreview=desktop-qr`, or `?installPreview=standalone` to the URL when inspecting platform install UIs on desktop. Append `?tier=high`, `?tier=medium`, or `?tier=low` to inspect 3D quality fallback tiers.
 
@@ -58,24 +58,24 @@ npm run start
 
 All copy lives directly inside each section component under `src/components/sections/` and `src/app/`:
 
-| Section / Area | File |
-| --- | --- |
-| Brand palette, typography, type ramp & layout tokens | `src/styles/tokens.scss`, `src/styles/base.scss` |
-| SEO metadata, Open Graph & Twitter card text | `src/app/layout.tsx`, `src/app/opengraph-image.tsx` |
-| Navigation links & Motion toggle | `src/components/ui/Nav.tsx`, `src/components/ui/MotionToggle.tsx` |
-| `00` Hero headline, cards, spec sheet & CTAs | `src/components/sections/Hero.tsx` |
-| `01` Problem statements | `src/components/sections/Problem.tsx` |
-| `02` How It Works 4-step walkthrough | `src/components/sections/HowItWorks.tsx` |
-| `03` 8 Expandable feature cards (`Illustrative` demo specs) | `src/components/sections/Features.tsx` |
-| `04` Interactive expiry slider cabinet demo | `src/components/sections/CabinetDemo.tsx` |
-| `05` Caregiver missed-dose demo | `src/components/sections/Caregivers.tsx` |
-| `06` Privacy spec columns (`WHAT MEDBUDDY DOES` / `NEVER DOES` / `CONTROLS`) | `src/components/sections/Privacy.tsx` |
-| `07` FAQ accordion items | `src/components/sections/Faq.tsx` |
-| `08` Install panel, QR & Footer disclaimer + placeholders | `src/components/sections/Install.tsx` |
-| iOS & Desktop install modal instructions | `src/components/ui/InstallModal.tsx` |
-| Early-access PWA launch shell (`/app`) & Offline page | `src/app/app/page.tsx`, `src/app/offline/page.tsx` |
-| PWA manifest icons & metadata | `src/app/manifest.ts`, `public/icons/` |
-| Interactive 3D phone screen demo data (`Illustrative`) | `src/components/scene/PhoneScreen.tsx`, `src/components/scene/bakedPhoneTexture.ts` |
+| Section / Area                                                               | File                                                                                |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Brand palette, typography, type ramp & layout tokens                         | `src/styles/tokens.scss`, `src/styles/base.scss`                                    |
+| SEO metadata, Open Graph & Twitter card text                                 | `src/app/layout.tsx`, `src/app/opengraph-image.tsx`                                 |
+| Navigation links & Motion toggle                                             | `src/components/ui/Nav.tsx`, `src/components/ui/MotionToggle.tsx`                   |
+| `00` Hero headline, cards, spec sheet & CTAs                                 | `src/components/sections/Hero.tsx`                                                  |
+| `01` Problem statements                                                      | `src/components/sections/Problem.tsx`                                               |
+| `02` How It Works 4-step walkthrough                                         | `src/components/sections/HowItWorks.tsx`                                            |
+| `03` 8 Expandable feature cards (`Illustrative` demo specs)                  | `src/components/sections/Features.tsx`                                              |
+| `04` Interactive expiry slider cabinet demo                                  | `src/components/sections/CabinetDemo.tsx`                                           |
+| `05` Caregiver missed-dose demo                                              | `src/components/sections/Caregivers.tsx`                                            |
+| `06` Privacy spec columns (`WHAT MEDBUDDY DOES` / `NEVER DOES` / `CONTROLS`) | `src/components/sections/Privacy.tsx`                                               |
+| `07` FAQ accordion items                                                     | `src/components/sections/Faq.tsx`                                                   |
+| `08` Install panel, QR & Footer disclaimer + placeholders                    | `src/components/sections/Install.tsx`                                               |
+| iOS & Desktop install modal instructions                                     | `src/components/ui/InstallModal.tsx`                                                |
+| Early-access PWA launch shell (`/app`) & Offline page                        | `src/app/app/page.tsx`, `src/app/offline/page.tsx`                                  |
+| PWA manifest icons & metadata                                                | `src/app/manifest.ts`, `public/icons/`                                              |
+| Interactive 3D phone screen demo data (`Illustrative`)                       | `src/components/scene/PhoneScreen.tsx`, `src/components/scene/bakedPhoneTexture.ts` |
 
 ---
 
@@ -84,4 +84,4 @@ All copy lives directly inside each section component under `src/components/sect
 - Keep placeholder labels (such as `hello@medbuddy.example` and privacy policy link placeholders) updated before public launch.
 - Retain explicit **Illustrative** tags on sample cabinet/phone data and paired icon + text labels (`In date`, `Use soon`, `Expired`).
 - Retain the medical disclaimer verbatim in the footer (`Install.tsx`) and `/app` shell (`src/app/app/page.tsx`):
-  > *MedBuddy is a reminder and tracking tool. It does not provide medical advice, diagnosis or treatment. Always follow your doctor’s instructions.*
+  > _MedBuddy is a reminder and tracking tool. It does not provide medical advice, diagnosis or treatment. Always follow your doctor’s instructions._

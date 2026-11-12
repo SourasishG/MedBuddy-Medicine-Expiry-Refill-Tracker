@@ -37,26 +37,26 @@ export function Hero({
     void import('@/lib/gsap')
       .then(({ loadGsapPlugins }) => loadGsapPlugins())
       .then(({ gsap, SplitText }) => {
-      if (cancelled || !headlineRef.current) return;
-      const split = SplitText.create(headlineRef.current, {
-        type: 'lines',
-        mask: 'lines',
-      });
+        if (cancelled || !headlineRef.current) return;
+        const split = SplitText.create(headlineRef.current, {
+          type: 'lines',
+          mask: 'lines',
+        });
 
-      const tween = gsap.from(split.lines, {
-        yPercent: 105,
-        opacity: 0,
-        duration: 1.05,
-        stagger: 0.06,
-        ease: 'power3.out',
-        clearProps: 'transform,opacity',
-      });
+        const tween = gsap.from(split.lines, {
+          yPercent: 105,
+          opacity: 0,
+          duration: 1.05,
+          stagger: 0.06,
+          ease: 'power3.out',
+          clearProps: 'transform,opacity',
+        });
 
-      cleanup = () => {
-        tween.kill();
-        split.revert();
-      };
-    });
+        cleanup = () => {
+          tween.kill();
+          split.revert();
+        };
+      });
 
     return () => {
       cancelled = true;
