@@ -88,7 +88,7 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
 
   const chromeMatRef = useRef<THREE.ShaderMaterial>(null);
 
-  const capsuleGeometry = useMemo(() => new THREE.CapsuleGeometry(0.068, 0.16, 8, 16), []);
+  const capsuleGeometry = useMemo(() => new THREE.CapsuleGeometry(0.048, 0.13, 8, 16), []);
 
   const chromeUniforms = useMemo(
     () => ({
@@ -161,7 +161,9 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
       group.rotation.x = THREE.MathUtils.damp(group.rotation.x, targetRotX, 4, delta);
     }
 
-    const baseRadius = isMobile ? 1.44 : 1.72;
+    const baseRadius = isMobile ? 1.08 : 1.54;
+    const baseHeight = isMobile ? 2.5 : 3.5;
+    const baseY = isMobile ? 0.62 : 0.28;
     const spread = sceneTargets.helixSpread;
     const ringMode = sceneTargets.helixRingMode;
     const statusBlend = sceneTargets.helixStatusBlend;
@@ -171,7 +173,7 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
       for (let idx = 0; idx < items.length; idx++) {
         const item = items[idx]!;
         const helixAngle = item.t * Math.PI * 3.4 + item.strand * Math.PI + t * 0.12;
-        const helixY = (item.t - 0.5) * 3.9;
+        const helixY = (item.t - 0.5) * baseHeight + baseY;
         const radius = baseRadius + spread * 1.35;
 
         const hx = Math.cos(helixAngle) * radius + item.spreadDir.x * spread;
@@ -180,9 +182,9 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
 
         // Reformed ring target for Section 08
         const ringAngle = (item.index / totalCount) * Math.PI * 2 + t * 0.14;
-        const ringRadius = isMobile ? 1.78 : 2.22;
+        const ringRadius = isMobile ? 1.38 : 1.98;
         const rx = Math.cos(ringAngle) * ringRadius;
-        const ry = Math.sin(ringAngle) * ringRadius + 0.08;
+        const ry = Math.sin(ringAngle) * ringRadius + baseY;
         const rz = Math.sin(ringAngle * 2) * 0.18 - 0.15;
 
         dummy.position.set(

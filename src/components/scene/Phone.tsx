@@ -82,14 +82,15 @@ export function Phone({ useBakedScreen = false, isMobile = false }: PhoneProps) 
     const group = groupRef.current;
     if (!group) return;
 
-    const baseScale = isMobile ? 0.86 : 1;
+    const baseScale = isMobile ? 0.62 : 0.88;
+    const baseYOffset = isMobile ? 0.54 : 0.22;
     const targetScale = sceneTargets.phoneScale * baseScale;
-    const idleFloat = Math.sin(state.clock.elapsedTime * 0.85) * 0.04;
+    const idleFloat = Math.sin(state.clock.elapsedTime * 0.85) * 0.035;
 
     group.position.x = THREE.MathUtils.damp(group.position.x, sceneTargets.phoneX, 5, delta);
     group.position.y = THREE.MathUtils.damp(
       group.position.y,
-      sceneTargets.phoneY + idleFloat,
+      sceneTargets.phoneY + baseYOffset + idleFloat,
       5,
       delta,
     );

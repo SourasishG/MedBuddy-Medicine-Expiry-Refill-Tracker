@@ -86,7 +86,12 @@ export default function Scene({ initialTier, isMobile, onReady, onFallbackToPost
       <Canvas
         dpr={dpr}
         frameloop={isActive ? 'always' : 'never'}
-        camera={{ position: [0, 0.12, 6.4], fov: 36, near: 0.1, far: 40 }}
+        camera={{
+          position: [0, 0.18, isMobile ? 8.8 : 7.3],
+          fov: 35,
+          near: 0.1,
+          far: 40,
+        }}
         gl={{
           antialias: tier === 'high',
           powerPreference: 'high-performance',

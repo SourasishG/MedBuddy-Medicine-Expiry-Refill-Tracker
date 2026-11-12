@@ -82,7 +82,7 @@ export function RingHalo({ isMobile = false }: { isMobile?: boolean }) {
     }
 
     if (haloMatRef.current) {
-      haloMatRef.current.uniforms.uOpacity!.value = 0.85 * sceneTargets.haloIntensity;
+      haloMatRef.current.uniforms.uOpacity!.value = 0.36 * sceneTargets.haloIntensity;
     }
 
     if (glitchMatRef.current) {
@@ -100,11 +100,13 @@ export function RingHalo({ isMobile = false }: { isMobile?: boolean }) {
     }
 
     const torus = torusRef.current;
+    const baseY = isMobile ? 0.62 : 0.3;
+    const baseScale = isMobile ? 0.66 : 0.88;
     if (torus) {
-      const baseScale = isMobile ? 0.84 : 1;
       const targetScale = sceneTargets.ringScale * baseScale;
       const nextScale = THREE.MathUtils.damp(torus.scale.x, targetScale, 5, delta);
       torus.scale.setScalar(nextScale);
+      torus.position.y = baseY;
       torus.rotation.z = t * 0.08;
       torus.rotation.x = Math.sin(t * 0.25) * 0.06;
       torus.rotation.y = Math.cos(t * 0.2) * 0.08;
@@ -112,7 +114,7 @@ export function RingHalo({ isMobile = false }: { isMobile?: boolean }) {
 
     const halo = haloGlowRef.current;
     if (halo) {
-      const baseScale = isMobile ? 0.84 : 1;
+      halo.position.y = baseY;
       halo.scale.setScalar(sceneTargets.ringScale * baseScale);
     }
   });

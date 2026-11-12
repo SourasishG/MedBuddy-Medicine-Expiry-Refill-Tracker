@@ -16,29 +16,29 @@ interface TileSpec {
 
 const TILES: TileSpec[] = [
   {
-    basePos: [-1.82, 0.92, 0.45],
-    liftPos: [-2.45, 1.15, 0.95],
+    basePos: [-1.42, 1.32, -0.35],
+    liftPos: [-2.35, 1.25, 0.95],
     rot: [0.12, 0.34, -0.08],
     accent: '#5CF2C7',
     phase: 0.4,
   },
   {
-    basePos: [1.92, 0.68, -0.35],
-    liftPos: [2.52, 0.96, 0.65],
+    basePos: [1.56, 1.15, -0.45],
+    liftPos: [2.42, 1.05, 0.65],
     rot: [-0.08, -0.38, 0.1],
     accent: '#FFB347',
     phase: 1.7,
   },
   {
-    basePos: [-1.74, -0.78, -0.25],
-    liftPos: [-2.38, -0.95, 0.85],
+    basePos: [-1.48, -0.42, -0.3],
+    liftPos: [-2.28, -0.85, 0.85],
     rot: [0.14, 0.28, 0.06],
     accent: '#DDE6F0',
     phase: 3.1,
   },
   {
-    basePos: [1.78, -0.86, 0.55],
-    liftPos: [2.42, -1.02, 1.05],
+    basePos: [1.52, -0.52, 0.45],
+    liftPos: [2.35, -0.95, 1.05],
     rot: [-0.1, -0.28, -0.06],
     accent: '#FF4D6A',
     phase: 4.5,
