@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { setActivePhoneScreen, type PhoneScreenId } from '@/lib/sceneState';
+import { useEffect, useState } from 'react';
+import { setActivePhoneScreen, subscribePhoneScreen, type PhoneScreenId } from '@/lib/sceneState';
 import styles from './HowItWorks.module.scss';
 
-export interface HowItWorksStep {
+interface HowItWorksStep {
   step: string;
   title: string;
   description: string;
@@ -12,7 +12,7 @@ export interface HowItWorksStep {
   screenSummary: string;
 }
 
-export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
+const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
   {
     step: '01',
     title: 'Add a medicine',
@@ -53,10 +53,19 @@ export interface HowItWorksProps {
   onSelectStep?: (stepIndex: number) => void;
 }
 
-export function HowItWorks({ activeStep: controlledStep, onSelectStep }: HowItWorksProps) {
+export function HowItWorks({ activeStep: controlledStep, onSelectStep }: HowItWorksProps = {}) {
   const [localStep, setLocalStep] = useState(0);
   const currentStep = controlledStep ?? localStep;
   const activeItem = HOW_IT_WORKS_STEPS[currentStep] ?? HOW_IT_WORKS_STEPS[0]!;
+
+  useEffect(() => {
+    return subscribePhoneScreen((screen) => {
+      const idx = HOW_IT_WORKS_STEPS.findIndex((item) => item.screen === screen);
+      if (idx !== -1) {
+        setLocalStep(idx);
+      }
+    });
+  }, []);
 
   const handleSelect = (idx: number) => {
     setLocalStep(idx);

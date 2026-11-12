@@ -5,7 +5,8 @@
   background: radial-gradient(circle at 50% 34%, rgba(31, 75, 255, 0.16) 0%, #090c12 58%);
   display: grid;
   place-items: center;
-  padding: 32px var(--gutter);
+  padding: calc(32px + env(safe-area-inset-top)) var(--gutter)
+    calc(32px + env(safe-area-inset-bottom));
 }
 
 .card {

@@ -9,7 +9,8 @@
   -webkit-backdrop-filter: blur(12px);
   display: grid;
   place-items: center;
-  padding: 20px var(--gutter);
+  padding: calc(20px + env(safe-area-inset-top)) var(--gutter)
+    calc(20px + env(safe-area-inset-bottom));
   overflow-y: auto;
 }
 

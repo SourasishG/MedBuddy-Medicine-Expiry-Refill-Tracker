@@ -10,20 +10,6 @@
   border-radius: var(--radius-pill);
 }
 
-@mixin hairline-border($side: all) {
-  @if $side == all {
-    border: 1px solid var(--hairline);
-  } @else if $side == top {
-    border-top: 1px solid var(--hairline);
-  } @else if $side == bottom {
-    border-bottom: 1px solid var(--hairline);
-  } @else if $side == left {
-    border-left: 1px solid var(--hairline);
-  } @else if $side == right {
-    border-right: 1px solid var(--hairline);
-  }
-}
-
 @mixin focus-ring {
   &:focus-visible {
     outline: 2px solid var(--ok);

@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next';
 import { Instrument_Serif, JetBrains_Mono, Manrope } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { MotionProvider } from '@/hooks/useMotionPreference';
-import { SmoothScrollProvider } from '@/components/ui/SmoothScrollProvider';
 import '@/styles/base.scss';
 
 const instrumentSerif = Instrument_Serif({
@@ -84,6 +83,7 @@ export const viewport: Viewport = {
   colorScheme: 'dark',
   width: 'device-width',
   initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -98,9 +98,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
-        <MotionProvider>
-          <SmoothScrollProvider>{children}</SmoothScrollProvider>
-        </MotionProvider>
+        <MotionProvider>{children}</MotionProvider>
       </body>
     </html>
   );

@@ -1,9 +1,35 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Component, useCallback, useEffect, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { useGpuTier } from '@/hooks/useGpuTier';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
+
+interface SceneErrorBoundaryProps {
+  onError: () => void;
+  children: ReactNode;
+}
+
+interface SceneErrorBoundaryState {
+  hasError: boolean;
+}
+
+class SceneErrorBoundary extends Component<SceneErrorBoundaryProps, SceneErrorBoundaryState> {
+  override state: SceneErrorBoundaryState = { hasError: false };
+
+  static getDerivedStateFromError(): SceneErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  override componentDidCatch(): void {
+    this.props.onError();
+  }
+
+  override render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
 
 const DynamicScene = dynamic(() => import('./Scene'), {
   ssr: false,
@@ -42,17 +68,21 @@ export function SceneLoader({ onSceneReadyChange }: SceneLoaderProps) {
     }
   }, [shouldRenderCanvas, onSceneReadyChange]);
 
+  const handleFallback = useCallback(() => {
+    setContextFailed(true);
+    onSceneReadyChange?.(false);
+  }, [onSceneReadyChange]);
+
   if (!shouldRenderCanvas) return null;
 
   return (
-    <DynamicScene
-      initialTier={tier === 'high' ? 'high' : 'medium'}
-      isMobile={isMobile}
-      onReady={() => onSceneReadyChange?.(true)}
-      onFallbackToPoster={() => {
-        setContextFailed(true);
-        onSceneReadyChange?.(false);
-      }}
-    />
+    <SceneErrorBoundary onError={handleFallback}>
+      <DynamicScene
+        initialTier={tier === 'high' ? 'high' : 'medium'}
+        isMobile={isMobile}
+        onReady={() => onSceneReadyChange?.(true)}
+        onFallbackToPoster={handleFallback}
+      />
+    </SceneErrorBoundary>
   );
 }

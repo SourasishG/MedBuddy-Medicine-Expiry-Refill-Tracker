@@ -30,6 +30,13 @@ const COLOR_OK = new THREE.Color('#5CF2C7');
 const COLOR_WARN = new THREE.Color('#FFB347');
 const COLOR_ALERT = new THREE.Color('#FF4D6A');
 
+const LOCK_SLOTS: ReadonlyArray<readonly [number, number, number]> = [
+  [-1.12, 0.95, 0.35],
+  [1.12, 0.45, 0.35],
+  [-1.12, -0.35, 0.35],
+  [1.12, -0.85, 0.35],
+];
+
 export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixProps) {
   const groupRef = useRef<THREE.Group>(null);
   const chromeMeshRef = useRef<THREE.InstancedMesh>(null);
@@ -148,6 +155,7 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
   const tempColor = useMemo(() => new THREE.Color(), []);
 
   useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
     const t = state.clock.elapsedTime;
     if (chromeMatRef.current) {
       chromeMatRef.current.uniforms.uTime!.value = t;
@@ -158,8 +166,8 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
     if (group) {
       const targetRotY = state.pointer.x * 0.24 + deviceTiltRef.current.x;
       const targetRotX = state.pointer.y * 0.14 + deviceTiltRef.current.y;
-      group.rotation.y = THREE.MathUtils.damp(group.rotation.y, targetRotY, 4, delta);
-      group.rotation.x = THREE.MathUtils.damp(group.rotation.x, targetRotX, 4, delta);
+      group.rotation.y = THREE.MathUtils.damp(group.rotation.y, targetRotY, 4.5, dt);
+      group.rotation.x = THREE.MathUtils.damp(group.rotation.x, targetRotX, 4.5, dt);
     }
 
     const baseRadius = isMobile ? 1.08 : 1.54;
@@ -170,13 +178,6 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
     const lockedCount = sceneTargets.lockedPills;
     const phoneX = sceneTargets.phoneX;
     const phoneY = sceneTargets.phoneY;
-
-    const lockSlots: Array<[number, number, number]> = [
-      [-1.12, 0.95, 0.35],
-      [1.12, 0.45, 0.35],
-      [-1.12, -0.35, 0.35],
-      [1.12, -0.85, 0.35],
-    ];
 
     const updateMesh = (mesh: THREE.InstancedMesh | null, items: PillMeta[]) => {
       if (!mesh) return;
@@ -210,14 +211,16 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
         const lockBlend =
           !item.isGlass && idx < 4 ? THREE.MathUtils.clamp(lockedCount - idx, 0, 1) : 0;
         if (lockBlend > 0.001) {
-          const slot = lockSlots[idx]!;
-          px = THREE.MathUtils.lerp(px, phoneX + slot[0], lockBlend);
-          py = THREE.MathUtils.lerp(py, phoneY + slot[1] + 0.14, lockBlend);
-          pz = THREE.MathUtils.lerp(pz, slot[2], lockBlend);
-          rxRot = THREE.MathUtils.lerp(rxRot, 0.25, lockBlend);
-          ryRot = THREE.MathUtils.lerp(ryRot, 0.3, lockBlend);
-          rzRot = THREE.MathUtils.lerp(rzRot, Math.PI * 0.5, lockBlend);
-          s = THREE.MathUtils.lerp(s, 1.25, lockBlend);
+          const slot = LOCK_SLOTS[idx];
+          if (slot) {
+            px = THREE.MathUtils.lerp(px, phoneX + slot[0], lockBlend);
+            py = THREE.MathUtils.lerp(py, phoneY + slot[1] + 0.14, lockBlend);
+            pz = THREE.MathUtils.lerp(pz, slot[2], lockBlend);
+            rxRot = THREE.MathUtils.lerp(rxRot, 0.25, lockBlend);
+            ryRot = THREE.MathUtils.lerp(ryRot, 0.3, lockBlend);
+            rzRot = THREE.MathUtils.lerp(rzRot, Math.PI * 0.5, lockBlend);
+            s = THREE.MathUtils.lerp(s, 1.25, lockBlend);
+          }
         }
 
         dummy.position.set(px, py, pz);

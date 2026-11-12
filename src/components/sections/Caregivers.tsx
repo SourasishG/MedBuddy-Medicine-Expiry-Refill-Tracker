@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { m } from 'framer-motion';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { sceneTargets } from '@/lib/sceneState';
@@ -9,15 +9,24 @@ import styles from './Caregivers.module.scss';
 export function Caregivers() {
   const sectionRef = useRef<HTMLElement>(null);
   const hasAutoPlayedRef = useRef(false);
+  const mountedRef = useRef(true);
   const [doseMissed, setDoseMissed] = useState(false);
   const [pulseKey, setPulseKey] = useState(0);
   const { motionEnabled } = useMotionPreference();
 
-  const triggerMissedEvent = () => {
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const triggerMissedEvent = useCallback(() => {
     setDoseMissed(true);
     setPulseKey((k) => k + 1);
     if (motionEnabled) {
       void import('@/lib/gsap').then(({ gsap }) => {
+        if (!mountedRef.current) return;
         gsap.killTweensOf(sceneTargets, 'glitchPulse');
         gsap.fromTo(
           sceneTargets,
@@ -26,7 +35,7 @@ export function Caregivers() {
         );
       });
     }
-  };
+  }, [motionEnabled]);
 
   useEffect(() => {
     if (!motionEnabled || hasAutoPlayedRef.current) return;
@@ -47,8 +56,7 @@ export function Caregivers() {
 
     observer.observe(section);
     return () => observer.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [motionEnabled]);
+  }, [motionEnabled, triggerMissedEvent]);
 
   return (
     <section

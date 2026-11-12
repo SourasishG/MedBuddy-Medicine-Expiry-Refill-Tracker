@@ -73,9 +73,9 @@ export function Install({
               <div className={styles.previewBanner} role="status">
                 MedBuddy has been added to your device. Open the installed app anytime from your
                 home screen or{' '}
-                <a href="/app" style={{ textDecoration: 'underline', color: 'var(--ok)' }}>
+                <Link href="/app" style={{ textDecoration: 'underline', color: 'var(--ok)' }}>
                   launch the shell now
-                </a>
+                </Link>
                 .
               </div>
             )}
@@ -144,7 +144,9 @@ export function Footer() {
       </p>
 
       <div className={styles.footerBottom}>
-        <span>© {new Date().getFullYear()} MedBuddy · Sourasish Ghosh</span>
+        <span suppressHydrationWarning>
+          © {new Date().getFullYear()} MedBuddy · Sourasish Ghosh
+        </span>
         <div className={styles.legalLinks}>
           <Link href="/privacy">Privacy notice</Link>
           <a href="mailto:ghoshsourasish1@gmail.com">ghoshsourasish1@gmail.com</a>

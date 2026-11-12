@@ -7,6 +7,7 @@
   right: 0;
   z-index: 80;
   pointer-events: none;
+  transform: translateZ(0);
 }
 
 .bar {
@@ -15,7 +16,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-top: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top));
   padding-bottom: 18px;
   pointer-events: auto;
   background: linear-gradient(
@@ -118,7 +119,8 @@
   position: fixed;
   inset: 0;
   z-index: 75;
-  padding: 88px var(--gutter) 24px;
+  padding: calc(88px + env(safe-area-inset-top)) var(--gutter)
+    calc(24px + env(safe-area-inset-bottom));
   background: rgba(9, 12, 18, 0.88);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);

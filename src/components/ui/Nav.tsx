@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { MotionToggle } from './MotionToggle';
 import { PillButton } from './PillButton';
 import styles from './Nav.module.scss';
 
@@ -25,6 +24,7 @@ export function Nav({ onInstallClick, installLabel = 'Install', installHref }: N
   const [showInstall, setShowInstall] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
   const { motionEnabled } = useMotionPreference();
 
   useEffect(() => {
@@ -52,14 +52,58 @@ export function Nav({ onInstallClick, installLabel = 'Install', installHref }: N
 
   useEffect(() => {
     if (!menuOpen) return;
+
+    const focusTimer = window.setTimeout(() => {
+      const firstLink = drawerRef.current?.querySelector<HTMLElement>(
+        'a[href], button:not([disabled])',
+      );
+      firstLink?.focus();
+    }, 30);
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setMenuOpen(false);
         menuBtnRef.current?.focus();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+      const drawer = drawerRef.current;
+      if (!drawer) return;
+
+      const drawerFocusables = Array.from(
+        drawer.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      const focusables = [...(menuBtnRef.current ? [menuBtnRef.current] : []), ...drawerFocusables];
+      if (focusables.length === 0) return;
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (!first || !last) return;
+
+      const active = document.activeElement;
+      if (active !== menuBtnRef.current && !(active instanceof Node && drawer.contains(active))) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+        return;
+      }
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
+
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener('keydown', onKeyDown);
+    };
   }, [menuOpen]);
 
   return (
@@ -79,41 +123,21 @@ export function Nav({ onInstallClick, installLabel = 'Install', installHref }: N
           </nav>
 
           <div className={styles.actions}>
-            <div className={styles.installSlot} data-visible={showInstall}>
+            <div className={styles.installSlot} data-visible={showInstall} inert={!showInstall}>
               {installHref ? (
-                <PillButton
-                  variant="primary"
-                  size="sm"
-                  href={installHref}
-                  tabIndex={showInstall ? 0 : -1}
-                  aria-hidden={!showInstall}
-                >
+                <PillButton variant="primary" size="sm" href={installHref}>
                   {installLabel}
                 </PillButton>
               ) : onInstallClick ? (
-                <PillButton
-                  variant="primary"
-                  size="sm"
-                  onClick={onInstallClick}
-                  tabIndex={showInstall ? 0 : -1}
-                  aria-hidden={!showInstall}
-                >
+                <PillButton variant="primary" size="sm" onClick={onInstallClick}>
                   {installLabel}
                 </PillButton>
               ) : (
-                <PillButton
-                  variant="primary"
-                  size="sm"
-                  href="#install"
-                  tabIndex={showInstall ? 0 : -1}
-                  aria-hidden={!showInstall}
-                >
+                <PillButton variant="primary" size="sm" href="#install">
                   {installLabel}
                 </PillButton>
               )}
             </div>
-
-            <MotionToggle />
 
             <button
               ref={menuBtnRef}
@@ -134,12 +158,19 @@ export function Nav({ onInstallClick, installLabel = 'Install', installHref }: N
           <m.div
             id="mobile-nav-drawer"
             className={styles.drawerBackdrop}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setMenuOpen(false);
+                menuBtnRef.current?.focus();
+              }
+            }}
             initial={motionEnabled ? { opacity: 0 } : false}
             animate={{ opacity: 1 }}
             exit={motionEnabled ? { opacity: 0 } : { opacity: 0 }}
             transition={{ duration: motionEnabled ? 0.25 : 0.001 }}
           >
             <m.nav
+              ref={drawerRef}
               className={styles.drawer}
               aria-label="Mobile navigation"
               initial={motionEnabled ? { y: -16, opacity: 0 } : false}

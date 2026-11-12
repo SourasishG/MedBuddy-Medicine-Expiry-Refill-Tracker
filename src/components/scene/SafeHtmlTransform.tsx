@@ -105,8 +105,17 @@ export function SafeHtmlTransform({
   const isMeshSizeSetRef = useRef(false);
   const visibleRef = useRef(true);
   const mountedRef = useRef<MountedPortal | null>(null);
+  const lastLayoutRef = useRef({
+    w: -1,
+    h: -1,
+    z: '',
+    persp: '',
+    outerTx: '',
+    innerTx: '',
+  });
 
-  const target = (events.connected as HTMLElement | null) || gl.domElement.parentElement;
+  const connectedEl = events.connected instanceof HTMLElement ? events.connected : null;
+  const target = connectedEl ?? gl.domElement.parentElement;
 
   const outerStyle = useMemo<CSSProperties>(
     () => ({
@@ -116,6 +125,7 @@ export function SafeHtmlTransform({
       width: size.width,
       height: size.height,
       transformStyle: 'preserve-3d',
+      willChange: 'transform',
       pointerEvents: 'none',
     }),
     [size.width, size.height],
@@ -124,6 +134,8 @@ export function SafeHtmlTransform({
   const innerStyle = useMemo<CSSProperties>(
     () => ({
       position: 'absolute',
+      willChange: 'transform',
+      backfaceVisibility: 'hidden',
       pointerEvents: 'none',
     }),
     [],
@@ -223,8 +235,13 @@ export function SafeHtmlTransform({
     const halfRange = Math.floor(zMax / 2);
     const zRange: [number, number] = [halfRange - 1, zMin];
     const zIdx = objectZIndex(group, camera, zRange);
+    const cache = lastLayoutRef.current;
     if (zIdx !== undefined) {
-      portal.el.style.zIndex = `${zIdx}`;
+      const nextZ = `${zIdx}`;
+      if (cache.z !== nextZ) {
+        cache.z = nextZ;
+        portal.el.style.zIndex = nextZ;
+      }
     }
 
     const widthHalf = size.width / 2;
@@ -236,22 +253,37 @@ export function SafeHtmlTransform({
       ? `scale(${fov})translate(${epsilon(-(camera.right + camera.left) / 2)}px,${epsilon((camera.top + camera.bottom) / 2)}px)`
       : `translateZ(${fov}px)`;
 
-    portal.el.style.width = `${size.width}px`;
-    portal.el.style.height = `${size.height}px`;
-    portal.el.style.perspective = isOrtho ? '' : `${fov}px`;
+    if (cache.w !== size.width) {
+      cache.w = size.width;
+      portal.el.style.width = `${size.width}px`;
+    }
+    if (cache.h !== size.height) {
+      cache.h = size.height;
+      portal.el.style.height = `${size.height}px`;
+    }
+    const nextPersp = isOrtho ? '' : `${fov}px`;
+    if (cache.persp !== nextPersp) {
+      cache.persp = nextPersp;
+      portal.el.style.perspective = nextPersp;
+    }
 
     if (portal.outer && portal.inner) {
-      portal.outer.style.transform = `${cameraTransform}${cameraMatrix}translate(${widthHalf}px,${heightHalf}px)`;
-      portal.inner.style.transform = getObjectCSSMatrix(
-        group.matrixWorld,
-        1 / ((distanceFactor || 10) / 400),
-      );
+      const nextOuterTx = `${cameraTransform}${cameraMatrix}translate(${widthHalf}px,${heightHalf}px)`;
+      if (cache.outerTx !== nextOuterTx) {
+        cache.outerTx = nextOuterTx;
+        portal.outer.style.transform = nextOuterTx;
+      }
+      const nextInnerTx = getObjectCSSMatrix(group.matrixWorld, 1 / ((distanceFactor || 10) / 400));
+      if (cache.innerTx !== nextInnerTx) {
+        cache.innerTx = nextInnerTx;
+        portal.inner.style.transform = nextInnerTx;
+      }
     }
 
     const occlusionMesh = occlusionMeshRef.current;
     if (occlusionMesh && !isMeshSizeSetRef.current && portal.outer) {
-      const innerEl = portal.outer.children[0] as HTMLElement | undefined;
-      if (innerEl && innerEl.clientWidth && innerEl.clientHeight) {
+      const innerEl = portal.outer.children[0];
+      if (innerEl instanceof HTMLElement && innerEl.clientWidth && innerEl.clientHeight) {
         if (isOrtho) {
           occlusionMesh.scale.setScalar(1 / scale);
         } else {

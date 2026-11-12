@@ -85,35 +85,36 @@ export function Phone({ useBakedScreen = false, isMobile = false }: PhoneProps) 
     const group = groupRef.current;
     if (!group) return;
 
+    const dt = Math.min(delta, 0.05);
     const baseScale = isMobile ? 0.62 : 0.88;
     const baseYOffset = isMobile ? 0.54 : 0.22;
     const targetScale = sceneTargets.phoneScale * baseScale;
     const idleFloat = Math.sin(state.clock.elapsedTime * 0.85) * 0.035;
 
-    group.position.x = THREE.MathUtils.damp(group.position.x, sceneTargets.phoneX, 5, delta);
+    group.position.x = THREE.MathUtils.damp(group.position.x, sceneTargets.phoneX, 6, dt);
     group.position.y = THREE.MathUtils.damp(
       group.position.y,
       sceneTargets.phoneY + baseYOffset + idleFloat,
-      5,
-      delta,
+      6,
+      dt,
     );
-    group.position.z = THREE.MathUtils.damp(group.position.z, sceneTargets.phoneZ, 5, delta);
+    group.position.z = THREE.MathUtils.damp(group.position.z, sceneTargets.phoneZ, 6, dt);
 
     group.rotation.x = THREE.MathUtils.damp(
       group.rotation.x,
       sceneTargets.phoneRotX + state.pointer.y * 0.06,
-      5,
-      delta,
+      6,
+      dt,
     );
     group.rotation.y = THREE.MathUtils.damp(
       group.rotation.y,
       sceneTargets.phoneRotY + state.pointer.x * 0.1,
-      5,
-      delta,
+      6,
+      dt,
     );
-    group.rotation.z = THREE.MathUtils.damp(group.rotation.z, sceneTargets.phoneRotZ, 5, delta);
+    group.rotation.z = THREE.MathUtils.damp(group.rotation.z, sceneTargets.phoneRotZ, 6, dt);
 
-    const nextScale = THREE.MathUtils.damp(group.scale.x, targetScale, 5, delta);
+    const nextScale = THREE.MathUtils.damp(group.scale.x, targetScale, 6, dt);
     group.scale.setScalar(nextScale);
   });
 
