@@ -27,11 +27,16 @@ export default function Scene({ initialTier, isMobile, onReady, onFallbackToPost
   const [isTabActive, setIsTabActive] = useState(true);
   const declineCountRef = useRef(0);
   const isUnmountedRef = useRef(false);
+  const activeCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const cleanupContextListenerRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     isUnmountedRef.current = false;
     return () => {
       isUnmountedRef.current = true;
+      cleanupContextListenerRef.current?.();
+      cleanupContextListenerRef.current = null;
+      activeCanvasRef.current = null;
     };
   }, []);
 
@@ -106,16 +111,19 @@ export default function Scene({ initialTier, isMobile, onReady, onFallbackToPost
           alpha: false,
         }}
         onCreated={({ gl }) => {
-          gl.domElement.addEventListener(
-            'webglcontextlost',
-            (e) => {
-              e.preventDefault();
-              if (!isUnmountedRef.current) {
-                onFallbackToPoster?.();
-              }
-            },
-            { once: true },
-          );
+          cleanupContextListenerRef.current?.();
+          const canvas = gl.domElement;
+          activeCanvasRef.current = canvas;
+          const handleContextLost = (e: Event) => {
+            e.preventDefault();
+            if (!isUnmountedRef.current && activeCanvasRef.current === canvas) {
+              onFallbackToPoster?.();
+            }
+          };
+          canvas.addEventListener('webglcontextlost', handleContextLost, { once: true });
+          cleanupContextListenerRef.current = () => {
+            canvas.removeEventListener('webglcontextlost', handleContextLost);
+          };
           onReady?.();
         }}
       >
