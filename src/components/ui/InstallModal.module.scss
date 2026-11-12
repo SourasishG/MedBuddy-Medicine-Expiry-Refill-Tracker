@@ -1,0 +1,200 @@
+@use '../../styles/mixins.scss' as *;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(5, 7, 12, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: grid;
+  place-items: center;
+  padding: 20px var(--gutter);
+  overflow-y: auto;
+}
+
+.dialog {
+  width: min(100%, 540px);
+  padding: 28px 24px;
+  border-radius: var(--radius-card-lg);
+  background: #0e131c;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.65);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+
+  @media (min-width: 768px) {
+    padding: 36px 34px;
+  }
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.mono {
+  @include mono-label;
+  color: var(--ok);
+}
+
+.closeBtn {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.04);
+  font-family: var(--font-code);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+  transition:
+    border-color 0.25s var(--ease-gallery),
+    background-color 0.25s var(--ease-gallery);
+
+  &:hover {
+    border-color: var(--chrome);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  @include focus-ring;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(1.85rem, 4.5vw, 2.5rem);
+  font-weight: 400;
+  line-height: 1.06;
+  color: var(--text);
+
+  em {
+    font-style: italic;
+    color: var(--chrome);
+  }
+}
+
+.subtitle {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.stepsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stepCard {
+  width: 100%;
+  text-align: left;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition:
+    border-color 0.35s var(--ease-gallery),
+    background-color 0.35s var(--ease-gallery);
+
+  &[data-active='true'] {
+    border-color: rgba(92, 242, 199, 0.55);
+    background: rgba(92, 242, 199, 0.08);
+  }
+
+  @include focus-ring;
+}
+
+.stepIconBox {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--glass-border);
+  display: grid;
+  place-items: center;
+  color: var(--ok);
+}
+
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.stepNum {
+  @include mono-label;
+  font-size: 0.6875rem;
+}
+
+.stepTitle {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.stepDesc {
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.qrPanel {
+  padding: 24px;
+  border-radius: 20px;
+  background: rgba(9, 12, 18, 0.85);
+  border: 1px solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.qrFrame {
+  padding: 14px;
+  border-radius: 16px;
+  background: #eaf0f6;
+}
+
+.qrUrl {
+  font-family: var(--font-code);
+  font-size: 0.75rem;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.actionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hairline);
+}
+
+.copyBtn {
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 0.9375rem;
+  font-weight: 600;
+
+  &:hover {
+    border-color: var(--ok);
+  }
+
+  @include focus-ring;
+}

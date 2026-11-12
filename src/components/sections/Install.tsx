@@ -1,25 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { PillButton } from '@/components/ui/PillButton';
+import type { InstallSituation } from '@/hooks/useInstallPrompt';
 import styles from './Install.module.scss';
 
 export interface InstallProps {
   onInstallClick?: () => void;
-  qrSlotContent?: React.ReactNode;
+  installLabel?: string;
+  installHref?: string;
+  siteUrl?: string;
+  justInstalled?: boolean;
+  situation?: InstallSituation;
 }
 
-export function Install({ onInstallClick, qrSlotContent }: InstallProps) {
-  const [previewNoticeOpen, setPreviewNoticeOpen] = useState(false);
-
-  const handleInstallPress = () => {
-    if (onInstallClick) {
-      onInstallClick();
-    } else {
-      setPreviewNoticeOpen((prev) => !prev);
-    }
-  };
-
+export function Install({
+  onInstallClick,
+  installLabel = 'Install MedBuddy',
+  installHref,
+  siteUrl = 'https://medbuddy.app',
+  justInstalled = false,
+  situation = 'desktop-qr',
+}: InstallProps) {
   return (
     <section id="install" className={styles.section} aria-labelledby="install-heading">
       <div className={styles.wordmarkStage}>
@@ -42,69 +44,42 @@ export function Install({ onInstallClick, qrSlotContent }: InstallProps) {
             </p>
 
             <div className={styles.ctaRow}>
-              <PillButton variant="primary" onClick={handleInstallPress}>
-                Install MedBuddy
-              </PillButton>
+              {installHref ? (
+                <PillButton variant="primary" href={installHref}>
+                  {installLabel}
+                </PillButton>
+              ) : (
+                <PillButton variant="primary" onClick={onInstallClick}>
+                  {installLabel}
+                </PillButton>
+              )}
               <span className={styles.platformHint}>
                 Android Chrome · iPhone Safari · Desktop QR
               </span>
             </div>
 
-            {previewNoticeOpen && (
+            {justInstalled && (
               <div className={styles.previewBanner} role="status">
-                Phase 5 wires the live browser install prompt, iOS Add to Home Screen guide, offline
-                service worker, and launching-soon `/app` shell to this button.
+                MedBuddy has been added to your device. Open the installed app anytime from your
+                home screen or{' '}
+                <a href="/app" style={{ textDecoration: 'underline', color: 'var(--ok)' }}>
+                  launch the shell now
+                </a>
+                .
               </div>
             )}
           </div>
 
-          <aside className={styles.qrSlot} aria-label="Phone install QR preview">
-            {qrSlotContent ?? (
-              <div className={styles.qrBox} aria-label="QR code slot for desktop">
-                <svg width="108" height="108" viewBox="0 0 36 36" fill="none" aria-hidden="true">
-                  <rect
-                    x="2"
-                    y="2"
-                    width="10"
-                    height="10"
-                    rx="1.5"
-                    stroke="#090C12"
-                    strokeWidth="2.4"
-                  />
-                  <rect x="5" y="5" width="4" height="4" fill="#090C12" />
-                  <rect
-                    x="24"
-                    y="2"
-                    width="10"
-                    height="10"
-                    rx="1.5"
-                    stroke="#090C12"
-                    strokeWidth="2.4"
-                  />
-                  <rect x="27" y="5" width="4" height="4" fill="#090C12" />
-                  <rect
-                    x="2"
-                    y="24"
-                    width="10"
-                    height="10"
-                    rx="1.5"
-                    stroke="#090C12"
-                    strokeWidth="2.4"
-                  />
-                  <rect x="5" y="27" width="4" height="4" fill="#090C12" />
-                  <rect x="16" y="4" width="4" height="4" fill="#090C12" />
-                  <rect x="16" y="12" width="4" height="4" fill="#090C12" />
-                  <rect x="4" y="16" width="4" height="4" fill="#090C12" />
-                  <rect x="12" y="18" width="6" height="4" fill="#090C12" />
-                  <rect x="22" y="16" width="4" height="6" fill="#090C12" />
-                  <rect x="28" y="18" width="4" height="4" fill="#090C12" />
-                  <rect x="18" y="26" width="6" height="4" fill="#090C12" />
-                  <rect x="28" y="28" width="4" height="4" fill="#090C12" />
-                </svg>
-              </div>
-            )}
+          <aside
+            className={styles.qrSlot}
+            data-platform={situation}
+            aria-label="Phone install QR code"
+          >
+            <div className={styles.qrBox}>
+              <QRCodeSVG value={siteUrl} size={124} bgColor="#EAF0F6" fgColor="#090C12" level="M" />
+            </div>
             <p className={styles.qrLabel}>Open this on your phone</p>
-            <span className={styles.qrMeta}>Live URL QR wired in Phase 5</span>
+            <span className={styles.qrMeta}>Scan with camera to install</span>
           </aside>
         </div>
       </div>

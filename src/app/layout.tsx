@@ -31,6 +31,21 @@ export const metadata: Metadata = {
   title: 'MedBuddy — Every dose. Every expiry. Every loved one.',
   description:
     'A calm medicine expiry, dose reminder, and refill tracker for patients and the families who care for them.',
+  applicationName: 'MedBuddy',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'MedBuddy',
+    statusBarStyle: 'black-translucent',
+  },
 };
 
 export const viewport: Viewport = {

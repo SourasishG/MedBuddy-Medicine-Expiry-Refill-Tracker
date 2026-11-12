@@ -1,0 +1,94 @@
+@use '../../styles/mixins.scss' as *;
+
+.shell {
+  min-height: 100dvh;
+  background: radial-gradient(circle at 50% 34%, rgba(31, 75, 255, 0.16) 0%, #090c12 58%);
+  display: grid;
+  place-items: center;
+  padding: 32px var(--gutter);
+}
+
+.card {
+  width: min(100%, 560px);
+  padding: 40px 28px;
+  border-radius: var(--radius-card-lg);
+  background: rgba(14, 19, 28, 0.88);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 20px;
+
+  @media (min-width: 768px) {
+    padding: 52px 44px;
+  }
+}
+
+.markRing {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 1px solid rgba(221, 230, 240, 0.3);
+  background: radial-gradient(circle, rgba(31, 75, 255, 0.28) 0%, rgba(9, 12, 18, 0.9) 70%);
+  display: grid;
+  place-items: center;
+}
+
+.wordmark {
+  @include chrome-text;
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 7vw, 3.4rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.statusBadge {
+  @include mono-label;
+  font-size: 0.7rem;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(92, 242, 199, 0.36);
+  background: rgba(92, 242, 199, 0.08);
+  color: var(--ok);
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: clamp(1.85rem, 4.5vw, 2.5rem);
+  font-weight: 400;
+  line-height: 1.08;
+  color: var(--text);
+
+  em {
+    font-style: italic;
+    color: var(--chrome);
+  }
+}
+
+.copy {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 42ch;
+}
+
+.actions {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.note {
+  margin-top: 8px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--muted);
+}

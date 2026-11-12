@@ -130,15 +130,19 @@
 }
 
 .qrSlot {
+  display: none;
   padding: 20px;
   border-radius: var(--radius-card-sm);
   background: rgba(9, 12, 18, 0.72);
   border: 1px solid var(--hairline);
-  display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 12px;
+
+  @media (min-width: 960px) {
+    display: flex;
+  }
 }
 
 .qrBox {

@@ -11,9 +11,16 @@ import styles from './Hero.module.scss';
 export interface HeroProps {
   hasCanvas?: boolean;
   onInstallClick?: () => void;
+  installLabel?: string;
+  installHref?: string;
 }
 
-export function Hero({ hasCanvas = false, onInstallClick }: HeroProps) {
+export function Hero({
+  hasCanvas = false,
+  onInstallClick,
+  installLabel = 'Install MedBuddy',
+  installHref,
+}: HeroProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
   const posterWrapRef = useRef<HTMLDivElement>(null);
@@ -166,13 +173,17 @@ export function Hero({ hasCanvas = false, onInstallClick }: HeroProps) {
               you.
             </p>
             <div className={styles.buttons}>
-              {onInstallClick ? (
+              {installHref ? (
+                <PillButton variant="primary" href={installHref}>
+                  {installLabel}
+                </PillButton>
+              ) : onInstallClick ? (
                 <PillButton variant="primary" onClick={onInstallClick}>
-                  Install MedBuddy
+                  {installLabel}
                 </PillButton>
               ) : (
                 <PillButton variant="primary" href="#install">
-                  Install MedBuddy
+                  {installLabel}
                 </PillButton>
               )}
               <PillButton variant="secondary" href="#how-it-works">

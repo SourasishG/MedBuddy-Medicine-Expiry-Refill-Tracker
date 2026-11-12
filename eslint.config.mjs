@@ -7,7 +7,14 @@ const eslintConfig = [
   ...nextTs,
   prettierConfig,
   {
-    ignores: ['.next/**', 'node_modules/**', 'out/**', 'next-env.d.ts'],
+    ignores: [
+      '.next/**',
+      'node_modules/**',
+      'out/**',
+      'next-env.d.ts',
+      'public/sw.js*',
+      'public/swe-worker*',
+    ],
   },
 ];
 

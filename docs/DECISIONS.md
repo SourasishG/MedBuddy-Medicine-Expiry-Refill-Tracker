@@ -85,3 +85,18 @@
 
 3. **3D Scene Handoff & Ring Re-formation**
    - Extended `scrollTimeline.ts` so the helix recolours by status (`helixStatusBlend: 1`) while the ring and phone recede quietly behind Sections 04–07, then returns the phone to center with the re-formed forward-facing pill ring (`helixRingMode: 1`) and brightened halo at Section 08. Also removed redundant continuous Y-axis group rotation in `PillHelix.tsx` so the re-formed Install ring always faces the camera.
+
+## Phase 5: PWA & Install Flow
+
+1. **Web App Manifest & Generated PNG Icons**
+   - Added `src/app/manifest.ts` serving `MedBuddy` (`start_url: '/app'`, `scope: '/'`, `display: 'standalone'`, `#090C12` background and theme colors).
+   - Generated PNG icons (`public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, and `apple-touch-icon.png`) directly from the simple dark obsidian capsule-and-ring vector mark.
+
+2. **Serwist Service Worker & Offline / Early-Access Routes**
+   - Added `src/app/sw.ts` using `@serwist/next/worker` (`defaultCache`, `skipWaiting: true`, `clientsClaim: true`, `navigationPreload: true`, and `/offline` document fallback).
+   - Wrapped `next.config.ts` with `withSerwistInit` (`disable: process.env.NODE_ENV !== 'production'`) and updated `package.json` `"build"` to `next build --webpack` so Serwist generates `public/sw.js` cleanly in production builds without interfering with Turbopack `next dev`.
+   - Added `src/app/app/page.tsx` (`start_url` launching-soon shell with return link) and `src/app/offline/page.tsx`.
+
+3. **Platform-Aware Install Flow (`useInstallPrompt` + `InstallModal`)**
+   - `src/hooks/useInstallPrompt.ts` handles `beforeinstallprompt`, `appinstalled`, `display-mode: standalone` (`Open MedBuddy` link to `/app`), Android/Chromium native prompt, iPhone/iPad Safari 3-step guide, iOS non-Safari extra first step, desktop QR (`qrcode.react`), and unsupported browser guidance.
+   - Wired live into `Nav`, `Hero`, and Section 08 (`Install`), including a desktop `QRCodeSVG` panel in Section 08 and `InstallModal` dialog.

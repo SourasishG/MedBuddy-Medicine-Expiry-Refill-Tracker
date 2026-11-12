@@ -13,8 +13,10 @@ import { Privacy } from '@/components/sections/Privacy';
 import { Problem } from '@/components/sections/Problem';
 import { Cursor } from '@/components/ui/Cursor';
 import { GrainOverlay } from '@/components/ui/GrainOverlay';
+import { InstallModal } from '@/components/ui/InstallModal';
 import { Nav } from '@/components/ui/Nav';
 import { Preloader } from '@/components/ui/Preloader';
+import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { initScrollChoreography } from '@/lib/scrollTimeline';
 import styles from './LandingStage.module.scss';
@@ -23,6 +25,16 @@ export function LandingStage({ children }: { children?: ReactNode }) {
   const [sceneReady, setSceneReady] = useState(false);
   const [howStep, setHowStep] = useState(0);
   const { motionEnabled, isHydrated } = useMotionPreference();
+  const {
+    situation,
+    justInstalled,
+    ctaLabel,
+    ctaHref,
+    siteUrl,
+    modalOpen,
+    setModalOpen,
+    handleInstall,
+  } = useInstallPrompt();
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -38,10 +50,19 @@ export function LandingStage({ children }: { children?: ReactNode }) {
       <SceneLoader onSceneReadyChange={setSceneReady} />
       <GrainOverlay />
       <Cursor />
-      <Nav />
+      <Nav
+        onInstallClick={handleInstall}
+        installLabel={situation === 'standalone' ? 'Open MedBuddy' : 'Install'}
+        installHref={ctaHref}
+      />
 
       <main id="main-content" className={styles.main}>
-        <Hero hasCanvas={sceneReady} />
+        <Hero
+          hasCanvas={sceneReady}
+          onInstallClick={handleInstall}
+          installLabel={ctaLabel}
+          installHref={ctaHref}
+        />
         <Problem />
         <HowItWorks activeStep={howStep} onSelectStep={setHowStep} />
         <Features />
@@ -49,11 +70,25 @@ export function LandingStage({ children }: { children?: ReactNode }) {
         <Caregivers />
         <Privacy />
         <Faq />
-        <Install />
+        <Install
+          onInstallClick={handleInstall}
+          installLabel={ctaLabel}
+          installHref={ctaHref}
+          siteUrl={siteUrl}
+          justInstalled={justInstalled}
+          situation={situation}
+        />
         {children}
       </main>
 
       <Footer />
+
+      <InstallModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        situation={situation}
+        siteUrl={siteUrl}
+      />
     </div>
   );
 }

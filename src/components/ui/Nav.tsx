@@ -15,7 +15,13 @@ const NAV_LINKS = [
   { href: '#faq', label: 'FAQ' },
 ] as const;
 
-export function Nav({ onInstallClick }: { onInstallClick?: () => void }) {
+export interface NavProps {
+  onInstallClick?: () => void;
+  installLabel?: string;
+  installHref?: string;
+}
+
+export function Nav({ onInstallClick, installLabel = 'Install', installHref }: NavProps) {
   const [showInstall, setShowInstall] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { motionEnabled } = useMotionPreference();
@@ -72,7 +78,17 @@ export function Nav({ onInstallClick }: { onInstallClick?: () => void }) {
 
           <div className={styles.actions}>
             <div className={styles.installSlot} data-visible={showInstall}>
-              {onInstallClick ? (
+              {installHref ? (
+                <PillButton
+                  variant="primary"
+                  size="sm"
+                  href={installHref}
+                  tabIndex={showInstall ? 0 : -1}
+                  aria-hidden={!showInstall}
+                >
+                  {installLabel}
+                </PillButton>
+              ) : onInstallClick ? (
                 <PillButton
                   variant="primary"
                   size="sm"
@@ -80,7 +96,7 @@ export function Nav({ onInstallClick }: { onInstallClick?: () => void }) {
                   tabIndex={showInstall ? 0 : -1}
                   aria-hidden={!showInstall}
                 >
-                  Install
+                  {installLabel}
                 </PillButton>
               ) : (
                 <PillButton
@@ -90,7 +106,7 @@ export function Nav({ onInstallClick }: { onInstallClick?: () => void }) {
                   tabIndex={showInstall ? 0 : -1}
                   aria-hidden={!showInstall}
                 >
-                  Install
+                  {installLabel}
                 </PillButton>
               )}
             </div>
@@ -143,7 +159,15 @@ export function Nav({ onInstallClick }: { onInstallClick?: () => void }) {
                 ))}
               </ul>
               <div className={styles.drawerFooter}>
-                {onInstallClick ? (
+                {installHref ? (
+                  <PillButton
+                    variant="primary"
+                    href={installHref}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {installLabel === 'Install' ? 'Install MedBuddy' : installLabel}
+                  </PillButton>
+                ) : onInstallClick ? (
                   <PillButton
                     variant="primary"
                     onClick={() => {
@@ -151,7 +175,7 @@ export function Nav({ onInstallClick }: { onInstallClick?: () => void }) {
                       onInstallClick();
                     }}
                   >
-                    Install MedBuddy
+                    {installLabel === 'Install' ? 'Install MedBuddy' : installLabel}
                   </PillButton>
                 ) : (
                   <PillButton variant="primary" href="#install" onClick={() => setMenuOpen(false)}>
