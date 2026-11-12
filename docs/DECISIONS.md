@@ -100,3 +100,15 @@
 3. **Platform-Aware Install Flow (`useInstallPrompt` + `InstallModal`)**
    - `src/hooks/useInstallPrompt.ts` handles `beforeinstallprompt`, `appinstalled`, `display-mode: standalone` (`Open MedBuddy` link to `/app`), Android/Chromium native prompt, iPhone/iPad Safari 3-step guide, iOS non-Safari extra first step, desktop QR (`qrcode.react`), and unsupported browser guidance.
    - Wired live into `Nav`, `Hero`, and Section 08 (`Install`), including a desktop `QRCodeSVG` panel in Section 08 and `InstallModal` dialog.
+
+## Phase 6: Polish, Bundle Budget, SEO & Accessibility
+
+1. **Bundle Optimization (< 200 KB Gzipped Initial JS)**
+   - Switched Framer Motion usage across interactive UI and section components (`Nav`, `GlassCard`, `CabinetDemo`, `Caregivers`, `Faq`, `InstallModal`) from `motion` to `m` inside a root `LazyMotion` provider loading `domMax` asynchronously.
+   - Dynamically imported `InstallModal`, `QRCodeSVG`, `Lenis`, `SplitText`, and `ScrollTrigger` after initial paint, reducing initial synchronous JS on `/` before the 3D chunk from `263.1 KB` (and `302.7 KB` including `nomodule` polyfills) down to **`177.0 KB` gzipped**.
+   - Deferred `detect-gpu` execution in `useGpuTier.ts` to `requestIdleCallback`, removed the duplicate synchronous WebGL context check before `getGPUTier()`, and reduced `<Environment resolution={64}>` cubemap size, cutting Lighthouse Mobile Total Blocking Time from `1,910 ms` to `630 ms` (**Performance 84**).
+
+2. **Accessibility, SEO & Open Graph**
+   - Added focus management and focus restoration on open/close in `InstallModal` and Escape focus return in `Nav`.
+   - Fixed `QRCodeSVG` SVG accessible title (`svg-img-alt`) and `MotionToggle` spacing/label conformance (`label-content-name-mismatch`), bringing both Mobile and Desktop Lighthouse Accessibility scores to **100**.
+   - Added full `openGraph`, `twitter`, `robots`, canonical `metadataBase`, dynamic `src/app/opengraph-image.tsx`, `src/app/robots.ts`, `src/app/sitemap.ts`, and `README.md`.

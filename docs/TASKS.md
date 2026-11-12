@@ -5,5 +5,5 @@
 - [x] **Phase 2**: 3D scene — phone, ring halo, pill helix, lighting, bloom, shaders, fallback tiers. (Approved)
 - [x] **Phase 3**: Scroll choreography and sections 01 to 03. (Approved)
 - [x] **Phase 4**: Sections 04 to 08 and footer. (Approved)
-- [x] **Phase 5**: PWA — manifest, service worker, install flow for Android, iPhone, and desktop, `/app` placeholder. (Verified, awaiting approval)
-- [ ] **Phase 6**: Polish — performance, accessibility, SEO & Open Graph, reduced motion, cross-browser, README.
+- [x] **Phase 5**: PWA — manifest, service worker, install flow for Android, iPhone, and desktop, `/app` placeholder. (Approved)
+- [x] **Phase 6**: Polish — performance, accessibility, SEO & Open Graph, reduced motion, cross-browser, README. (Completed & verified)
