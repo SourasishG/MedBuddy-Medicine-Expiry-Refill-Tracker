@@ -1,0 +1,43 @@
+.ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 95;
+  width: 28px;
+  height: 28px;
+  margin-left: -14px;
+  margin-top: -14px;
+  border-radius: 50%;
+  border: 1px solid rgba(221, 230, 240, 0.48);
+  background: rgba(255, 255, 255, 0.02);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(-100px, -100px, 0) scale(1);
+  transition:
+    opacity 0.25s var(--ease-gallery),
+    width 0.3s var(--ease-gallery),
+    height 0.3s var(--ease-gallery),
+    margin 0.3s var(--ease-gallery),
+    border-color 0.3s var(--ease-gallery),
+    background-color 0.3s var(--ease-gallery);
+  will-change: transform;
+
+  &[data-visible='true'] {
+    opacity: 1;
+  }
+
+  &[data-active='true'] {
+    width: 44px;
+    height: 44px;
+    margin-left: -22px;
+    margin-top: -22px;
+    border-color: rgba(92, 242, 199, 0.65);
+    background: rgba(92, 242, 199, 0.05);
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .ring {
+    display: none;
+  }
+}
