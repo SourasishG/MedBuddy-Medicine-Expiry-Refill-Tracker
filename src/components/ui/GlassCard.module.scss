@@ -96,7 +96,9 @@
   height: 1.5px;
   background: var(--text);
   border-radius: 2px;
-  transition: transform 0.35s var(--ease-gallery), opacity 0.25s var(--ease-gallery);
+  transition:
+    transform 0.35s var(--ease-gallery),
+    opacity 0.25s var(--ease-gallery);
 }
 
 .plusLineVertical {

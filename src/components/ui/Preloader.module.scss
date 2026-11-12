@@ -95,7 +95,9 @@
   border-radius: var(--radius-pill);
   border: 1px solid var(--hairline);
   color: var(--muted);
-  transition: color 0.25s var(--ease-gallery), border-color 0.25s var(--ease-gallery);
+  transition:
+    color 0.25s var(--ease-gallery),
+    border-color 0.25s var(--ease-gallery);
 
   &:hover {
     color: var(--text);

@@ -106,11 +106,7 @@ export function Hero({ hasCanvas = false, onInstallClick }: HeroProps) {
         </div>
 
         {/* Centerpiece Poster (server-rendered LCP element; hides visually when 3D canvas takes over in Phase 2) */}
-        <div
-          ref={posterWrapRef}
-          className={styles.stage}
-          data-has-canvas={hasCanvas}
-        >
+        <div ref={posterWrapRef} className={styles.stage} data-has-canvas={hasCanvas}>
           <div className={styles.posterFrame}>
             <Image
               src="/posters/hero-poster.svg"
@@ -166,8 +162,8 @@ export function Hero({ hasCanvas = false, onInstallClick }: HeroProps) {
 
           <div className={styles.ctaGroup}>
             <p className={styles.lead}>
-              Track expiry dates, dose reminders, and refills for you and the family who look
-              after you.
+              Track expiry dates, dose reminders, and refills for you and the family who look after
+              you.
             </p>
             <div className={styles.buttons}>
               {onInstallClick ? (

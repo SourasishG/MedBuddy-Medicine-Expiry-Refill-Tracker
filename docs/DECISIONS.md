@@ -26,3 +26,18 @@
 5. **Linting & Formatting**
    - ESLint 9 flat config using `eslint-config-next/core-web-vitals`, `eslint-config-next/typescript`, and `eslint-config-prettier`.
    - Prettier configured with single quotes, trailing commas, and 100-char line width.
+
+## Phase 1: Hero Without 3D
+
+1. **Server-Rendered Landing Page & LCP Poster**
+   - `src/app/(site)/page.tsx` stays a Server Component so the hero headline, hairline columns, glass cards, CTAs, and `public/posters/hero-poster.svg` (`next/image` with `priority`) paint immediately without waiting for client hydration.
+   - `public/posters/hero-poster.svg` depicts the dark graphite phone (Cabinet UI labelled `Illustrative`), glowing white ring halo, deep `#1F4BFF` ambient glow, and frosted-glass/chrome pill helix as a crisp vector poster.
+
+2. **Preloader (`00`)**
+   - Uses `useSyncExternalStore` + `sessionStorage` (`medbuddy-preloader-seen` inside `try/catch`) so repeat visits and Motion-off sessions skip the preloader immediately and SSR never blocks initial paint.
+   - Animates 12 pills, a `000`–`100` mono counter, wordmark reveal, and a single `<250ms` scan-line pulse under 1.8s total.
+
+3. **Nav, Cursor & Micro-Interactions**
+   - `Nav` renders wordmark left, anchor links centered, `Install` pill (revealing via `IntersectionObserver` once scrolled past `#hero`), `MotionToggle`, and a Framer Motion mobile drawer under 960px.
+   - `Cursor` runs GSAP `quickTo` strictly on fine pointers when Motion is enabled.
+   - `PillButton` uses GSAP `quickTo` for subtle magnetic hover on desktop; `GlassCard` uses Framer Motion `AnimatePresence` exclusively for expand/collapse (never mixing GSAP and Framer Motion on the same element).

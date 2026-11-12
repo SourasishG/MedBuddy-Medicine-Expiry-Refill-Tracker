@@ -47,12 +47,7 @@ function StatusIcon({ tone }: { tone: StatusTone }) {
     return (
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
         <circle cx="7" cy="7" r="6" stroke="currentColor" strokeOpacity="0.5" />
-        <path
-          d="M5 5L9 9M9 5L5 9"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
+        <path d="M5 5L9 9M9 5L5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     );
   }
@@ -118,9 +113,7 @@ export function GlassCard({
             animate={{ height: 'auto', opacity: 1 }}
             exit={motionEnabled ? { height: 0, opacity: 0 } : { opacity: 0 }}
             transition={
-              motionEnabled
-                ? { duration: 0.42, ease: [0.22, 1, 0.36, 1] }
-                : { duration: 0.001 }
+              motionEnabled ? { duration: 0.42, ease: [0.22, 1, 0.36, 1] } : { duration: 0.001 }
             }
           >
             <div className={styles.body}>

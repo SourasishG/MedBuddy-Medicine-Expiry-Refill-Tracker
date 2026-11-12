@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useRef, type AnchorHTMLAttributes, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  type AnchorHTMLAttributes,
+  type ButtonHTMLAttributes,
+  type ReactNode,
+} from 'react';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { ensureGsapRegistered, gsap } from '@/lib/gsap';
 import styles from './PillButton.module.scss';

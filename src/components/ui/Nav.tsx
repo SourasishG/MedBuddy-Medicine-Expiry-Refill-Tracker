@@ -64,12 +64,7 @@ export function Nav({ onInstallClick }: { onInstallClick?: () => void }) {
 
           <nav className={styles.desktopNav} aria-label="Primary">
             {NAV_LINKS.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className={styles.link}
-                data-cursor="interactive"
-              >
+              <a key={item.href} href={item.href} className={styles.link} data-cursor="interactive">
                 {item.label}
               </a>
             ))}
@@ -159,11 +154,7 @@ export function Nav({ onInstallClick }: { onInstallClick?: () => void }) {
                     Install MedBuddy
                   </PillButton>
                 ) : (
-                  <PillButton
-                    variant="primary"
-                    href="#install"
-                    onClick={() => setMenuOpen(false)}
-                  >
+                  <PillButton variant="primary" href="#install" onClick={() => setMenuOpen(false)}>
                     Install MedBuddy
                   </PillButton>
                 )}
