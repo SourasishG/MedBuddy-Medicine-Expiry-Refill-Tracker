@@ -44,7 +44,7 @@ export function useGpuTier(): GpuProfile {
 
     let cancelled = false;
     let idleHandle: number | undefined;
-    let timeoutHandle: number | undefined;
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
 
     const isMobile = window.matchMedia('(max-width: 959px)').matches;
     const webgl = hasWebGLInterface();
