@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { SITE_URL } from '@/lib/site';
 import { useIsHydrated } from './useIsHydrated';
 
 export interface BeforeInstallPromptEvent extends Event {
@@ -135,7 +136,7 @@ export function useInstallPrompt() {
     ? detectPlatformSituation(Boolean(deferredPrompt), installedStandalone, isDesktopViewport)
     : 'desktop-qr';
 
-  const siteUrl = isClient ? window.location.origin : 'https://medbuddy.app';
+  const siteUrl = isClient ? window.location.origin : SITE_URL;
 
   const ctaLabel =
     situation === 'standalone'

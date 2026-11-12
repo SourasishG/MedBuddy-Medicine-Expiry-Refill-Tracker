@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { AnimatePresence, m } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import styles from './Faq.module.scss';
 
@@ -96,25 +96,22 @@ export function Faq() {
                   </span>
                 </button>
 
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <m.div
-                      id={panelId}
-                      role="region"
-                      aria-labelledby={buttonId}
-                      className={styles.answerWrap}
-                      initial={motionEnabled ? { height: 0, opacity: 0 } : false}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={motionEnabled ? { height: 0, opacity: 0 } : { opacity: 0 }}
-                      transition={{
-                        duration: motionEnabled ? 0.35 : 0.001,
-                        ease: [0.22, 1, 0.36, 1],
-                      }}
-                    >
-                      <div className={styles.answerInner}>{item.answer}</div>
-                    </m.div>
-                  )}
-                </AnimatePresence>
+                <m.div
+                  id={panelId}
+                  role="region"
+                  aria-labelledby={buttonId}
+                  aria-hidden={!isOpen}
+                  inert={!isOpen}
+                  className={styles.answerWrap}
+                  initial={false}
+                  animate={isOpen ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
+                  transition={{
+                    duration: motionEnabled ? 0.35 : 0.001,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                >
+                  <div className={styles.answerInner}>{item.answer}</div>
+                </m.div>
               </div>
             );
           })}

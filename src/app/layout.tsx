@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Instrument_Serif, JetBrains_Mono, Manrope } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { MotionProvider } from '@/hooks/useMotionPreference';
+import { OG_IMAGE, SITE_URL } from '@/lib/site';
 import '@/styles/base.scss';
 
 const instrumentSerif = Instrument_Serif({
@@ -27,7 +28,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://medbuddy.app'),
+  metadataBase: new URL(SITE_URL),
   title: 'MedBuddy — Every dose. Every expiry. Every loved one.',
   description:
     'A calm medicine expiry, dose reminder, and refill tracker for patients and the families who care for them.',
@@ -40,23 +41,21 @@ export const metadata: Metadata = {
     'caregiver adherence alerts',
     'family medication tracker',
   ],
-  alternates: {
-    canonical: '/',
-  },
   openGraph: {
     title: 'MedBuddy — Every dose. Every expiry. Every loved one.',
     description:
       'Track expiry dates, opened-bottle countdowns, dose reminders, refills, and shared family adherence in one calm cabinet view.',
-    url: '/',
     siteName: 'MedBuddy',
     type: 'website',
     locale: 'en_US',
+    images: [OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'MedBuddy — Every dose. Every expiry. Every loved one.',
     description:
       'Track expiry dates, opened-bottle countdowns, dose reminders, refills, and shared family adherence.',
+    images: [OG_IMAGE.url],
   },
   robots: {
     index: true,
