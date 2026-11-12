@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, m } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import type { InstallSituation } from '@/hooks/useInstallPrompt';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
@@ -57,7 +57,7 @@ function StepIcon({
 }) {
   const animateProps = motionEnabled && active ? { y: [0, -3, 0] } : undefined;
   return (
-    <motion.div
+    <m.div
       className={styles.stepIconBox}
       animate={animateProps}
       transition={{
@@ -107,7 +107,7 @@ function StepIcon({
           />
         </svg>
       )}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -115,6 +115,8 @@ export function InstallModal({ open, onClose, situation, siteUrl }: InstallModal
   const { motionEnabled } = useMotionPreference();
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [copied, setCopied] = useState(false);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
 
   const isIosGuide = situation === 'ios-safari' || situation === 'ios-non-safari';
   const steps: GuideStep[] =
@@ -134,11 +136,20 @@ export function InstallModal({ open, onClose, situation, siteUrl }: InstallModal
 
   useEffect(() => {
     if (!open) return;
+    openerRef.current = document.activeElement as HTMLElement | null;
+    const focusTimer = window.setTimeout(() => {
+      closeBtnRef.current?.focus();
+    }, 30);
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener('keydown', onKeyDown);
+      openerRef.current?.focus();
+    };
   }, [open, onClose]);
 
   useEffect(() => {
@@ -162,7 +173,7 @@ export function InstallModal({ open, onClose, situation, siteUrl }: InstallModal
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
+        <m.div
           className={styles.backdrop}
           role="presentation"
           onClick={(e) => {
@@ -173,7 +184,7 @@ export function InstallModal({ open, onClose, situation, siteUrl }: InstallModal
           exit={motionEnabled ? { opacity: 0 } : { opacity: 0 }}
           transition={{ duration: motionEnabled ? 0.25 : 0.001 }}
         >
-          <motion.div
+          <m.div
             role="dialog"
             aria-modal="true"
             aria-labelledby="install-modal-title"
@@ -191,7 +202,7 @@ export function InstallModal({ open, onClose, situation, siteUrl }: InstallModal
                     ? 'OPEN ON YOUR PHONE'
                     : 'HOW TO INSTALL MEDBUDDY'}
               </span>
-              <button type="button" className={styles.closeBtn} onClick={onClose}>
+              <button ref={closeBtnRef} type="button" className={styles.closeBtn} onClick={onClose}>
                 Close
               </button>
             </div>
@@ -303,8 +314,8 @@ export function InstallModal({ open, onClose, situation, siteUrl }: InstallModal
               </button>
               <span className={styles.qrUrl}>Early-access PWA shell</span>
             </div>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

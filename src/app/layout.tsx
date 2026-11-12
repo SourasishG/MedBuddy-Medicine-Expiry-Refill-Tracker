@@ -28,10 +28,41 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://medbuddy.app'),
   title: 'MedBuddy — Every dose. Every expiry. Every loved one.',
   description:
     'A calm medicine expiry, dose reminder, and refill tracker for patients and the families who care for them.',
   applicationName: 'MedBuddy',
+  keywords: [
+    'MedBuddy',
+    'medicine expiry tracker',
+    'dose reminder app',
+    'refill tracker',
+    'caregiver adherence alerts',
+    'family medication tracker',
+  ],
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: 'MedBuddy — Every dose. Every expiry. Every loved one.',
+    description:
+      'Track expiry dates, opened-bottle countdowns, dose reminders, refills, and shared family adherence in one calm cabinet view.',
+    url: '/',
+    siteName: 'MedBuddy',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'MedBuddy — Every dose. Every expiry. Every loved one.',
+    description:
+      'Track expiry dates, opened-bottle countdowns, dose reminders, refills, and shared family adherence.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   manifest: '/manifest.webmanifest',
   icons: {
     icon: [
