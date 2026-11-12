@@ -112,7 +112,6 @@ export function initScrollChoreography({
           onUpdate: (self) => {
             updateStep(self.progress);
           },
-          onEnter: () => updateStep(0),
         },
       });
 
