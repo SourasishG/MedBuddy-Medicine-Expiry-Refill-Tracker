@@ -1,6 +1,7 @@
 'use client';
 
-import { ensureGsapRegistered, gsap, ScrollTrigger } from './gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ensureGsapRegistered, gsap } from './gsap';
 import {
   defaultSceneTargets,
   sceneTargets,
@@ -30,6 +31,7 @@ export function initScrollChoreography({
   }
 
   ensureGsapRegistered();
+  gsap.registerPlugin(ScrollTrigger);
 
   const isDesktop = window.matchMedia('(min-width: 960px)').matches;
 

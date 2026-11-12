@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PillButton } from '@/components/ui/PillButton';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { ensureGsapRegistered, gsap, SplitText } from '@/lib/gsap';
+import { ensureGsapRegistered, gsap, loadGsapPlugins } from '@/lib/gsap';
 import styles from './Hero.module.scss';
 
 export interface HeroProps {
@@ -29,27 +29,37 @@ export function Hero({
   useEffect(() => {
     if (!isHydrated || !motionEnabled) return;
 
-    ensureGsapRegistered();
     const headline = headlineRef.current;
     if (!headline) return;
 
-    const split = SplitText.create(headline, {
-      type: 'lines',
-      mask: 'lines',
-    });
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
 
-    const tween = gsap.from(split.lines, {
-      yPercent: 105,
-      opacity: 0,
-      duration: 1.05,
-      stagger: 0.06,
-      ease: 'power3.out',
-      clearProps: 'transform,opacity',
+    void loadGsapPlugins().then(({ SplitText }) => {
+      if (cancelled || !headlineRef.current) return;
+      const split = SplitText.create(headlineRef.current, {
+        type: 'lines',
+        mask: 'lines',
+      });
+
+      const tween = gsap.from(split.lines, {
+        yPercent: 105,
+        opacity: 0,
+        duration: 1.05,
+        stagger: 0.06,
+        ease: 'power3.out',
+        clearProps: 'transform,opacity',
+      });
+
+      cleanup = () => {
+        tween.kill();
+        split.revert();
+      };
     });
 
     return () => {
-      tween.kill();
-      split.revert();
+      cancelled = true;
+      cleanup?.();
     };
   }, [isHydrated, motionEnabled]);
 

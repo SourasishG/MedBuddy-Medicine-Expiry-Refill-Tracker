@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, type ReactNode } from 'react';
+import { LazyMotion } from 'framer-motion';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { createLenisController } from '@/lib/lenis';
-import { ensureGsapRegistered, ScrollTrigger } from '@/lib/gsap';
+
+const loadMotionFeatures = () => import('framer-motion').then((mod) => mod.domMax);
 
 export function SmoothScrollProvider({ children }: { children: ReactNode }) {
   const { motionEnabled, isHydrated } = useMotionPreference();
@@ -11,20 +12,43 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isHydrated) return;
 
-    ensureGsapRegistered();
+    let cancelled = false;
+    let destroyController: (() => void) | undefined;
 
     if (!motionEnabled) {
-      ScrollTrigger.refresh();
-      return;
+      import('@/lib/gsap').then(({ loadGsapPlugins }) => {
+        if (cancelled) return;
+        void loadGsapPlugins().then(({ ScrollTrigger }) => {
+          if (!cancelled) ScrollTrigger.refresh();
+        });
+      });
+      return () => {
+        cancelled = true;
+      };
     }
 
-    const controller = createLenisController();
-    ScrollTrigger.refresh();
+    import('@/lib/lenis').then(({ createLenisController }) => {
+      if (cancelled) return;
+      void createLenisController().then((controller) => {
+        if (cancelled) {
+          controller.destroy();
+          return;
+        }
+        destroyController = controller.destroy;
+        void import('@/lib/gsap').then(({ loadGsapPlugins }) => {
+          if (cancelled) return;
+          void loadGsapPlugins().then(({ ScrollTrigger }) => {
+            if (!cancelled) ScrollTrigger.refresh();
+          });
+        });
+      });
+    });
 
     return () => {
-      controller.destroy();
+      cancelled = true;
+      destroyController?.();
     };
   }, [motionEnabled, isHydrated]);
 
-  return <>{children}</>;
+  return <LazyMotion features={loadMotionFeatures}>{children}</LazyMotion>;
 }

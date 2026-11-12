@@ -1,15 +1,15 @@
 'use client';
 
 import Lenis from 'lenis';
-import { ensureGsapRegistered, gsap, ScrollTrigger } from './gsap';
+import { loadGsapPlugins } from './gsap';
 
 export interface LenisController {
   lenis: Lenis;
   destroy: () => void;
 }
 
-export function createLenisController(): LenisController {
-  ensureGsapRegistered();
+export async function createLenisController(): Promise<LenisController> {
+  const { gsap, ScrollTrigger } = await loadGsapPlugins();
 
   const lenis = new Lenis({
     duration: 1.2,

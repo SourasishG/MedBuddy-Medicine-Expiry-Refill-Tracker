@@ -1,19 +1,30 @@
 'use client';
 
 import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { SplitText } from 'gsap/SplitText';
 
-let registered = false;
+let coreConfigured = false;
+let pluginsRegistered = false;
 
 export function ensureGsapRegistered(): void {
-  if (registered || typeof window === 'undefined') return;
-  gsap.registerPlugin(ScrollTrigger, SplitText);
+  if (coreConfigured || typeof window === 'undefined') return;
   gsap.defaults({
     ease: 'power3.out',
     duration: 1,
   });
-  registered = true;
+  coreConfigured = true;
 }
 
-export { gsap, ScrollTrigger, SplitText };
+export async function loadGsapPlugins() {
+  ensureGsapRegistered();
+  const [{ ScrollTrigger }, { SplitText }] = await Promise.all([
+    import('gsap/ScrollTrigger'),
+    import('gsap/SplitText'),
+  ]);
+  if (!pluginsRegistered && typeof window !== 'undefined') {
+    gsap.registerPlugin(ScrollTrigger, SplitText);
+    pluginsRegistered = true;
+  }
+  return { gsap, ScrollTrigger, SplitText };
+}
+
+export { gsap };

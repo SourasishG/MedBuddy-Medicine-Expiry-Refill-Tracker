@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { ensureGsapRegistered, gsap, SplitText } from '@/lib/gsap';
+import { loadGsapPlugins } from '@/lib/gsap';
 import styles from './Problem.module.scss';
 
 const STATEMENTS = [
@@ -33,31 +33,39 @@ export function Problem() {
   useEffect(() => {
     if (!isHydrated || !motionEnabled) return;
 
-    ensureGsapRegistered();
     const section = sectionRef.current;
     if (!section) return;
 
-    const ctx = gsap.context(() => {
-      const headings = section.querySelectorAll<HTMLElement>('[data-problem-heading]');
-      headings.forEach((heading) => {
-        const split = SplitText.create(heading, { type: 'lines', mask: 'lines' });
-        gsap.from(split.lines, {
-          yPercent: 105,
-          opacity: 0,
-          duration: 0.95,
-          stagger: 0.06,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: heading,
-            start: 'top 82%',
-            once: true,
-          },
+    let cancelled = false;
+    let revertCtx: (() => void) | undefined;
+
+    void loadGsapPlugins().then(({ gsap, SplitText }) => {
+      if (cancelled || !sectionRef.current) return;
+      const ctx = gsap.context(() => {
+        const headings = section.querySelectorAll<HTMLElement>('[data-problem-heading]');
+        headings.forEach((heading) => {
+          const split = SplitText.create(heading, { type: 'lines', mask: 'lines' });
+          gsap.from(split.lines, {
+            yPercent: 105,
+            opacity: 0,
+            duration: 0.95,
+            stagger: 0.06,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: heading,
+              start: 'top 82%',
+              once: true,
+            },
+          });
         });
-      });
-    }, section);
+      }, section);
+
+      revertCtx = () => ctx.revert();
+    });
 
     return () => {
-      ctx.revert();
+      cancelled = true;
+      revertCtx?.();
     };
   }, [isHydrated, motionEnabled]);
 
