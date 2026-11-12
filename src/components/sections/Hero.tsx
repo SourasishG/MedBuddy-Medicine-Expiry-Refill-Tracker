@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PillButton } from '@/components/ui/PillButton';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { loadGsapPlugins } from '@/lib/gsap';
 import styles from './Hero.module.scss';
 
 export interface HeroProps {
@@ -35,7 +34,9 @@ export function Hero({
     let cancelled = false;
     let cleanup: (() => void) | undefined;
 
-    void loadGsapPlugins().then(({ gsap, SplitText }) => {
+    void import('@/lib/gsap')
+      .then(({ loadGsapPlugins }) => loadGsapPlugins())
+      .then(({ gsap, SplitText }) => {
       if (cancelled || !headlineRef.current) return;
       const split = SplitText.create(headlineRef.current, {
         type: 'lines',

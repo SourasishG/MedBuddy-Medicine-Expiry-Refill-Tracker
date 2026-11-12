@@ -36,7 +36,9 @@ export function Cursor() {
 
         const target = event.target as HTMLElement | null;
         const interactive = Boolean(
-          target?.closest('a, button, [role="button"], input, summary, [data-cursor="interactive"]'),
+          target?.closest(
+            'a, button, [role="button"], input, summary, [data-cursor="interactive"]',
+          ),
         );
         setIsActive(interactive);
       };

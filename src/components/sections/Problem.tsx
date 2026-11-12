@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from 'react';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { loadGsapPlugins } from '@/lib/gsap';
 import styles from './Problem.module.scss';
 
 const STATEMENTS = [
@@ -39,7 +38,9 @@ export function Problem() {
     let cancelled = false;
     let revertCtx: (() => void) | undefined;
 
-    void loadGsapPlugins().then(({ gsap, SplitText }) => {
+    void import('@/lib/gsap')
+      .then(({ loadGsapPlugins }) => loadGsapPlugins())
+      .then(({ gsap, SplitText }) => {
       if (cancelled || !sectionRef.current) return;
       const ctx = gsap.context(() => {
         const headings = section.querySelectorAll<HTMLElement>('[data-problem-heading]');
