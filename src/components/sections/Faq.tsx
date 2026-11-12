@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import styles from './Faq.module.scss';
 
@@ -98,7 +98,7 @@ export function Faq() {
 
                 <AnimatePresence initial={false}>
                   {isOpen && (
-                    <motion.div
+                    <m.div
                       id={panelId}
                       role="region"
                       aria-labelledby={buttonId}
@@ -112,7 +112,7 @@ export function Faq() {
                       }}
                     >
                       <div className={styles.answerInner}>{item.answer}</div>
-                    </motion.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
               </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import styles from './GlassCard.module.scss';
 
@@ -106,7 +106,7 @@ export function GlassCard({
 
       <AnimatePresence initial={false}>
         {expanded && (
-          <motion.div
+          <m.div
             id={panelId}
             className={styles.bodyWrap}
             initial={motionEnabled ? { height: 0, opacity: 0 } : false}
@@ -120,7 +120,7 @@ export function GlassCard({
               <div className={styles.details}>{details}</div>
               <span className={styles.tag}>{badgeTag}</span>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </article>

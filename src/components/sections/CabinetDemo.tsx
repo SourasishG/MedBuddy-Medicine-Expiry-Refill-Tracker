@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import styles from './CabinetDemo.module.scss';
 
@@ -264,7 +264,7 @@ export function CabinetDemo() {
 
             <ol className={styles.priorityList}>
               {evaluated.prioritized.map((item, idx) => (
-                <motion.li
+                <m.li
                   key={item.id}
                   layout={motionEnabled}
                   transition={{ duration: motionEnabled ? 0.35 : 0, ease: [0.22, 1, 0.36, 1] }}
@@ -283,7 +283,7 @@ export function CabinetDemo() {
                   <span className={styles.priorityDays} data-status={item.status}>
                     {item.remaining <= 0 ? 'DISPOSE' : `${item.remaining}d left`}
                   </span>
-                </motion.li>
+                </m.li>
               ))}
             </ol>
           </aside>

@@ -1,9 +1,19 @@
 'use client';
 
-import { QRCodeSVG } from 'qrcode.react';
+import dynamic from 'next/dynamic';
 import { PillButton } from '@/components/ui/PillButton';
 import type { InstallSituation } from '@/hooks/useInstallPrompt';
 import styles from './Install.module.scss';
+
+const QRCodeSVG = dynamic(() => import('qrcode.react').then((mod) => mod.QRCodeSVG), {
+  ssr: false,
+  loading: () => (
+    <div
+      style={{ width: 124, height: 124, background: 'rgba(9, 12, 18, 0.12)', borderRadius: 8 }}
+      aria-hidden="true"
+    />
+  ),
+});
 
 export interface InstallProps {
   onInstallClick?: () => void;

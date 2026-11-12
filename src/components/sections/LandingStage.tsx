@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import { SceneLoader } from '@/components/scene/SceneLoader';
 import { CabinetDemo } from '@/components/sections/CabinetDemo';
 import { Caregivers } from '@/components/sections/Caregivers';
@@ -13,17 +14,21 @@ import { Privacy } from '@/components/sections/Privacy';
 import { Problem } from '@/components/sections/Problem';
 import { Cursor } from '@/components/ui/Cursor';
 import { GrainOverlay } from '@/components/ui/GrainOverlay';
-import { InstallModal } from '@/components/ui/InstallModal';
 import { Nav } from '@/components/ui/Nav';
 import { Preloader } from '@/components/ui/Preloader';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
-import { initScrollChoreography } from '@/lib/scrollTimeline';
 import styles from './LandingStage.module.scss';
+
+const InstallModal = dynamic(
+  () => import('@/components/ui/InstallModal').then((mod) => mod.InstallModal),
+  { ssr: false },
+);
 
 export function LandingStage({ children }: { children?: ReactNode }) {
   const [sceneReady, setSceneReady] = useState(false);
   const [howStep, setHowStep] = useState(0);
+  const [modalMounted, setModalMounted] = useState(false);
   const { motionEnabled, isHydrated } = useMotionPreference();
   const {
     situation,
@@ -38,11 +43,28 @@ export function LandingStage({ children }: { children?: ReactNode }) {
 
   useEffect(() => {
     if (!isHydrated) return;
-    return initScrollChoreography({
-      motionEnabled,
-      onStepChange: setHowStep,
+
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
+
+    void import('@/lib/scrollTimeline').then(({ initScrollChoreography }) => {
+      if (cancelled) return;
+      cleanup = initScrollChoreography({
+        motionEnabled,
+        onStepChange: setHowStep,
+      });
     });
+
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
   }, [isHydrated, motionEnabled]);
+
+  const onTriggerInstall = () => {
+    setModalMounted(true);
+    void handleInstall();
+  };
 
   return (
     <div id="top" className={styles.page}>
@@ -51,7 +73,7 @@ export function LandingStage({ children }: { children?: ReactNode }) {
       <GrainOverlay />
       <Cursor />
       <Nav
-        onInstallClick={handleInstall}
+        onInstallClick={onTriggerInstall}
         installLabel={situation === 'standalone' ? 'Open MedBuddy' : 'Install'}
         installHref={ctaHref}
       />
@@ -59,7 +81,7 @@ export function LandingStage({ children }: { children?: ReactNode }) {
       <main id="main-content" className={styles.main}>
         <Hero
           hasCanvas={sceneReady}
-          onInstallClick={handleInstall}
+          onInstallClick={onTriggerInstall}
           installLabel={ctaLabel}
           installHref={ctaHref}
         />
@@ -71,7 +93,7 @@ export function LandingStage({ children }: { children?: ReactNode }) {
         <Privacy />
         <Faq />
         <Install
-          onInstallClick={handleInstall}
+          onInstallClick={onTriggerInstall}
           installLabel={ctaLabel}
           installHref={ctaHref}
           siteUrl={siteUrl}
@@ -83,12 +105,14 @@ export function LandingStage({ children }: { children?: ReactNode }) {
 
       <Footer />
 
-      <InstallModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        situation={situation}
-        siteUrl={siteUrl}
-      />
+      {(modalMounted || modalOpen) && (
+        <InstallModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          situation={situation}
+          siteUrl={siteUrl}
+        />
+      )}
     </div>
   );
 }

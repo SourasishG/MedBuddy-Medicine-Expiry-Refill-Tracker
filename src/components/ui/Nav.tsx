@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, m } from 'framer-motion';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { MotionToggle } from './MotionToggle';
 import { PillButton } from './PillButton';
@@ -24,6 +24,7 @@ export interface NavProps {
 export function Nav({ onInstallClick, installLabel = 'Install', installHref }: NavProps) {
   const [showInstall, setShowInstall] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
   const { motionEnabled } = useMotionPreference();
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export function Nav({ onInstallClick, installLabel = 'Install', installHref }: N
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setMenuOpen(false);
+        menuBtnRef.current?.focus();
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -114,6 +116,7 @@ export function Nav({ onInstallClick, installLabel = 'Install', installHref }: N
             <MotionToggle />
 
             <button
+              ref={menuBtnRef}
               type="button"
               className={styles.menuButton}
               aria-expanded={menuOpen}
@@ -128,7 +131,7 @@ export function Nav({ onInstallClick, installLabel = 'Install', installHref }: N
 
       <AnimatePresence>
         {menuOpen && (
-          <motion.div
+          <m.div
             id="mobile-nav-drawer"
             className={styles.drawerBackdrop}
             initial={motionEnabled ? { opacity: 0 } : false}
@@ -136,7 +139,7 @@ export function Nav({ onInstallClick, installLabel = 'Install', installHref }: N
             exit={motionEnabled ? { opacity: 0 } : { opacity: 0 }}
             transition={{ duration: motionEnabled ? 0.25 : 0.001 }}
           >
-            <motion.nav
+            <m.nav
               className={styles.drawer}
               aria-label="Mobile navigation"
               initial={motionEnabled ? { y: -16, opacity: 0 } : false}
@@ -183,8 +186,8 @@ export function Nav({ onInstallClick, installLabel = 'Install', installHref }: N
                   </PillButton>
                 )}
               </div>
-            </motion.nav>
-          </motion.div>
+            </m.nav>
+          </m.div>
         )}
       </AnimatePresence>
     </>

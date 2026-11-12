@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 import { gsap } from '@/lib/gsap';
 import { sceneTargets } from '@/lib/sceneState';
@@ -124,7 +124,7 @@ export function Caregivers() {
             {/* Glowing Connecting Thread */}
             <div className={styles.threadWrap} aria-live="polite">
               <div className={styles.threadTrack} data-missed={doseMissed}>
-                <motion.span
+                <m.span
                   key={`${doseMissed}-${pulseKey}`}
                   className={styles.threadPulse}
                   data-missed={doseMissed}
