@@ -1,0 +1,252 @@
+@use '../../styles/mixins.scss' as *;
+
+.hero {
+  position: relative;
+  min-height: 100dvh;
+  padding-top: 96px;
+  padding-bottom: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: clip;
+
+  @media (min-width: 960px) {
+    padding-top: 88px;
+    padding-bottom: 44px;
+  }
+}
+
+.columns {
+  @include container;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.column {
+  height: 100%;
+  border-left: 1px solid var(--hairline);
+
+  &:last-child {
+    border-right: 1px solid var(--hairline);
+  }
+}
+
+.ambientGlow {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  width: min(92vw, 760px);
+  height: min(92vw, 760px);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(31, 75, 255, 0.16) 0%,
+    rgba(31, 75, 255, 0.05) 45%,
+    transparent 72%
+  );
+  pointer-events: none;
+}
+
+.grid {
+  @include container;
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+
+  @media (min-width: 960px) {
+    min-height: calc(100dvh - 132px);
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: 1fr auto auto;
+    align-items: end;
+    gap: 24px 16px;
+  }
+}
+
+/* Mobile: headline sits above centered phone */
+.headlineBlock {
+  order: 1;
+  position: relative;
+  z-index: 4;
+  padding-top: 8px;
+
+  @media (min-width: 960px) {
+    order: unset;
+    grid-column: 1 / 11;
+    grid-row: 2;
+    align-self: end;
+    padding-top: 0;
+    margin-bottom: 4px;
+    pointer-events: none;
+  }
+}
+
+.headline {
+  font-family: var(--font-display);
+  font-size: clamp(2.85rem, 7.2vw, 6.4rem);
+  font-weight: 400;
+  line-height: 0.96;
+  letter-spacing: -0.022em;
+  color: var(--text);
+  text-shadow: 0 12px 48px rgba(9, 12, 18, 0.85);
+
+  em {
+    font-style: italic;
+    color: var(--chrome);
+  }
+}
+
+/* Centerpiece phone/helix static poster */
+.stage {
+  order: 2;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-block: -8px;
+  transition: opacity 0.5s var(--ease-gallery);
+
+  &[data-has-canvas='true'] {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (min-width: 960px) {
+    order: unset;
+    grid-column: 3 / 11;
+    grid-row: 1 / 3;
+    align-self: center;
+    margin-block: 0;
+    margin-bottom: 16px;
+  }
+}
+
+.posterFrame {
+  position: relative;
+  width: min(100%, 420px);
+
+  @media (min-width: 768px) {
+    width: min(100%, 540px);
+  }
+
+  @media (min-width: 960px) {
+    width: min(100%, 640px);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 36%;
+    background: linear-gradient(180deg, transparent 0%, rgba(9, 12, 18, 0.82) 100%);
+    pointer-events: none;
+  }
+}
+
+.posterImg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Pinned Glass Cards */
+.cardNextDose {
+  order: 3;
+  position: relative;
+  z-index: 5;
+
+  @media (min-width: 960px) {
+    order: unset;
+    grid-column: 1 / 5;
+    grid-row: 1;
+    align-self: center;
+    max-width: 310px;
+    transform: translateY(-28px);
+  }
+}
+
+.cardExpiring {
+  order: 4;
+  position: relative;
+  z-index: 5;
+
+  @media (min-width: 960px) {
+    order: unset;
+    grid-column: 9 / 13;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+    max-width: 310px;
+    transform: translateY(38px);
+  }
+}
+
+.bottomRow {
+  order: 5;
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hairline);
+
+  @media (min-width: 960px) {
+    order: unset;
+    grid-column: 1 / 13;
+    grid-row: 3;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-top: 20px;
+  }
+}
+
+.specBlock {
+  @include mono-label;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.ctaGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 560px;
+
+  @media (min-width: 960px) {
+    align-items: flex-end;
+    text-align: right;
+  }
+}
+
+.lead {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+
+    > * {
+      width: 100%;
+    }
+  }
+}
