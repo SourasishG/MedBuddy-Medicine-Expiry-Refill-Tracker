@@ -167,6 +167,16 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
     const spread = sceneTargets.helixSpread;
     const ringMode = sceneTargets.helixRingMode;
     const statusBlend = sceneTargets.helixStatusBlend;
+    const lockedCount = sceneTargets.lockedPills;
+    const phoneX = sceneTargets.phoneX;
+    const phoneY = sceneTargets.phoneY;
+
+    const lockSlots: Array<[number, number, number]> = [
+      [-1.12, 0.95, 0.35],
+      [1.12, 0.45, 0.35],
+      [-1.12, -0.35, 0.35],
+      [1.12, -0.85, 0.35],
+    ];
 
     const updateMesh = (mesh: THREE.InstancedMesh | null, items: PillMeta[]) => {
       if (!mesh) return;
@@ -187,24 +197,36 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
         const ry = Math.sin(ringAngle) * ringRadius + baseY;
         const rz = Math.sin(ringAngle * 2) * 0.18 - 0.15;
 
-        dummy.position.set(
-          THREE.MathUtils.lerp(hx, rx, ringMode),
-          THREE.MathUtils.lerp(hy, ry, ringMode),
-          THREE.MathUtils.lerp(hz, rz, ringMode),
-        );
+        let px = THREE.MathUtils.lerp(hx, rx, ringMode);
+        let py = THREE.MathUtils.lerp(hy, ry, ringMode);
+        let pz = THREE.MathUtils.lerp(hz, rz, ringMode);
 
-        dummy.rotation.set(
-          Math.sin(t * 0.4 + item.rotOffset) * 0.35 + item.t * 1.4,
-          helixAngle + Math.PI * 0.5,
-          Math.cos(item.t * Math.PI * 2 + item.rotOffset) * 0.65,
-        );
+        let rxRot = Math.sin(t * 0.4 + item.rotOffset) * 0.35 + item.t * 1.4;
+        let ryRot = helixAngle + Math.PI * 0.5;
+        let rzRot = Math.cos(item.t * Math.PI * 2 + item.rotOffset) * 0.65;
+        let s = 1 - spread * 0.12;
 
-        const s = 1 - spread * 0.12;
+        // Lock first 4 chrome capsules into step beacons around the phone during Section 02
+        const lockBlend =
+          !item.isGlass && idx < 4 ? THREE.MathUtils.clamp(lockedCount - idx, 0, 1) : 0;
+        if (lockBlend > 0.001) {
+          const slot = lockSlots[idx]!;
+          px = THREE.MathUtils.lerp(px, phoneX + slot[0], lockBlend);
+          py = THREE.MathUtils.lerp(py, phoneY + slot[1] + 0.14, lockBlend);
+          pz = THREE.MathUtils.lerp(pz, slot[2], lockBlend);
+          rxRot = THREE.MathUtils.lerp(rxRot, 0.25, lockBlend);
+          ryRot = THREE.MathUtils.lerp(ryRot, 0.3, lockBlend);
+          rzRot = THREE.MathUtils.lerp(rzRot, Math.PI * 0.5, lockBlend);
+          s = THREE.MathUtils.lerp(s, 1.25, lockBlend);
+        }
+
+        dummy.position.set(px, py, pz);
+        dummy.rotation.set(rxRot, ryRot, rzRot);
         dummy.scale.setScalar(s);
         dummy.updateMatrix();
         mesh.setMatrixAt(idx, dummy.matrix);
 
-        tempColor.copy(item.baseColor).lerp(item.statusColor, statusBlend);
+        tempColor.copy(item.baseColor).lerp(item.statusColor, Math.max(statusBlend, lockBlend));
         mesh.setColorAt(idx, tempColor);
       }
 

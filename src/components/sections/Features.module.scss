@@ -1,0 +1,80 @@
+@use '../../styles/mixins.scss' as *;
+
+.section {
+  position: relative;
+  padding-block: 112px;
+  border-top: 1px solid var(--hairline);
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(9, 12, 18, 0.25) 0%,
+    rgba(9, 12, 18, 0.85) 68%
+  );
+
+  @media (min-width: 960px) {
+    padding-block: 148px;
+  }
+}
+
+.container {
+  @include container;
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+}
+
+.header {
+  max-width: 60ch;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sectionCode {
+  @include mono-label;
+  color: var(--chrome);
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 4.8vw, 4rem);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: var(--text);
+
+  em {
+    font-style: italic;
+    color: var(--chrome);
+  }
+}
+
+.sub {
+  color: var(--muted);
+}
+
+.layers {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+
+  @media (min-width: 960px) {
+    grid-template-columns: minmax(0, 1fr) 260px minmax(0, 1fr);
+    align-items: start;
+    gap: 28px;
+  }
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.centerSpacer {
+  display: none;
+
+  @media (min-width: 960px) {
+    display: block;
+    min-height: 440px;
+  }
+}

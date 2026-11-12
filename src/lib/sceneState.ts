@@ -15,6 +15,7 @@ export interface SceneTargets {
   ringScale: number;
   haloIntensity: number;
   tilesLift: number; // 0 = orbiting gently, 1 = lifted out into feature layers
+  lockedPills: number; // 0..4 pills locked around phone during HowItWorks
   glitchPulse: number; // 0..1 brief <300ms transition pulse
   sceneOpacity: number;
 }
@@ -34,6 +35,7 @@ export const defaultSceneTargets: SceneTargets = {
   ringScale: 1,
   haloIntensity: 1,
   tilesLift: 0,
+  lockedPills: 0,
   glitchPulse: 0,
   sceneOpacity: 1,
 };
