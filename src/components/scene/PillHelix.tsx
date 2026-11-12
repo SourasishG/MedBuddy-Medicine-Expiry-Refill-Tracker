@@ -88,19 +88,21 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
 
   const capsuleGeometry = useMemo(() => new THREE.CapsuleGeometry(0.068, 0.16, 8, 16), []);
 
-  const chromeMaterial = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        vertexShader: chromeVertexShader,
-        fragmentShader: chromeFragmentShader,
-        uniforms: {
-          uTime: { value: 0 },
-          uKeyDir: { value: new THREE.Vector3(-4, 4, 5) },
-          uRimDir: { value: new THREE.Vector3(5, 1.5, -2) },
-        },
-      }),
-    [],
-  );
+  const chromeUniformsRef = useRef({
+    uTime: { value: 0 },
+    uKeyDir: { value: new THREE.Vector3(-4, 4, 5) },
+    uRimDir: { value: new THREE.Vector3(5, 1.5, -2) },
+  });
+
+  const chromeMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+  if (!chromeMaterialRef.current) {
+    chromeMaterialRef.current = new THREE.ShaderMaterial({
+      vertexShader: chromeVertexShader,
+      fragmentShader: chromeFragmentShader,
+      uniforms: chromeUniformsRef.current,
+    });
+  }
+  const chromeMaterial = chromeMaterialRef.current;
 
   const glassMaterial = useMemo(() => {
     if (tier === 'high') {
@@ -153,7 +155,7 @@ export function PillHelix({ tier, isMobile, capsuleCountOverride }: PillHelixPro
 
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
-    chromeMaterial.uniforms.uTime!.value = t;
+    chromeUniformsRef.current.uTime.value = t;
 
     const group = groupRef.current;
     if (group) {

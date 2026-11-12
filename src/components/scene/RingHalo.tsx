@@ -12,19 +12,34 @@ export function RingHalo({ isMobile = false }: { isMobile?: boolean }) {
   const haloGlowRef = useRef<THREE.Mesh>(null);
   const { size } = useThree();
 
+  const grainUniformsRef = useRef({
+    uTime: { value: 0 },
+    uResolution: { value: new THREE.Vector2(1440, 900) },
+    uBaseColor: { value: new THREE.Color('#090C12') },
+    uHaloColor: { value: new THREE.Color('#1F4BFF') },
+    uIntensity: { value: 1.0 },
+  });
+
+  const haloUniformsRef = useRef({
+    uOpacity: { value: 0.9 },
+    uColor: { value: new THREE.Color('#1F4BFF') },
+  });
+
+  const glitchUniformsRef = useRef({
+    uTime: { value: 0 },
+    uPulse: { value: 0 },
+    uAccentColor: { value: new THREE.Color('#FF4D6A') },
+  });
+
+  const ringMatRef = useRef<THREE.MeshBasicMaterial>(null);
+
   const grainMaterial = useMemo(
     () =>
       new THREE.ShaderMaterial({
         vertexShader: grainVertexShader,
         fragmentShader: grainFragmentShader,
         depthWrite: false,
-        uniforms: {
-          uTime: { value: 0 },
-          uResolution: { value: new THREE.Vector2(1440, 900) },
-          uBaseColor: { value: new THREE.Color('#090C12') },
-          uHaloColor: { value: new THREE.Color('#1F4BFF') },
-          uIntensity: { value: 1.0 },
-        },
+        uniforms: grainUniformsRef.current,
       }),
     [],
   );
@@ -54,10 +69,7 @@ export function RingHalo({ isMobile = false }: { isMobile?: boolean }) {
         transparent: true,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
-        uniforms: {
-          uOpacity: { value: 0.9 },
-          uColor: { value: new THREE.Color('#1F4BFF') },
-        },
+        uniforms: haloUniformsRef.current,
       }),
     [],
   );
@@ -70,52 +82,40 @@ export function RingHalo({ isMobile = false }: { isMobile?: boolean }) {
         transparent: true,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
-        uniforms: {
-          uTime: { value: 0 },
-          uPulse: { value: 0 },
-          uAccentColor: { value: new THREE.Color('#FF4D6A') },
-        },
+        uniforms: glitchUniformsRef.current,
       }),
     [],
   );
 
-  const ringMaterial = useMemo(
-    () =>
-      new THREE.MeshBasicMaterial({
-        color: new THREE.Color(2.15, 2.3, 2.55),
-        toneMapped: false,
-        transparent: true,
-        opacity: 0.92,
-      }),
-    [],
-  );
+  const ringColor = useMemo(() => new THREE.Color(2.15, 2.3, 2.55), []);
 
   useEffect(() => {
     return () => {
       grainMaterial.dispose();
       haloDiscMaterial.dispose();
       glitchMaterial.dispose();
-      ringMaterial.dispose();
     };
-  }, [grainMaterial, haloDiscMaterial, glitchMaterial, ringMaterial]);
+  }, [grainMaterial, haloDiscMaterial, glitchMaterial]);
 
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
-    grainMaterial.uniforms.uTime!.value = t;
-    grainMaterial.uniforms.uResolution!.value.set(size.width, size.height);
-    grainMaterial.uniforms.uIntensity!.value = sceneTargets.haloIntensity;
+    grainUniformsRef.current.uTime.value = t;
+    grainUniformsRef.current.uResolution.value.set(size.width, size.height);
+    grainUniformsRef.current.uIntensity.value = sceneTargets.haloIntensity;
 
-    haloDiscMaterial.uniforms.uOpacity!.value = 0.85 * sceneTargets.haloIntensity;
+    haloUniformsRef.current.uOpacity.value = 0.85 * sceneTargets.haloIntensity;
 
-    glitchMaterial.uniforms.uTime!.value = t;
-    glitchMaterial.uniforms.uPulse!.value = sceneTargets.glitchPulse;
+    glitchUniformsRef.current.uTime.value = t;
+    glitchUniformsRef.current.uPulse.value = sceneTargets.glitchPulse;
 
-    ringMaterial.opacity = THREE.MathUtils.damp(
-      ringMaterial.opacity,
-      sceneTargets.ringOpacity,
-      5,
-      delta,
-    );
+    if (ringMatRef.current) {
+      ringMatRef.current.opacity = THREE.MathUtils.damp(
+        ringMatRef.current.opacity,
+        sceneTargets.ringOpacity,
+        5,
+        delta,
+      );
+    }
 
     const torus = torusRef.current;
     if (torus) {
@@ -148,8 +148,15 @@ export function RingHalo({ isMobile = false }: { isMobile?: boolean }) {
       </mesh>
 
       {/* Glowing thin white torus halo */}
-      <mesh ref={torusRef} position={[0, 0.08, -0.95]} material={ringMaterial}>
+      <mesh ref={torusRef} position={[0, 0.08, -0.95]}>
         <torusGeometry args={[2.06, 0.018, 20, 140]} />
+        <meshBasicMaterial
+          ref={ringMatRef}
+          color={ringColor}
+          toneMapped={false}
+          transparent
+          opacity={0.92}
+        />
       </mesh>
 
       {/* Short <300ms scan-line glitch overlay plane (inactive when uPulse == 0) */}
