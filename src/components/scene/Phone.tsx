@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Html, RoundedBox } from '@react-three/drei';
+import { RoundedBox } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import {
@@ -11,7 +11,10 @@ import {
   type PhoneScreenId,
 } from '@/lib/sceneState';
 import { PhoneScreen } from './PhoneScreen';
+import { SafeHtmlTransform } from './SafeHtmlTransform';
 import { createBakedScreenTexture } from './bakedPhoneTexture';
+
+const SCREEN_CONTAINER_STYLE = { pointerEvents: 'none' as const };
 
 export interface PhoneProps {
   useBakedScreen?: boolean;
@@ -186,15 +189,9 @@ export function Phone({ useBakedScreen = false, isMobile = false }: PhoneProps) 
         <mesh position={[0, 0, 0.088]}>
           <planeGeometry args={[1.31, 2.74]} />
           <meshBasicMaterial color="#090C12" />
-          <Html
-            transform
-            occlude="blending"
-            position={[0, 0, 0.004]}
-            scale={0.197}
-            style={{ pointerEvents: 'none' }}
-          >
+          <SafeHtmlTransform position={[0, 0, 0.004]} scale={0.197} style={SCREEN_CONTAINER_STYLE}>
             <PhoneScreen screen={activeScreen} />
-          </Html>
+          </SafeHtmlTransform>
         </mesh>
       )}
     </group>
