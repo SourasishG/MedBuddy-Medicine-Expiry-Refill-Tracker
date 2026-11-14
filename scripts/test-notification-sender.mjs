@@ -48,17 +48,33 @@ async function main() {
       email_confirm: true,
       user_metadata: { full_name: 'B2 Test User' },
     });
-    if (authError) throw authError;
+    if (authError) {
+      console.error('authError:', authError);
+      throw authError;
+    }
     testUserId = authData.user.id;
+    console.log('Created user id:', testUserId);
+
+    // Give a brief tick for the asynchronous trigger in hosted environment
+    await new Promise((r) => setTimeout(r, 500));
 
     // Ensure profile row exists (created via on_auth_user_created trigger)
-    const { data: profile } = await supabase.from('profiles').select('id').eq('id', testUserId).single();
+    const { data: profile, error: profError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', testUserId)
+      .single();
+
+    if (profError) {
+      console.error('profError:', profError);
+    }
+    console.log('Profile query result:', profile);
     assert(profile, 'Profile must exist');
 
     // Create care profile
     const { data: cpData, error: cpError } = await supabase
       .from('care_profiles')
-      .insert({ name: 'B2 Test Care Profile' })
+      .insert({ name: 'B2 Test Care Profile', created_by: testUserId })
       .select('id')
       .single();
     if (cpError) throw cpError;
@@ -168,7 +184,8 @@ async function main() {
     if (subSuccessErr) throw subSuccessErr;
 
     // Pick one claimed notification to mark sent
-    const targetNotifId = Array.from(worker1Ids)[0];
+    const allClaimed = [...worker1Ids, ...worker2Ids];
+    const targetNotifId = allClaimed[0];
 
     // Mock sender success action: fn_finish_notification(id, true) and update subscription
     await supabase.rpc('fn_finish_notification', { p_id: targetNotifId, p_ok: true });
@@ -251,7 +268,7 @@ async function main() {
     if (subTransErr) throw subTransErr;
 
     // Pick an un-finished claimed notification
-    const transientNotifId = Array.from(worker1Ids)[1];
+    const transientNotifId = allClaimed[1];
 
     // Simulate transient failure handling in send-notifications:
     // "Other errors: increase failure_count and leave the notification to retry"
