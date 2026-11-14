@@ -102,3 +102,12 @@ revoke all on function fn_cleanup_old_notifications() from public, anon, authent
 grant execute on function fn_claim_notifications(int) to service_role;
 grant execute on function fn_finish_notification(uuid, boolean, text) to service_role;
 grant execute on function fn_cleanup_old_notifications() to service_role;
+
+-- Ensure service_role (backend worker, Edge Functions, schedulers) maintains access to public schema
+grant all on all tables in schema public to service_role;
+grant all on all sequences in schema public to service_role;
+grant all on all routines in schema public to service_role;
+
+alter default privileges in schema public grant all on tables to service_role;
+alter default privileges in schema public grant all on sequences to service_role;
+alter default privileges in schema public grant all on routines to service_role;
