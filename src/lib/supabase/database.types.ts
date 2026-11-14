@@ -1,4 +1,3 @@
-﻿
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
@@ -475,9 +474,6 @@ isOneToOne: false
           Functions: {
             "_deduct_stock":
 { Args: { "p_amount": number,"p_event": string,"p_medicine": string }; Returns: number
-                           },
-"assert":
-{ Args: { "c": boolean,"msg": string }; Returns: undefined
                            },
 "can_edit":
 { Args: { "cp": string }; Returns: boolean
