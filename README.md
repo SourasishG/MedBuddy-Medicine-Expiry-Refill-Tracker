@@ -133,6 +133,82 @@ All copy lives directly inside each section component under `src/components/sect
 
 ---
 
+## Backend Development & Operations (Supabase)
+
+MedBuddy uses a Supabase backend with Row Level Security (RLS), atomic `SECURITY DEFINER` RPC functions, `pg_cron` scheduling, and an Edge Function notification dispatcher.
+
+### 1. Environment Configuration
+
+Copy `.env.example` to `.env.local` and populate your project credentials:
+```bash
+cp .env.example .env.local
+```
+See [.env.example](.env.example) and [docs/SETUP_CHECKLIST.md](docs/SETUP_CHECKLIST.md) for full variable explanations.
+
+### 2. Database Migrations & Reset
+
+- Apply migrations to remote Supabase project:
+  ```bash
+  npx supabase db push
+  ```
+- Reset database locally or on remote dev instance:
+  ```bash
+  npm run db:reset
+  ```
+
+### 3. Running Database Scenario Tests
+
+Runs the full 11-step PostgreSQL test suite (`supabase/tests/schema_scenario.sql`) validating profiles, FEFO stock deduction, RLS boundaries, caregiver invites, snoozing, and GDPR deletion:
+```bash
+npm run db:test
+```
+Requires `psql` and database credentials in `.env.local`. Must output `ALL TESTS PASSED`.
+
+### 4. Running Real-Stack Security Smoke Tests
+
+Executes end-to-end security verification creating real authenticated users and testing RLS isolation:
+```bash
+node scripts/smoke-test.mjs
+```
+Requires `ALLOW_TEST_USERS=true` in `.env.local`.
+
+### 5. Regenerating TypeScript Types
+
+Updates database type definitions in `src/lib/supabase/database.types.ts`:
+```bash
+npm run db:types
+```
+
+### 6. Deploying the Notification Sender Edge Function
+
+Deploy the Deno Edge Function without JWT verification (secured via `x-cron-secret` and Supabase Vault):
+```bash
+npx supabase functions deploy send-notifications --no-verify-jwt
+```
+Set secrets via Supabase CLI:
+```bash
+npx supabase secrets set CRON_SECRET=... VAPID_PRIVATE_KEY=... VAPID_PUBLIC_KEY=... VAPID_SUBJECT=...
+```
+
+### 7. Typed Client Usage in Application Code
+
+- **Browser (Client Components):**
+  ```typescript
+  import { createClient } from '@/lib/supabase/client';
+  const supabase = createClient();
+  const { data } = await supabase.from('medicines').select('*');
+  ```
+- **Server (Server Components, Server Actions, Route Handlers):**
+  ```typescript
+  import { createClient } from '@/lib/supabase/server';
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  ```
+
+For the complete API, RPC endpoints, and permission reference, see [docs/API.md](docs/API.md).
+
+---
+
 ## Content & Safety Reminders
 
 - Review [src/app/privacy/page.tsx](src/app/privacy/page.tsx) and update server log retention if upgrading your Vercel plan or adding any third-party analytics later.

@@ -112,3 +112,57 @@
    - Added focus management and focus restoration on open/close in `InstallModal` and Escape focus return in `Nav`.
    - Fixed `QRCodeSVG` SVG accessible title (`svg-img-alt`) and `MotionToggle` spacing/label conformance (`label-content-name-mismatch`), bringing both Mobile and Desktop Lighthouse Accessibility scores to **100**.
    - Added full `openGraph`, `twitter`, `robots`, canonical `metadataBase`, dynamic `src/app/opengraph-image.tsx`, `src/app/robots.ts`, `src/app/sitemap.ts`, and `README.md`.
+
+
+## Backend Architecture & Build Phases (Supabase)
+
+### Phase B0: Environment & Cloud Project Setup
+1. **Cloud Project Configuration:**
+   - Hosted on Supabase Cloud in Mumbai (`ap-south-1`) for Indian latency and data residency standards.
+   - Comprehensive checklist prepared in `docs/SETUP_CHECKLIST.md` detailing Google OAuth, passwordless 6-digit email OTP, Web Push VAPID key pairs, and Supabase Vault secrets.
+
+### Phase B1: Schema Application & Portability
+1. **Portable PostgreSQL Tooling:**
+   - On Windows development environments lacking native PostgreSQL installations, standalone portable PostgreSQL 16.6 binaries were placed in `C:\Users\Sourasish\pgsql\bin` and registered in the user PATH.
+2. **Idempotent Test Execution (`scripts/db-test.mjs`):**
+   - Supabase schema scenario tests (`supabase/tests/schema_scenario.sql`) require repeated runs. Added pre- and post-test cleanup in `scripts/db-test.mjs` that drops test care profiles and helper functions (`assert`), allowing idempotent runs that pass with `ALL TESTS PASSED`.
+3. **Strict Typed Interfaces:**
+   - Generated `src/lib/supabase/database.types.ts` (791 lines) directly from the live remote PostgreSQL schema via `supabase gen types typescript`.
+
+### Phase B2: Notification Sender & Service Role Privileges
+1. **Service Role Explicit Grants in Migration 2 (`20261114000001_notification_sender.sql`):**
+   - *PostgreSQL Nuance:* In PostgreSQL, `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM public` revokes privileges from all non-owner roles, including Supabase's `service_role`.
+   - *Resolution:* Migration 2 explicitly granted table, sequence, and routine privileges to `service_role` while leaving `anon` and `authenticated` locked down. This restored backend worker privileges without weakening the client security boundary.
+2. **Atomic Queue Claim with Visibility Timeout:**
+   - `fn_claim_notifications(p_limit int)` claims up to 50 pending notifications using `FOR UPDATE SKIP LOCKED`, advancing `send_after` by 2 minutes as a visibility timeout to prevent duplicate dispatch during concurrent or crashed runs.
+3. **Deno vs Next.js TypeScript Boundaries:**
+   - Edge Functions in `supabase/functions/` run on Deno with URL imports. Excluded `supabase/functions` from root `tsconfig.json` and ESLint flat config, configuring `supabase/functions/deno.json` for independent type checking and deployment.
+
+### Phase B3: Scheduler (pg_cron & pg_net)
+1. **Dynamic Vault Secret Lookup:**
+   - In Migration 3 (`20261114000002_scheduler.sql`), the `medbuddy-send` job reads `CRON_SECRET` dynamically from `vault.decrypted_secrets` using a subquery:
+     ```sql
+     (select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret')
+     ```
+     This completely eliminates hardcoded credentials from SQL files and migration history.
+2. **Edge Function Invocation & Constant-Time Verification:**
+   - Deployed `send-notifications` with `--no-verify-jwt`. Requests are authenticated via `x-cron-secret` header verified using constant-time string comparison (`crypto.subtle.timingSafeEqual`) to prevent timing attacks.
+3. **End-to-End Delivery:**
+   - Verified automated execution of 5 cron jobs (`medbuddy-enqueue-due`, `medbuddy-send`, `medbuddy-generate-doses`, `medbuddy-expiry`, `medbuddy-cleanup`), achieving full dispatch in under 25 seconds.
+
+### Phase B4: Security Verification & Audit
+1. **Isolated Real-Stack Client Testing (`scripts/smoke-test.mjs`):**
+   - Configured separate client instances for `anonClient` (never authenticated), `clientA`, and `clientB` to ensure sessions do not bleed across client objects in memory.
+   - Enforced `ALLOW_TEST_USERS=true` guard to protect production data.
+2. **Audit & Advisor Findings (`docs/BACKEND_SECURITY_CHECK.md`):**
+   - Documented and approved `care_members` `SECURITY DEFINER` view (safe membership directory without exposing entire `profiles` table).
+   - Documented and justified client-callable `SECURITY DEFINER` RPC functions (`fn_log_dose`, `fn_create_care_profile`, etc.) as the core security model preventing direct table manipulation.
+
+### Phase B5: Handover & Typed SSR Client Helpers
+1. **Next.js 16 SSR & Async Cookie Storage:**
+   - In Next.js 16 App Router, `cookies()` is an asynchronous function returning a Promise.
+   - `src/lib/supabase/server.ts` uses `await cookies()` with safe `try/catch` cookie writing to permit read operations in Server Components while enabling seamless session refresh in Server Actions and Route Handlers.
+2. **Browser Client Helper:**
+   - `src/lib/supabase/client.ts` wraps `createBrowserClient<Database>` for type-safe client-side queries.
+3. **Comprehensive API Reference:**
+   - Authored `docs/API.md` providing exact specifications, schemas, error codes, and TypeScript examples for every RPC function and table.
