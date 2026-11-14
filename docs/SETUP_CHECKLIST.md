@@ -196,6 +196,22 @@ All scheduler checks passed cleanly.
 
 ---
 
+### 3.7 Verify Scheduler & Vault Health
+
+Verify that the scheduler and Vault secrets are properly configured without exposing secrets:
+
+```bash
+npm run health
+```
+
+Must return:
+```text
+Scheduler Health Verdict: OK
+All scheduler checks passed cleanly.
+```
+
+---
+
 ## 4. Phase F0 Action Checklist
 
 Please perform the following actions:
