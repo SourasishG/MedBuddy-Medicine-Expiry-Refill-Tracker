@@ -310,14 +310,14 @@ isOneToOne: false
                   ]
                 },"push_subscriptions": {
                   Row: {
-                    "auth_key": string,"created_at": string,"endpoint": string,"failure_count": number,"id": string,"last_success_at": string | null,"p256dh": string,"platform": string | null,"user_agent": string | null,"user_id": string
+                    "auth_key": string,"created_at": string,"endpoint": string,"failure_count": number,"first_failure_at": string | null,"id": string,"last_failure_at": string | null,"last_success_at": string | null,"p256dh": string,"platform": string | null,"user_agent": string | null,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "auth_key": string,"created_at"?: string,"endpoint": string,"failure_count"?: number,"id"?: string,"last_success_at"?: string | null,"p256dh": string,"platform"?: string | null,"user_agent"?: string | null,"user_id"?: string
+                    "auth_key": string,"created_at"?: string,"endpoint": string,"failure_count"?: number,"first_failure_at"?: string | null,"id"?: string,"last_failure_at"?: string | null,"last_success_at"?: string | null,"p256dh": string,"platform"?: string | null,"user_agent"?: string | null,"user_id"?: string
                   }
                   Update: {
-                    "auth_key"?: string,"created_at"?: string,"endpoint"?: string,"failure_count"?: number,"id"?: string,"last_success_at"?: string | null,"p256dh"?: string,"platform"?: string | null,"user_agent"?: string | null,"user_id"?: string
+                    "auth_key"?: string,"created_at"?: string,"endpoint"?: string,"failure_count"?: number,"first_failure_at"?: string | null,"id"?: string,"last_failure_at"?: string | null,"last_success_at"?: string | null,"p256dh"?: string,"platform"?: string | null,"user_agent"?: string | null,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -429,6 +429,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     },{
       foreignKeyName: "care_access_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"eligible_push_subscriptions": {
+                  Row: {
+                    "auth_key": string,"created_at": string,"endpoint": string,"failure_count": number,"first_failure_at": string | null,"id": string,"last_failure_at": string | null,"last_success_at": string | null,"p256dh": string,"platform": string | null,"user_agent": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                           "auth_key"?: string | null,"created_at"?: string | null,"endpoint"?: string | null,"failure_count"?: number | null,"first_failure_at"?: string | null,"id"?: string | null,"last_failure_at"?: string | null,"last_success_at"?: string | null,"p256dh"?: string | null,"platform"?: string | null,"user_agent"?: string | null,"user_id"?: string | null
+                         }
+                        Update: {
+                           "auth_key"?: string | null,"created_at"?: string | null,"endpoint"?: string | null,"failure_count"?: number | null,"first_failure_at"?: string | null,"id"?: string | null,"last_failure_at"?: string | null,"last_success_at"?: string | null,"p256dh"?: string | null,"platform"?: string | null,"user_agent"?: string | null,"user_id"?: string | null
+                         }
+                        Relationships: [
+                    {
+      foreignKeyName: "push_subscriptions_user_id_fkey"
       columns: ["user_id"]
 isOneToOne: false
       referencedRelation: "profiles"
@@ -593,6 +613,12 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"fn_record_push_failure":
+{ Args: { "p_id": string }; Returns: boolean
+                           },
+"fn_record_push_success":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
 "fn_remove_access":
 { Args: { "p_care_profile": string,"p_user": string }; Returns: undefined
                            },
@@ -601,6 +627,9 @@ isOneToOne: false
                            },
 "fn_revoke_invite":
 { Args: { "p_invite": string }; Returns: undefined
+                           },
+"fn_scheduler_health":
+{ Args: Record<PropertyKey, never>; Returns: Json
                            },
 "fn_set_my_notifications":
 { Args: { "p_care_profile": string,"p_due": boolean,"p_expiry": boolean,"p_missed": boolean }; Returns: undefined
@@ -634,6 +663,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"fn_trigger_notification_sender":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "fn_undo_dose":
 { Args: { "p_event": string }; Returns: {
               "amount": number,

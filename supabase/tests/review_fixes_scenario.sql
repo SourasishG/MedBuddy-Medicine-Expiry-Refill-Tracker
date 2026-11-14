@@ -10,11 +10,6 @@
 
 \set ON_ERROR_STOP on
 
-do $$
-begin
-  raise notice '== Phase F1 Tests: Starting Verification ==';
-end $$;
-
 -- Helper assertion routine
 create or replace function test_assert(condition boolean, message text) returns void as $$
 begin
@@ -27,6 +22,7 @@ $$ language plpgsql;
 -- ---------------------------------------------------------------------
 -- T1: Setup Test User & Push Subscriptions
 -- ---------------------------------------------------------------------
+\echo == F1.1: Push subscription failure tracking, cool-down, and recovery
 do $$
 declare
   v_uid uuid := '00000000-0000-0000-0000-0000000000f1';
@@ -35,8 +31,6 @@ declare
   v_sub record;
   v_res boolean;
 begin
-  raise notice '== T1: Push subscription failure tracking, cool-down, and recovery ==';
-
   -- Create test user in auth.users (trigger creates profile)
   insert into auth.users (id, email, raw_user_meta_data)
   values (v_uid, 'f1@medbuddy.test', '{"full_name": "F1 Test User"}')
@@ -72,7 +66,6 @@ begin
 
   select exists(select 1 from eligible_push_subscriptions where id = v_sub_id) into v_is_eligible;
   perform test_assert(v_is_eligible, 'Subscription with 5 failures after 65m cool-down MUST be eligible');
-  raise notice '  ✓ Cool-down rule verified (eligible after 1 hour)';
 
   -- 4. Success resets failure counters and timestamps
   perform fn_record_push_success(v_sub_id);
@@ -81,7 +74,6 @@ begin
   perform test_assert(v_sub.first_failure_at is null, 'first_failure_at must be cleared to null');
   perform test_assert(v_sub.last_failure_at is null, 'last_failure_at must be cleared to null');
   perform test_assert(v_sub.last_success_at is not null, 'last_success_at must be updated');
-  raise notice '  ✓ Success reset verified (counters and failure timestamps cleared)';
 
   -- 5. Stale subscription failing for > 7 days is deleted on failure
   update push_subscriptions
@@ -93,19 +85,16 @@ begin
   v_res := fn_record_push_failure(v_sub_id);
   perform test_assert(not v_res, 'fn_record_push_failure must return false when deleting');
   perform test_assert(not exists(select 1 from push_subscriptions where id = v_sub_id), 'Subscription failing > 7 days must be deleted');
-  raise notice '  ✓ 7-day failure cutoff deletion verified';
 
   -- Clean up test profile and user
   delete from auth.users where id = v_uid;
 end $$;
+\echo (cool-down rule, success reset, 7-day failure deletion: ok)
 
 -- ---------------------------------------------------------------------
 -- T2: Permission Lockdown on New Functions & View
 -- ---------------------------------------------------------------------
-do $$
-begin
-  raise notice '== T2: Permission lockdown for anon and authenticated ==';
-end $$;
+\echo == F1.2: Permission lockdown for anon and authenticated
 
 -- Set role to anon
 set role anon;
@@ -143,29 +132,23 @@ exception when sqlstate '42501' then null; end $$;
 
 -- Reset role back to postgres
 reset role;
-
-do $$
-begin
-  raise notice '  ✓ Anon and authenticated role execution strictly refused';
-end $$;
+\echo (anon and authenticated execution refused: ok)
 
 -- ---------------------------------------------------------------------
 -- T3: fn_scheduler_health() Verification (With & Without Secrets)
 -- ---------------------------------------------------------------------
+\echo == F1.3: fn_scheduler_health() verification
 do $$
 declare
   v_health jsonb;
   v_sec_id uuid;
 begin
-  raise notice '== T3: fn_scheduler_health() verification ==';
-
   -- 1. With both secrets present
   v_health := fn_scheduler_health();
   perform test_assert((v_health->'vault'->>'has_cron_secret')::boolean = true, 'cron_secret must be detected');
   perform test_assert((v_health->'vault'->>'has_project_url')::boolean = true, 'project_url must be detected');
   perform test_assert(jsonb_array_length(v_health->'jobs') >= 5, 'Must report at least 5 cron jobs');
   perform test_assert((v_health->'notifications'->>'pending_lagging_over_5m') is not null, 'Must report pending lag');
-  raise notice '  ✓ fn_scheduler_health reports healthy when both secrets present';
 
   -- 2. With project_url temporarily renamed
   select id into v_sec_id from vault.decrypted_secrets where name = 'project_url';
@@ -179,17 +162,12 @@ begin
 
   v_health := fn_scheduler_health();
   perform test_assert((v_health->'vault'->>'has_project_url')::boolean = true, 'project_url must report true after restore');
-  raise notice '  ✓ fn_scheduler_health correctly detects missing secret';
 end $$;
+\echo (fn_scheduler_health output with and without secrets: ok)
 
 -- ---------------------------------------------------------------------
 -- Cleanup
 -- ---------------------------------------------------------------------
 drop function if exists test_assert(boolean, text);
 
-do $$
-begin
-  raise notice '=======================================================';
-  raise notice 'ALL REVIEW FIXES TESTS PASSED';
-  raise notice '=======================================================';
-end $$;
+\echo ALL REVIEW FIXES TESTS PASSED
