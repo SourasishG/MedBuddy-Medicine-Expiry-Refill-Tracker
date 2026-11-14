@@ -178,7 +178,36 @@ node scripts/smoke-test.mjs
 
 Requires `ALLOW_TEST_USERS=true` in `.env.local`.
 
-### 5. Regenerating TypeScript Types
+### 5. Checking Scheduler & Vault Health
+
+Validates background scheduling status and Supabase Vault secrets without exposing sensitive credentials:
+
+```bash
+npm run health
+```
+
+Calls `fn_scheduler_health()` using the `service_role` key and outputs a plain-language health verdict.
+
+### 6. Testing Notification Sender Edge Function
+
+Executes isolated scenario tests for the notification dispatcher across 6 error and success cases (cool-down, 410 removal, 403 ignore, concurrency limits, idempotent dispatch):
+
+```bash
+node scripts/test-notification-sender.mjs
+```
+
+### 7. Security & Privacy Audit Scripts
+
+- Verify service worker static-only caching and zero private data rules:
+  ```bash
+  node scripts/check-sw.mjs
+  ```
+- Guard against accidental references to `SUPABASE_SERVICE_ROLE_KEY` in frontend source code and client bundles:
+  ```bash
+  node scripts/check-no-service-key.mjs
+  ```
+
+### 8. Regenerating TypeScript Types
 
 Updates database type definitions in `src/lib/supabase/database.types.ts`:
 
@@ -186,7 +215,7 @@ Updates database type definitions in `src/lib/supabase/database.types.ts`:
 npm run db:types
 ```
 
-### 6. Deploying the Notification Sender Edge Function
+### 9. Deploying the Notification Sender Edge Function
 
 Deploy the Deno Edge Function without JWT verification (secured via `x-cron-secret` and Supabase Vault):
 
@@ -200,7 +229,7 @@ Set secrets via Supabase CLI:
 npx supabase secrets set CRON_SECRET=... VAPID_PRIVATE_KEY=... VAPID_PUBLIC_KEY=... VAPID_SUBJECT=...
 ```
 
-### 7. Typed Client Usage in Application Code
+### 10. Typed Client Usage in Application Code
 
 - **Browser (Client Components):**
   ```typescript

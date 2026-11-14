@@ -128,8 +128,16 @@ Notification log generated for users.
 
 Stores Web Push endpoints registered by the user's browser.
 
-- **Columns:** `id (uuid)`, `user_id (uuid)`, `endpoint (text)`, `keys_p256dh (text)`, `keys_auth (text)`, `created_at (timestamptz)`, `last_success_at (timestamptz)`, `failure_count (int)`
+- **Columns:** `id (uuid)`, `user_id (uuid)`, `endpoint (text)`, `p256dh (text)`, `auth_key (text)`, `created_at (timestamptz)`, `last_success_at (timestamptz)`, `failure_count (int)`, `first_failure_at (timestamptz)`, `last_failure_at (timestamptz)`
 - **Read / Insert / Delete:** Permitted where `user_id = auth.uid()`.
+
+### `eligible_push_subscriptions` (View)
+
+Internal view used by the notification sender to select active, non-degraded subscriptions.
+
+- **Rule:** Includes subscriptions where `failure_count < 5` OR `last_failure_at < now() - interval '1 hour'` (cool-down window).
+- **Cleanup cut-off:** Subscriptions failing continuously for > 7 days (`first_failure_at < now() - interval '7 days'`) are automatically pruned.
+- **Access:** `service_role` only. Direct client access is revoked.
 
 ### `consents`
 
@@ -470,7 +478,50 @@ These functions are available as SQL functions and PostgREST RPC endpoints to te
 
 ---
 
-## 5. Standard Error Codes Reference
+## 5. Worker & Administrative Functions (`service_role` Only)
+
+These functions are strictly restricted to backend background workers and the `service_role`. Direct execution by `anon` or `authenticated` roles is revoked (`42501 Not allowed`).
+
+### `fn_scheduler_health`
+
+Evaluates the health and status of background scheduling and Vault configurations.
+
+- **Arguments:** None (`{}`)
+- **Returns:** `jsonb` containing:
+  - `secrets`: Boolean presence indicators (`has_cron_secret`, `has_project_url`). Secret values are NEVER returned.
+  - `jobs`: Last status, start time, and error messages for each `medbuddy-*` cron job.
+  - `pending_overdue_count`: Number of pending notifications older than 5 minutes past their `send_after` time.
+  - `recent_failed_count`: Number of notifications marked `failed` in the last 24 hours.
+  - `last_success_at`: Timestamp of the most recent successful notification delivery.
+- **CLI Helper:** `npm run health` (`scripts/health.mjs`).
+
+### `fn_record_push_failure`
+
+Records a dispatch failure against a push subscription.
+
+- **Arguments:** `p_id (uuid)`: ID of the failed `push_subscriptions` record.
+- **Behavior:** Increments `failure_count`, sets `last_failure_at = now()`, and initializes `first_failure_at` if null.
+
+### `fn_record_push_success`
+
+Records a successful push dispatch.
+
+- **Arguments:** `p_id (uuid)`: ID of the successful `push_subscriptions` record.
+- **Behavior:** Resets `failure_count = 0`, clears `first_failure_at` and `last_failure_at` to null, and updates `last_success_at = now()`.
+
+### `fn_trigger_notification_sender`
+
+Dispatches pending notifications to the Edge Function via `pg_net`.
+
+- **Behavior:** Reads `project_url` and `cron_secret` dynamically from `vault.decrypted_secrets`. If either secret is absent, raises an explicit PostgreSQL exception to ensure failure visibility in `cron.job_run_details`.
+
+### `fn_cleanup_old_notifications`
+
+Purges delivered or failed notifications older than 30 days and prunes push subscriptions failing continuously for > 7 days.
+
+---
+
+## 6. Standard Error Codes Reference
 
 | Error Code | PostgreSQL State | Description                                                       | Recommended Client Action                                           |
 | ---------- | ---------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------- |

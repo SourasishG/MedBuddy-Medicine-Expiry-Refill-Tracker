@@ -179,13 +179,29 @@ Your MedBuddy verification code: {{ .Token }}
 
 ---
 
+### 3.7 Verify Scheduler & Vault Health
+
+Verify that the scheduler and Vault secrets are properly configured without exposing secrets:
+
+```bash
+npm run health
+```
+
+Must return:
+```text
+Scheduler Health Verdict: OK
+All scheduler checks passed cleanly.
+```
+
+---
+
 ## 4. Phase F0 Action Checklist
 
 Please perform the following actions:
 
-1. [ ] Run the SQL in Section 3.1 to add `project_url` to Supabase Vault:
+1. [x] Run the SQL in Section 3.1 to add `project_url` to Supabase Vault:
    ```sql
    select vault.create_secret('https://fenqdaymgofxozjgcppt.supabase.co', 'project_url');
    ```
-2. [ ] Confirm the Magic Link email template in Section 3.4 shows `{{ .Token }}`.
-3. [ ] Reply with **"done"** so we can proceed to Phase F1 (Database fixes migration).
+2. [x] Confirm the Magic Link email template in Section 3.4 shows `{{ .Token }}`.
+3. [x] All Phase F0 setup items completed and verified.
