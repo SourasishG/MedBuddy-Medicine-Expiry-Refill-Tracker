@@ -13,7 +13,7 @@ function timingSafeEqual(a: string, b: string): boolean {
   if (aBytes.byteLength !== bBytes.byteLength) return false;
   let diff = 0;
   for (let i = 0; i < aBytes.byteLength; i++) {
-    diff |= aBytes[i] ^ bBytes[i];
+    diff |= (aBytes[i] ?? 0) ^ (bBytes[i] ?? 0);
   }
   return diff === 0;
 }
