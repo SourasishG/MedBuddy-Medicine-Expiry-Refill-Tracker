@@ -24,15 +24,15 @@ Routes are separated into mutually exclusive policies configured in [next.config
 2. **App Routes (`/app` and `/app/*`):**
    - Enforces `connect-src 'self' https://<ref>.supabase.co wss://<ref>.supabase.co` (read dynamically from `NEXT_PUBLIC_SUPABASE_URL` without wildcards).
 
-| Header                      | Value & Purpose                                                                                                                                                                                                                                                                          |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Content-Security-Policy`   | Strict per-route policy detailed above (`frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`).                                                                                                                                                                               |
-| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` — enforces HTTPS with HSTS preloading on deployed origins.                                                                                                                                                                                |
-| `X-Frame-Options`           | `DENY` — blocks all cross-origin and same-origin framing (`frame-ancestors 'none'` mirrors this in CSP).                                                                                                                                                                                 |
-| `X-Content-Type-Options`    | `nosniff` — prevents MIME-type sniffing.                                                                                                                                                                                                                                                 |
-| `Referrer-Policy`           | `strict-origin-when-cross-origin` — strips full path/query strings when navigating cross-origin.                                                                                                                                                                                         |
-| `Permissions-Policy`        | `camera=(), microphone=(), geolocation=(), browsing-topics=()` — explicitly disables unused device sensors and Google Topics API.                                                                                                                                                        |
-| `X-Powered-By`              | Disabled (`poweredByHeader: false`).                                                                                                                                                                                                                                                     |
+| Header                      | Value & Purpose                                                                                                                   |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `Content-Security-Policy`   | Strict per-route policy detailed above (`frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`).                        |
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` — enforces HTTPS with HSTS preloading on deployed origins.                         |
+| `X-Frame-Options`           | `DENY` — blocks all cross-origin and same-origin framing (`frame-ancestors 'none'` mirrors this in CSP).                          |
+| `X-Content-Type-Options`    | `nosniff` — prevents MIME-type sniffing.                                                                                          |
+| `Referrer-Policy`           | `strict-origin-when-cross-origin` — strips full path/query strings when navigating cross-origin.                                  |
+| `Permissions-Policy`        | `camera=(), microphone=(), geolocation=(), browsing-topics=()` — explicitly disables unused device sensors and Google Topics API. |
+| `X-Powered-By`              | Disabled (`poweredByHeader: false`).                                                                                              |
 
 ### What Is Allowed vs. Blocked by CSP
 
@@ -64,6 +64,7 @@ Running `npm ls glob`, `npm ls zod`, and `npm ls minimatch` verifies that 100% o
 Downgrading `@serwist/next` via `npm audit fix --force` attempts to install the deprecated `@serwist/next@8.4.4`, which breaks Next.js 16 webpack compatibility and PWA service worker generation. Therefore, `--force` is strictly forbidden.
 
 **Upstream Versions to Watch:**
+
 - Watch for upstream `@serwist/next` releases patching dependencies to `zod >= 4.6.6` and `glob >= 14.0.2`.
 - Update `@serwist/next` once an official patch addressing the `zod` and `glob` advisories is published.
 

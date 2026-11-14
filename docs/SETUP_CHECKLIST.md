@@ -188,6 +188,7 @@ npm run health
 ```
 
 Must return:
+
 ```text
 Scheduler Health Verdict: OK
 All scheduler checks passed cleanly.

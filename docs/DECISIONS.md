@@ -179,10 +179,12 @@
 ## Review Fixes & Hardening (Phases F0 to F4)
 
 ### Phase F0: Vault Secrets & Configuration
+
 - Stored `project_url` and `cron_secret` in Supabase Vault (`vault.create_secret`) to decouple database triggers and pg_cron from static project URLs.
 - Standardized passwordless 6-digit OTP email template and Cloudflare Turnstile bot protection guidance.
 
 ### Phase F1: Database Robustness & Health (`20261114000003_review_fixes.sql`)
+
 1. **Push Subscription Resilience:**
    - Added `first_failure_at` and `last_failure_at` columns to `push_subscriptions`.
    - Created `eligible_push_subscriptions` view implementing the 1-hour cool-down rule (`failure_count < 5 OR last_failure_at < now() - interval '1 hour'`) and automatically pruning subscriptions that fail continuously for > 7 days.
@@ -195,6 +197,7 @@
    - Enforced fixed immutable search paths on `is_valid_tz` and `trg_inventory_init` (`SET search_path = public`).
 
 ### Phase F2: Notification Sender Edge Function Hardening
+
 1. **Upfront VAPID Validation:**
    - Added strict validation returning 500 before claiming notifications if `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, or `VAPID_SUBJECT` is absent. Removed placeholder `admin@example.com` default.
 2. **Subscription Error Classification:**
@@ -206,6 +209,7 @@
    - Dispatches notifications to a user's subscriptions in parallel batches limited to 5 concurrent requests.
 
 ### Phase F3: Website Privacy & Security Boundary
+
 1. **Service Worker Privacy:**
    - Replaced `defaultCache` with explicit same-origin static caching rules (`/_next/static/`, fonts, images, icons).
    - Strictly excluded `Authorization` headers, cross-origin requests, `*.supabase.co`, `/auth/`, `/rest/`, `/functions/`, and `/api/`.
@@ -220,6 +224,7 @@
    - Updated `src/app/privacy/page.tsx` table to detail both device storage keys (motion choice and intro seen) while maintaining zero cookies affirmation.
 
 ### Phase F4: Hygiene & Dependency Assurance
+
 1. **Formatting:**
    - Added `src/lib/supabase/database.types.ts` to `.prettierignore` and formatted all project code cleanly with Prettier.
 2. **Smoke Test Assertions:**
