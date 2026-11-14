@@ -112,7 +112,7 @@ async function main() {
     console.log('VERDICT: OK');
     console.log('All Vault secrets present, jobs running normally, notification pipeline healthy.');
     console.log('=================================================================');
-    process.exit(0);
+    process.exitCode = 0;
   } else {
     console.log('VERDICT: UNHEALTHY / DEGRADED');
     console.log('The following issues were detected:');
@@ -120,11 +120,11 @@ async function main() {
       console.log(`  ❌ ${issue}`);
     }
     console.log('=================================================================');
-    process.exit(1);
+    process.exitCode = 1;
   }
 }
 
 main().catch((err) => {
   console.error('\n❌ Unhandled exception during health check:', err);
-  process.exit(1);
+  process.exitCode = 1;
 });
