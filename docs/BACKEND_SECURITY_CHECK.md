@@ -1,7 +1,7 @@
 # MedBuddy: Backend Security Verification Report
 
 **Date:** 2026-11-14  
-**Target Environment:** Supabase Cloud Production/Dev Instance (`fenqdaymgofxozjgcppt` - Mumbai `ap-south-1`)  
+**Target Environment:** Supabase Cloud Instance (`fenqdaymgofxozjgcppt` - Mumbai `ap-south-1`, single project that will become production)  
 **Database Engine:** PostgreSQL 16.6 via Supabase Platform  
 **Branch:** `feat/backend`  
 **Status:** ALL CHECKS PASSED
@@ -122,11 +122,14 @@ The Supabase Security Advisor evaluated the production database and reported the
 ### 4.2. Role Mutable Search Path (`is_valid_tz`, `trg_inventory_init`)
 
 - **Advisor Finding:** `Function public.trg_inventory_init has a role mutable search_path` and `Function public.is_valid_tz has a role mutable search_path` (Level: WARN).
-- **Architectural Analysis:**
+- **Architectural Analysis & Resolution:**
   - `is_valid_tz` is a `LANGUAGE sql STABLE` helper function verifying timezone existence in `pg_timezone_names`.
   - `trg_inventory_init` is a standard `BEFORE INSERT` trigger copying `quantity_initial` to `quantity_remaining`.
-  - Neither function is `SECURITY DEFINER`. However, best practice in PostgreSQL is to fix `search_path` on all public functions to eliminate any search path spoofing risks. Note that all critical `SECURITY DEFINER` functions in MedBuddy (`fn_create_care_profile`, `fn_log_dose`, `trg_apply_stock_movement`, etc.) already declare `SET search_path = public`.
-- **Recommendation:** Can be optionally updated in a future maintenance migration with `ALTER FUNCTION public.is_valid_tz(text) SET search_path = public;` and `ALTER FUNCTION public.trg_inventory_init() SET search_path = public;`.
+  - Both functions were hardened in migration `20261114000003_review_fixes.sql` using:
+    - `ALTER FUNCTION public.is_valid_tz(text) SET search_path = public;`
+    - `ALTER FUNCTION public.trg_inventory_init() SET search_path = public;`
+  - All public functions and triggers in MedBuddy now declare explicit, immutable search paths (`SET search_path = public`), completely resolving the advisor finding and eliminating search path spoofing risks.
+- **Status:** **RESOLVED** via migration `20261114000003_review_fixes.sql`.
 
 ### 4.3. Extension in Public Schema (`pg_net`)
 
@@ -136,7 +139,7 @@ The Supabase Security Advisor evaluated the production database and reported the
 
 ### 4.4. Authenticated Role Can Execute Security Definer Functions
 
-- **Advisor Finding:** Functions like `can_edit`, `can_view`, `is_owner`, `fn_accept_invite`, `fn_create_care_profile`, `fn_create_invite`, `fn_delete_my_data`, `fn_export_my_data`, `fn_leave_profile`, `fn_log_dose`, `fn_remove_access`, `fn_resync_schedule`, `fn_set_my_notifications`, `fn_set_role`, `fn_snooze_dose`, `fn_undo_dose` are callable by `authenticated` as `SECURITY DEFINER`.
+- **Advisor Finding:** Functions like `can_edit`, `can_view`, `is_owner`, `fn_accept_invite`, `fn_create_care_profile`, `fn_create_invite`, `fn_delete_my_data`, `fn_export_my_data`, `fn_log_dose`, `fn_remove_access`, `fn_resync_schedule`, `fn_set_my_notifications`, `fn_set_role`, `fn_snooze_dose`, `fn_undo_dose` are callable by `authenticated` as `SECURITY DEFINER`.
 - **Architectural Analysis:**
   - This is **the core architectural paradigm** of MedBuddy's security architecture as specified in `docs/MEDBUDDY_DB_DESIGN.md`.
   - Clients are **prohibited** from directly modifying ledger tables (`stock_movements`), dose history (`dose_events`), access tables (`care_access`), or inventory remaining quantities (`inventory_items.quantity_remaining`).
