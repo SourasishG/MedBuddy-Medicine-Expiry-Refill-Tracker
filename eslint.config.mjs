@@ -14,6 +14,7 @@ const eslintConfig = [
       'next-env.d.ts',
       'public/sw.js*',
       'public/swe-worker*',
+      'supabase/functions/**',
     ],
   },
 ];

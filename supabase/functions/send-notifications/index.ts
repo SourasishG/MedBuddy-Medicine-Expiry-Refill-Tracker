@@ -138,8 +138,9 @@ Deno.serve(async (req: Request) => {
             last_success_at: new Date().toISOString(),
           })
           .eq('id', sub.id);
-      } catch (err: any) {
-        const statusCode = err?.statusCode;
+      } catch (err: unknown) {
+        const errorObj = err as { statusCode?: number };
+        const statusCode = errorObj?.statusCode;
         if (statusCode === 404 || statusCode === 410) {
           // Dead subscription: delete immediately
           await supabase.from('push_subscriptions').delete().eq('id', sub.id);
