@@ -90,33 +90,47 @@ runPsqlCommand(cleanupSql);
 
 console.log(`Running database scenario tests via psql against ${host}:${port}/${database}...`);
 
-const testFile = resolve(process.cwd(), 'supabase/tests/schema_scenario.sql');
-const res = spawnSync(
-  psqlBin,
-  ['-h', host, '-p', port, '-U', user, '-d', database, '-v', 'ON_ERROR_STOP=1', '-f', testFile],
-  {
-    env,
-    encoding: 'utf8',
-    maxBuffer: 10 * 1024 * 1024,
-  }
-);
+const testFiles = [
+  { name: 'Schema Scenario', path: resolve(process.cwd(), 'supabase/tests/schema_scenario.sql') },
+  { name: 'Review Fixes Scenario', path: resolve(process.cwd(), 'supabase/tests/review_fixes_scenario.sql') },
+];
 
-if (res.stdout) {
-  const lines = res.stdout.split('\n');
-  for (const line of lines) {
-    if (line.startsWith('==') || line.startsWith('ALL TESTS') || line.includes('ok)') || line.startsWith('FAIL:')) {
-      console.log(line);
+for (const tf of testFiles) {
+  console.log(`\n--- Running ${tf.name} ---`);
+  const res = spawnSync(
+    psqlBin,
+    ['-h', host, '-p', port, '-U', user, '-d', database, '-v', 'ON_ERROR_STOP=1', '-f', tf.path],
+    {
+      env,
+      encoding: 'utf8',
+      maxBuffer: 10 * 1024 * 1024,
+    }
+  );
+
+  if (res.stdout) {
+    const lines = res.stdout.split('\n');
+    for (const line of lines) {
+      if (
+        line.startsWith('==') ||
+        line.startsWith('ALL TESTS') ||
+        line.startsWith('ALL REVIEW') ||
+        line.includes('ok)') ||
+        line.includes('✓') ||
+        line.startsWith('FAIL:')
+      ) {
+        console.log(line);
+      }
     }
   }
+
+  // Clean up test remnants after each run
+  runPsqlCommand(cleanupSql);
+
+  if (res.status !== 0) {
+    console.error(`\n${tf.name} failed with exit code:`, res.status);
+    if (res.stderr) console.error(res.stderr);
+    process.exit(res.status || 1);
+  }
 }
 
-// Clean up test remnants after run
-runPsqlCommand(cleanupSql);
-
-if (res.status !== 0) {
-  console.error('\nTests failed with exit code:', res.status);
-  if (res.stderr) console.error(res.stderr);
-  process.exit(res.status || 1);
-}
-
-console.log('\nSchema test scenario completed successfully.');
+console.log('\nAll database test scenarios completed successfully.');
