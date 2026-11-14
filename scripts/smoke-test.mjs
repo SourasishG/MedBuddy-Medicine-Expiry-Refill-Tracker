@@ -244,11 +244,14 @@ async function main() {
     assert.strictEqual(dose.status, 'pending');
 
     // 6. Log dose taken
-    const { error: logErr } = await clientA.rpc('fn_log_dose', {
+    const { data: logRes, error: logErr } = await clientA.rpc('fn_log_dose', {
       p_event: dose.id,
       p_status: 'taken',
     });
     if (logErr) throw logErr;
+    assert.ok(logRes, 'fn_log_dose must return logged dose event');
+    assert.strictEqual(logRes.id, dose.id, 'Logged dose id must match target dose');
+    assert.strictEqual(logRes.status, 'taken', 'Logged dose status must be taken');
 
     // Verify FEFO: Box B (earliest expiry, 20d) must be deducted to 9, Box A (60d) remains 10
     const { data: checkB1 } = await clientA
@@ -319,11 +322,15 @@ async function main() {
     console.log('[Check 4] Tamper Protection: Direct bypasses and private RPCs blocked...');
 
     // Direct update of quantity_remaining (must be refused or not touch column)
-    await clientA
+    const { data: directUpd, error: directUpdErr } = await clientA
       .from('inventory_items')
       .update({ quantity_remaining: 999 })
       .eq('id', boxA.id)
       .select('quantity_remaining');
+    assert(
+      directUpdErr !== null || !directUpd || directUpd.length === 0,
+      'Direct update of quantity_remaining must be refused with error or yield no rows',
+    );
     // Schema revokes update on quantity_remaining
     const { data: boxACheck } = await clientA
       .from('inventory_items')
