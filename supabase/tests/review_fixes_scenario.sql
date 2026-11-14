@@ -43,7 +43,7 @@ begin
   on conflict (id) do nothing;
 
   -- Create fresh push subscription
-  insert into push_subscriptions (user_id, endpoint, keys_p256dh, keys_auth)
+  insert into push_subscriptions (user_id, endpoint, p256dh, auth_key)
   values (v_uid, 'https://push.example.com/sub-f1', 'key-p256dh', 'key-auth')
   returning id into v_sub_id;
 
@@ -108,88 +108,38 @@ begin
 end $$;
 
 -- Set role to anon
-set local role anon;
+set role anon;
 
-do $$
-begin
-  -- Anon calling fn_record_push_failure must fail
-  begin
-    perform fn_record_push_failure('00000000-0000-0000-0000-000000000000'::uuid);
-    raise exception 'Anon should not be able to execute fn_record_push_failure';
-  rescue when insufficient_privilege then
-    -- Expected: ok
-  end;
+do $$ begin perform fn_record_push_failure(gen_random_uuid()); raise exception 'SHOULD HAVE FAILED: anon called fn_record_push_failure';
+exception when sqlstate '42501' then null; end $$;
 
-  -- Anon calling fn_record_push_success must fail
-  begin
-    perform fn_record_push_success('00000000-0000-0000-0000-000000000000'::uuid);
-    raise exception 'Anon should not be able to execute fn_record_push_success';
-  rescue when insufficient_privilege then
-    -- Expected: ok
-  end;
+do $$ begin perform fn_record_push_success(gen_random_uuid()); raise exception 'SHOULD HAVE FAILED: anon called fn_record_push_success';
+exception when sqlstate '42501' then null; end $$;
 
-  -- Anon calling fn_scheduler_health must fail
-  begin
-    perform fn_scheduler_health();
-    raise exception 'Anon should not be able to execute fn_scheduler_health';
-  rescue when insufficient_privilege then
-    -- Expected: ok
-  end;
+do $$ begin perform fn_scheduler_health(); raise exception 'SHOULD HAVE FAILED: anon called fn_scheduler_health';
+exception when sqlstate '42501' then null; end $$;
 
-  -- Anon calling fn_trigger_notification_sender must fail
-  begin
-    perform fn_trigger_notification_sender();
-    raise exception 'Anon should not be able to execute fn_trigger_notification_sender';
-  rescue when insufficient_privilege then
-    -- Expected: ok
-  end;
+do $$ begin perform fn_trigger_notification_sender(); raise exception 'SHOULD HAVE FAILED: anon called fn_trigger_notification_sender';
+exception when sqlstate '42501' then null; end $$;
 
-  -- Anon selecting from eligible_push_subscriptions must fail
-  begin
-    perform * from eligible_push_subscriptions;
-    raise exception 'Anon should not be able to select from eligible_push_subscriptions';
-  rescue when insufficient_privilege then
-    -- Expected: ok
-  end;
-end $$;
+do $$ begin perform count(*) from eligible_push_subscriptions; raise exception 'SHOULD HAVE FAILED: anon read eligible_push_subscriptions';
+exception when sqlstate '42501' then null; end $$;
 
 -- Set role to authenticated
-set local role authenticated;
+reset role;
+set role authenticated;
 
-do $$
-begin
-  -- Authenticated calling fn_record_push_failure must fail
-  begin
-    perform fn_record_push_failure('00000000-0000-0000-0000-000000000000'::uuid);
-    raise exception 'Authenticated should not be able to execute fn_record_push_failure';
-  rescue when insufficient_privilege then
-    -- Expected: ok
-  end;
+do $$ begin perform fn_record_push_failure(gen_random_uuid()); raise exception 'SHOULD HAVE FAILED: authenticated called fn_record_push_failure';
+exception when sqlstate '42501' then null; end $$;
 
-  -- Authenticated calling fn_record_push_success must fail
-  begin
-    perform fn_record_push_success('00000000-0000-0000-0000-000000000000'::uuid);
-    raise exception 'Authenticated should not be able to execute fn_record_push_success';
-  rescue when insufficient_privilege then
-    -- Expected: ok
-  end;
+do $$ begin perform fn_record_push_success(gen_random_uuid()); raise exception 'SHOULD HAVE FAILED: authenticated called fn_record_push_success';
+exception when sqlstate '42501' then null; end $$;
 
-  -- Authenticated calling fn_scheduler_health must fail
-  begin
-    perform fn_scheduler_health();
-    raise exception 'Authenticated should not be able to execute fn_scheduler_health';
-  rescue when insufficient_privilege then
-    -- Expected: ok
-  end;
+do $$ begin perform fn_scheduler_health(); raise exception 'SHOULD HAVE FAILED: authenticated called fn_scheduler_health';
+exception when sqlstate '42501' then null; end $$;
 
-  -- Authenticated calling fn_trigger_notification_sender must fail
-  begin
-    perform fn_trigger_notification_sender();
-    raise exception 'Authenticated should not be able to execute fn_trigger_notification_sender';
-  rescue when insufficient_privilege then
-    -- Expected: ok
-  end;
-end $$;
+do $$ begin perform fn_trigger_notification_sender(); raise exception 'SHOULD HAVE FAILED: authenticated called fn_trigger_notification_sender';
+exception when sqlstate '42501' then null; end $$;
 
 -- Reset role back to postgres
 reset role;
