@@ -16,11 +16,17 @@ This document describes the security controls, HTTP headers, client data boundar
 
 ## 2. HTTP Security Headers (`next.config.ts`)
 
-Every route (`/:path*`) serves the following headers configured in [next.config.ts](file:///d:/MedBuddy/next.config.ts):
+Routes are separated into mutually exclusive policies configured in [next.config.ts](file:///d:/MedBuddy/next.config.ts):
+
+1. **Marketing & Public Routes (`/`, `/privacy`, `/offline`, and static assets):**
+   - Strictly enforces `connect-src 'self'`. Zero connections to external backends or APIs.
+   - Zero cookies and zero authentication helpers.
+2. **App Routes (`/app` and `/app/*`):**
+   - Enforces `connect-src 'self' https://<ref>.supabase.co wss://<ref>.supabase.co` (read dynamically from `NEXT_PUBLIC_SUPABASE_URL` without wildcards).
 
 | Header                      | Value & Purpose                                                                                                                                                                                                                                                                          |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Content-Security-Policy`   | `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'` |
+| `Content-Security-Policy`   | Strict per-route policy detailed above (`frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`).                                                                                                                                                                               |
 | `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` — enforces HTTPS with HSTS preloading on deployed origins.                                                                                                                                                                                |
 | `X-Frame-Options`           | `DENY` — blocks all cross-origin and same-origin framing (`frame-ancestors 'none'` mirrors this in CSP).                                                                                                                                                                                 |
 | `X-Content-Type-Options`    | `nosniff` — prevents MIME-type sniffing.                                                                                                                                                                                                                                                 |
@@ -46,12 +52,20 @@ Every route (`/:path*`) serves the following headers configured in [next.config.
 
 ## 4. Build-Time & Dev Dependency Audit Scope
 
-`npm audit` flags `12` transitive advisories (`4` High in `zod < 4.6.6`, `8` Moderate in `glob` and `minimatch`), originating exclusively inside build-time and lint tooling:
+`npm audit` flags `12` transitive advisories (`4` High in `zod < 4.6.6`, `8` Moderate in `glob` and `minimatch`), originating exclusively inside build-time compilation and development linting tooling:
 
-- `@serwist/next@9.5.13` / `@serwist/build` / `@serwist/webpack-plugin` (service-worker bundler run only during `npm run build` / CI)
-- `@typescript-eslint/*` via `eslint-config-next` (static linter run only during `npm run lint` / development)
+- `@serwist/next@9.5.13` -> `@serwist/build` -> `glob@13.0.6` & `zod@4.6.5` (service worker bundler invoked only at build time during `npm run build`)
+- `@typescript-eslint/*` via `eslint-config-next` -> `minimatch@10.2.6` (static AST parser invoked only during `npm run lint`)
 
-**Runtime impact:** `0` of these flagged packages ship in client-side browser bundles or execute against untrusted user input at runtime. Because downgrading `@serwist/next` (`npm audit fix --force`) introduces a breaking jump to `8.4.4`, `@serwist/next@9.5.13` is retained and tracked for upstream patch releases.
+**Build-Time Isolation Verification (`npm ls`):**
+Running `npm ls glob`, `npm ls zod`, and `npm ls minimatch` verifies that 100% of these dependencies exist under `@serwist/next` and `eslint-config-next`. Zero instances are imported under `src/` or bundled into client production assets in `.next/static`.
+
+**Policy on Force-Fixing:**
+Downgrading `@serwist/next` via `npm audit fix --force` attempts to install the deprecated `@serwist/next@8.4.4`, which breaks Next.js 16 webpack compatibility and PWA service worker generation. Therefore, `--force` is strictly forbidden.
+
+**Upstream Versions to Watch:**
+- Watch for upstream `@serwist/next` releases patching dependencies to `zod >= 4.6.6` and `glob >= 14.0.2`.
+- Update `@serwist/next` once an official patch addressing the `zod` and `glob` advisories is published.
 
 ---
 
