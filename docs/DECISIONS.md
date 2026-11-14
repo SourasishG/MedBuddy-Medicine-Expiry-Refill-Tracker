@@ -162,6 +162,8 @@
 1. **Next.js 16 SSR & Async Cookie Storage:**
    - In Next.js 16 App Router, `cookies()` is an asynchronous function returning a Promise.
    - `src/lib/supabase/server.ts` uses `await cookies()` with safe `try/catch` cookie writing to permit read operations in Server Components while enabling seamless session refresh in Server Actions and Route Handlers.
+   - **Service Role Key Isolation:** `src/lib/supabase/client.ts` and `server.ts` are strictly client and anon helpers. `SUPABASE_SERVICE_ROLE_KEY` is strictly forbidden from being imported or referenced under `src/` or bundled into client code. Automated enforcement is provided via `scripts/check-no-service-key.mjs`.
+   - **Marketing vs App Route Cookie Separation:** The future authenticated app (`/app/*`) will set HTTP-only session cookies managed by `@supabase/ssr` to authenticate users with Supabase Auth. Marketing and public routes (`/`, `/privacy`, `/offline`) remain strictly separate: zero cookies, zero auth middleware, and `connect-src 'self'` CSP restrictions. When the full app launches, `/app` will present its own session and privacy disclosure upon sign-in.
 2. **Browser Client Helper:**
    - `src/lib/supabase/client.ts` wraps `createBrowserClient<Database>` for type-safe client-side queries.
 3. **Comprehensive API Reference:**
