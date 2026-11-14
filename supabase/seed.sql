@@ -1,0 +1,2 @@
+-- supabase/seed.sql
+-- Seed data disabled by default. Tests manage their own test profiles and records idempotently.
