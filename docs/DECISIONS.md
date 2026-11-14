@@ -17,8 +17,10 @@
    - `JetBrains_Mono` for decorative spec labels and counters (`--font-mono`).
 
 4. **Motion System (`MotionProvider` + Lenis + GSAP)**
-   - `useMotionPreference` reads `localStorage` (`medbuddy-motion`) inside `try/catch`, falling back to `!(prefers-reduced-motion: reduce)`.
+   - `useMotionPreference` persists user preference in `localStorage` under `medbuddy-motion` (`'on' | 'off'`) inside `try/catch`, falling back to `!(prefers-reduced-motion: reduce)`.
+   - Cross-tab and programmatic updates broadcast via a custom `medbuddy-motion-change` event and `storage` event listener.
    - `MotionProvider` syncs `data-motion="on" | "off"` on `<html>`.
+   - `MotionToggle` in `Nav` provides an accessible toggle control (`aria-pressed`).
    - Lenis smooth scroll is wired directly to GSAP `ScrollTrigger` via `lenis.on('scroll', ScrollTrigger.update)` and `gsap.ticker.add((t) => lenis.raf(t * 1000))` with `gsap.ticker.lagSmoothing(0)`.
    - When Motion is `off`, Lenis is not initialized (or destroyed immediately) so native scrolling and static layout apply cleanly without animation lag.
    - Native browser scrollbar is hidden (`scrollbar-width: none`, `::-webkit-scrollbar { display: none }`) to preserve the dark gallery canvas without a grey OS scrollbar track while keeping wheel, keyboard, and touch scrolling active.
