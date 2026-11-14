@@ -78,7 +78,7 @@ const resetSql = `
 const resetRes = spawnSync(
   psqlBin,
   ['-h', host, '-p', port, '-U', user, '-d', database, '-c', resetSql.replace(/\n/g, ' ')],
-  { env, encoding: 'utf8' }
+  { env, encoding: 'utf8' },
 );
 
 if (resetRes.status !== 0) {

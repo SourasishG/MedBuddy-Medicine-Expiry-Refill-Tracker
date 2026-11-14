@@ -156,7 +156,11 @@ async function main() {
     }
 
     assert.strictEqual(overlapCount, 0, 'Zero overlapping notifications claimed');
-    assert.strictEqual(worker1Ids.size + worker2Ids.size, 10, 'All 10 claimed across workers exactly once');
+    assert.strictEqual(
+      worker1Ids.size + worker2Ids.size,
+      10,
+      'All 10 claimed across workers exactly once',
+    );
 
     // Third immediate claim gets 0 rows (visibility timeout active)
     const { data: worker3Data } = await supabase.rpc('fn_claim_notifications', { p_limit: 10 });
@@ -182,31 +186,55 @@ async function main() {
 
     // Simulate transient failure
     await supabase.rpc('fn_record_push_failure', { p_id: subTransient.id });
-    const { data: subTr1 } = await supabase.from('push_subscriptions').select('*').eq('id', subTransient.id).single();
+    const { data: subTr1 } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .eq('id', subTransient.id)
+      .single();
     assert.strictEqual(subTr1.failure_count, 1, 'failure_count must increment to 1');
     assert(subTr1.first_failure_at !== null, 'first_failure_at must be populated');
     assert(subTr1.last_failure_at !== null, 'last_failure_at must be populated');
 
     // Simulate 5 failures within 10 minutes (not eligible)
-    await supabase.from('push_subscriptions').update({
-      failure_count: 5,
-      last_failure_at: new Date(Date.now() - 10 * 60000).toISOString(),
-    }).eq('id', subTransient.id);
+    await supabase
+      .from('push_subscriptions')
+      .update({
+        failure_count: 5,
+        last_failure_at: new Date(Date.now() - 10 * 60000).toISOString(),
+      })
+      .eq('id', subTransient.id);
 
-    const { data: elig1 } = await supabase.from('eligible_push_subscriptions').select('id').eq('id', subTransient.id);
-    assert.strictEqual(elig1.length, 0, 'Must NOT be eligible when failure_count >= 5 and cooled down < 1h');
+    const { data: elig1 } = await supabase
+      .from('eligible_push_subscriptions')
+      .select('id')
+      .eq('id', subTransient.id);
+    assert.strictEqual(
+      elig1.length,
+      0,
+      'Must NOT be eligible when failure_count >= 5 and cooled down < 1h',
+    );
 
     // Cool-down recovery: last_failure_at 65 minutes ago (eligible again!)
-    await supabase.from('push_subscriptions').update({
-      last_failure_at: new Date(Date.now() - 65 * 60000).toISOString(),
-    }).eq('id', subTransient.id);
+    await supabase
+      .from('push_subscriptions')
+      .update({
+        last_failure_at: new Date(Date.now() - 65 * 60000).toISOString(),
+      })
+      .eq('id', subTransient.id);
 
-    const { data: elig2 } = await supabase.from('eligible_push_subscriptions').select('id').eq('id', subTransient.id);
+    const { data: elig2 } = await supabase
+      .from('eligible_push_subscriptions')
+      .select('id')
+      .eq('id', subTransient.id);
     assert.strictEqual(elig2.length, 1, 'Must BE eligible again after 1-hour cool-down');
 
     // Success resets counters
     await supabase.rpc('fn_record_push_success', { p_id: subTransient.id });
-    const { data: subRecovered } = await supabase.from('push_subscriptions').select('*').eq('id', subTransient.id).single();
+    const { data: subRecovered } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .eq('id', subTransient.id)
+      .single();
     assert.strictEqual(subRecovered.failure_count, 0, 'failure_count must reset to 0');
     assert.strictEqual(subRecovered.first_failure_at, null, 'first_failure_at must be null');
     assert.strictEqual(subRecovered.last_failure_at, null, 'last_failure_at must be null');
@@ -232,7 +260,10 @@ async function main() {
     // Edge function deletes subscription on 410
     await supabase.from('push_subscriptions').delete().eq('id', sub410.id);
 
-    const { data: checkDeleted } = await supabase.from('push_subscriptions').select('id').eq('id', sub410.id);
+    const { data: checkDeleted } = await supabase
+      .from('push_subscriptions')
+      .select('id')
+      .eq('id', sub410.id);
     assert.strictEqual(checkDeleted.length, 0, 'Subscription must be deleted on 410');
     console.log('✓ 410 response removal verified');
 
@@ -254,7 +285,11 @@ async function main() {
 
     // Simulate 403 handling (key/config error, do not count against subscription)
     // Edge function logs warning and leaves failure_count unchanged
-    const { data: sub403Check } = await supabase.from('push_subscriptions').select('failure_count').eq('id', sub403.id).single();
+    const { data: sub403Check } = await supabase
+      .from('push_subscriptions')
+      .select('failure_count')
+      .eq('id', sub403.id)
+      .single();
     assert.strictEqual(sub403Check.failure_count, 0, '403 must not increment failure_count');
     console.log('✓ 403 handling verified: subscription failure_count not penalized');
 
@@ -265,7 +300,9 @@ async function main() {
     // The deployed function checks VAPID keys before rpc('fn_claim_notifications')
     // We verified this in the Edge Function implementation:
     // if (!vapidPublicKey || !vapidPrivateKey || !vapidSubject) return 500
-    console.log('✓ Function checks VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, and VAPID_SUBJECT upfront before claiming');
+    console.log(
+      '✓ Function checks VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, and VAPID_SUBJECT upfront before claiming',
+    );
 
     console.log('\n=================================================================');
     console.log('ALL PHASE F2 NOTIFICATION SENDER TESTS PASSED SUCCESSFULLY');

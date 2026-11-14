@@ -84,7 +84,9 @@ async function main() {
 
     // 4. Poll database every 5 seconds for up to 120 seconds (2 minutes)
     // to observe automated pickup and processing by medbuddy-send and send-notifications
-    console.log('\n[Step 3] Waiting for automated pg_cron + pg_net + send-notifications run (max 120s)...');
+    console.log(
+      '\n[Step 3] Waiting for automated pg_cron + pg_net + send-notifications run (max 120s)...',
+    );
     const startTime = Date.now();
     let finalStatus = null;
     let attemptsCount = 0;
@@ -101,7 +103,9 @@ async function main() {
         attemptsCount = currentNotif.attempts;
         if (currentNotif.status !== 'pending' || currentNotif.attempts > 0) {
           finalStatus = currentNotif;
-          console.log(`  [+${elapsed}s] Notification picked up! Status: ${currentNotif.status}, Attempts: ${currentNotif.attempts}, Error: ${currentNotif.last_error || 'none'}`);
+          console.log(
+            `  [+${elapsed}s] Notification picked up! Status: ${currentNotif.status}, Attempts: ${currentNotif.attempts}, Error: ${currentNotif.last_error || 'none'}`,
+          );
           if (currentNotif.status !== 'pending') {
             break;
           }
@@ -117,7 +121,9 @@ async function main() {
     console.log(`Notification ID: ${notificationId}`);
     console.log(`Final Status: ${finalStatus?.status || 'pending'}`);
     console.log(`Attempts: ${finalStatus?.attempts || attemptsCount}`);
-    console.log(`Processed by Scheduler: ${finalStatus && finalStatus.attempts > 0 ? 'YES' : 'NO'}`);
+    console.log(
+      `Processed by Scheduler: ${finalStatus && finalStatus.attempts > 0 ? 'YES' : 'NO'}`,
+    );
 
     if (finalStatus && finalStatus.attempts > 0) {
       console.log('\n✓ Automated end-to-end delivery verified within 2 minutes!');

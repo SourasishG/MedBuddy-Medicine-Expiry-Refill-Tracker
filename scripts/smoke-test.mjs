@@ -23,7 +23,9 @@ if (existsSync(envPath)) {
 
 if (process.env.ALLOW_TEST_USERS !== 'true') {
   console.error('\n❌ ERROR: Smoke tests refused to run.');
-  console.error('Smoke tests create and delete real test users. Set ALLOW_TEST_USERS=true in .env.local to run on development.');
+  console.error(
+    'Smoke tests create and delete real test users. Set ALLOW_TEST_USERS=true in .env.local to run on development.',
+  );
   process.exit(1);
 }
 
@@ -139,7 +141,9 @@ async function main() {
     console.log(`  ✓ All ${tables.length} tables return empty/refused for anon role.`);
 
     // Check RPCs refused for anon
-    const { error: anonRpc1 } = await anonClient.rpc('fn_create_care_profile', { p_name: 'Hacked' });
+    const { error: anonRpc1 } = await anonClient.rpc('fn_create_care_profile', {
+      p_name: 'Hacked',
+    });
     assert(anonRpc1 !== null, 'Anon cannot call fn_create_care_profile');
 
     const { error: anonRpc2 } = await anonClient.rpc('fn_export_my_data');
@@ -150,8 +154,10 @@ async function main() {
     // -----------------------------------------------------------------
     // CHECK 2: User A valid workflow (Create, Schedule, Log, FEFO, Undo)
     // -----------------------------------------------------------------
-    console.log('[Check 2] User A Valid Workflow (Care profile, Meds, Box, Schedule, Log, Undo)...');
-    
+    console.log(
+      '[Check 2] User A Valid Workflow (Care profile, Meds, Box, Schedule, Log, Undo)...',
+    );
+
     // 1. A creates care profile
     const { data: cpId, error: cpErr } = await clientA.rpc('fn_create_care_profile', {
       p_name: 'Asha (Mum)',
@@ -245,8 +251,16 @@ async function main() {
     if (logErr) throw logErr;
 
     // Verify FEFO: Box B (earliest expiry, 20d) must be deducted to 9, Box A (60d) remains 10
-    const { data: checkB1 } = await clientA.from('inventory_items').select('quantity_remaining').eq('id', boxB.id).single();
-    const { data: checkA1 } = await clientA.from('inventory_items').select('quantity_remaining').eq('id', boxA.id).single();
+    const { data: checkB1 } = await clientA
+      .from('inventory_items')
+      .select('quantity_remaining')
+      .eq('id', boxB.id)
+      .single();
+    const { data: checkA1 } = await clientA
+      .from('inventory_items')
+      .select('quantity_remaining')
+      .eq('id', boxA.id)
+      .single();
     assert.strictEqual(checkB1.quantity_remaining, 9, 'FEFO: Earliest-expiring box deducted first');
     assert.strictEqual(checkA1.quantity_remaining, 10, 'Later box untouched');
 
@@ -255,7 +269,11 @@ async function main() {
     if (undoErr) throw undoErr;
 
     // Verify stock restored
-    const { data: checkB2 } = await clientA.from('inventory_items').select('quantity_remaining').eq('id', boxB.id).single();
+    const { data: checkB2 } = await clientA
+      .from('inventory_items')
+      .select('quantity_remaining')
+      .eq('id', boxB.id)
+      .single();
     assert.strictEqual(checkB2.quantity_remaining, 10, 'Undo restores stock exactly to 10');
     console.log('✓ Check 2 PASSED: User A workflow, FEFO deduction, and exact undo verified.\n');
 
@@ -263,7 +281,7 @@ async function main() {
     // CHECK 3: User B (Stranger) Data Isolation
     // -----------------------------------------------------------------
     console.log('[Check 3] User B (Stranger) Isolation: Zero Visibility & Write Refusal...');
-    
+
     // B queries care profiles, medicines, inventory, doses
     const { data: bProfiles } = await clientB.from('care_profiles').select('*');
     assert.strictEqual(bProfiles.length, 0, 'Stranger must see 0 care profiles');
@@ -291,13 +309,15 @@ async function main() {
       p_status: 'taken',
     });
     assert(bLogDose !== null, 'Stranger call to fn_log_dose must be refused');
-    console.log('✓ Check 3 PASSED: Stranger sees none of User A data and all writes are refused.\n');
+    console.log(
+      '✓ Check 3 PASSED: Stranger sees none of User A data and all writes are refused.\n',
+    );
 
     // -----------------------------------------------------------------
     // CHECK 4: Tamper Protection (Direct Column & Table Bypass Refusal)
     // -----------------------------------------------------------------
     console.log('[Check 4] Tamper Protection: Direct bypasses and private RPCs blocked...');
-    
+
     // Direct update of quantity_remaining (must be refused or not touch column)
     await clientA
       .from('inventory_items')
@@ -305,8 +325,16 @@ async function main() {
       .eq('id', boxA.id)
       .select('quantity_remaining');
     // Schema revokes update on quantity_remaining
-    const { data: boxACheck } = await clientA.from('inventory_items').select('quantity_remaining').eq('id', boxA.id).single();
-    assert.strictEqual(boxACheck.quantity_remaining, 10, 'Direct edit of quantity_remaining is blocked');
+    const { data: boxACheck } = await clientA
+      .from('inventory_items')
+      .select('quantity_remaining')
+      .eq('id', boxA.id)
+      .single();
+    assert.strictEqual(
+      boxACheck.quantity_remaining,
+      10,
+      'Direct edit of quantity_remaining is blocked',
+    );
 
     // Direct insert into dose_events
     const { error: dirDoseErr } = await clientA.from('dose_events').insert({
@@ -352,13 +380,15 @@ async function main() {
       p_event: dose.id,
     });
     assert(priv5 !== null, '_deduct_stock must be refused for client');
-    console.log('✓ Check 4 PASSED: Tamper attempts and private scheduler RPCs are strictly refused.\n');
+    console.log(
+      '✓ Check 4 PASSED: Tamper attempts and private scheduler RPCs are strictly refused.\n',
+    );
 
     // -----------------------------------------------------------------
     // CHECK 5: Invite Flow (Family Sharing, Viewer Read-Only, Removal)
     // -----------------------------------------------------------------
     console.log('[Check 5] Invite Flow: Invite creation, acceptance, viewer read-only, removal...');
-    
+
     // 1. A creates invite for B as viewer
     const { data: inviteToken, error: invErr } = await clientA.rpc('fn_create_invite', {
       p_care_profile: careProfileId,
@@ -375,10 +405,16 @@ async function main() {
     assert.strictEqual(acceptedCpId, careProfileId, 'Accepted care profile ID must match');
 
     // 3. B can now read care profile and medicines
-    const { data: bReadCp } = await clientB.from('care_profiles').select('*').eq('id', careProfileId);
+    const { data: bReadCp } = await clientB
+      .from('care_profiles')
+      .select('*')
+      .eq('id', careProfileId);
     assert.strictEqual(bReadCp.length, 1, 'B can now view care profile');
 
-    const { data: bReadMeds } = await clientB.from('medicines').select('*').eq('care_profile_id', careProfileId);
+    const { data: bReadMeds } = await clientB
+      .from('medicines')
+      .select('*')
+      .eq('care_profile_id', careProfileId);
     assert.strictEqual(bReadMeds.length, 1, 'B can now view medicines');
 
     // 4. B (viewer) attempts to write -> must be refused
@@ -403,21 +439,32 @@ async function main() {
     if (remErr) throw remErr;
 
     // Verify B no longer sees care profile
-    const { data: bRevoked } = await clientB.from('care_profiles').select('*').eq('id', careProfileId);
+    const { data: bRevoked } = await clientB
+      .from('care_profiles')
+      .select('*')
+      .eq('id', careProfileId);
     assert.strictEqual(bRevoked.length, 0, 'Revoked user sees 0 care profiles');
-    console.log('✓ Check 5 PASSED: Family sharing invite, viewer read-only, and removal verified.\n');
+    console.log(
+      '✓ Check 5 PASSED: Family sharing invite, viewer read-only, and removal verified.\n',
+    );
 
     // -----------------------------------------------------------------
     // CHECK 6: Data Export & Clean Deletion (GDPR / DPDP compliance)
     // -----------------------------------------------------------------
-    console.log('[Check 6] Data Export and Data Deletion (fn_export_my_data & fn_delete_my_data)...');
-    
+    console.log(
+      '[Check 6] Data Export and Data Deletion (fn_export_my_data & fn_delete_my_data)...',
+    );
+
     const { data: exportData, error: expErr } = await clientA.rpc('fn_export_my_data');
     if (expErr) throw expErr;
     assert(exportData.profile, 'Export must include profile');
     assert(Array.isArray(exportData.care_profiles), 'Export must include care profiles');
     assert.strictEqual(exportData.care_profiles.length, 1, 'Export contains 1 care profile');
-    assert.strictEqual(exportData.care_profiles[0].medicines.length, 1, 'Export contains 1 medicine');
+    assert.strictEqual(
+      exportData.care_profiles[0].medicines.length,
+      1,
+      'Export contains 1 medicine',
+    );
     console.log('  ✓ fn_export_my_data returned complete structured JSON data.');
 
     // Delete my data
@@ -425,13 +472,22 @@ async function main() {
     if (delErr) throw delErr;
 
     // Verify nothing is left behind
-    const { data: cpCheck } = await adminClient.from('care_profiles').select('*').eq('id', careProfileId);
+    const { data: cpCheck } = await adminClient
+      .from('care_profiles')
+      .select('*')
+      .eq('id', careProfileId);
     assert.strictEqual(cpCheck.length, 0, 'Care profile deleted');
 
-    const { data: medCheck } = await adminClient.from('medicines').select('*').eq('care_profile_id', careProfileId);
+    const { data: medCheck } = await adminClient
+      .from('medicines')
+      .select('*')
+      .eq('care_profile_id', careProfileId);
     assert.strictEqual(medCheck.length, 0, 'Medicines deleted');
 
-    const { data: itemCheck } = await adminClient.from('inventory_items').select('*').eq('care_profile_id', careProfileId);
+    const { data: itemCheck } = await adminClient
+      .from('inventory_items')
+      .select('*')
+      .eq('care_profile_id', careProfileId);
     assert.strictEqual(itemCheck.length, 0, 'Inventory items deleted');
 
     const { data: userACheck } = await adminClient.from('profiles').select('*').eq('id', userA_id);

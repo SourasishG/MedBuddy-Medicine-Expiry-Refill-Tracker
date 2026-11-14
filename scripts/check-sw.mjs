@@ -14,7 +14,10 @@ const content = readFileSync(swPath, 'utf8');
 console.log('=== Service Worker Privacy & Caching Audit ===\n');
 
 // 1. Verify defaultCache is completely removed
-assert(!content.includes('defaultCache'), 'defaultCache must not be present in service worker bundle');
+assert(
+  !content.includes('defaultCache'),
+  'defaultCache must not be present in service worker bundle',
+);
 console.log('✓ Verified: defaultCache is completely absent');
 
 // 2. Extract runtimeCaching section from minified bundle
@@ -37,7 +40,9 @@ for (const check of prohibitedTargets) {
   // inside the matcher without the exclusion check
   const matcherHasTarget = check.pattern.test(runtimeCachingBlock);
   if (matcherHasTarget) {
-    console.error(`❌ VIOLATION: Found affirmative caching rule for sensitive target: ${check.name}`);
+    console.error(
+      `❌ VIOLATION: Found affirmative caching rule for sensitive target: ${check.name}`,
+    );
     violations++;
   } else {
     console.log(`✓ Verified: No caching rule for ${check.name}`);
@@ -46,7 +51,10 @@ for (const check of prohibitedTargets) {
 
 // 4. Verify Authorization header and sameOrigin exclusion guards exist
 const hasAuthHeaderGuard = content.includes('Authorization');
-assert(hasAuthHeaderGuard, 'Service worker must explicitly check and exclude Authorization headers');
+assert(
+  hasAuthHeaderGuard,
+  'Service worker must explicitly check and exclude Authorization headers',
+);
 console.log('✓ Verified: Authorization header exclusion guard is present');
 
 const hasSameOriginGuard = content.includes('sameOrigin');

@@ -63,7 +63,8 @@ const serwist = new Serwist({
     {
       matcher({ request, url, sameOrigin }: MatcherParams) {
         return (
-          isSafeStaticAsset({ request, url, sameOrigin }) && url.pathname.startsWith('/_next/static/')
+          isSafeStaticAsset({ request, url, sameOrigin }) &&
+          url.pathname.startsWith('/_next/static/')
         );
       },
       handler: new CacheFirst({

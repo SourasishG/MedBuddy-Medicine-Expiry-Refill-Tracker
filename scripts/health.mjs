@@ -75,9 +75,13 @@ async function main() {
       const timeStr = job.start_time ? new Date(job.start_time).toLocaleString() : 'N/A';
       const isFailed = status === 'failed';
       const mark = isFailed ? '❌' : status === 'succeeded' ? '✓' : 'ℹ️';
-      console.log(`  ${mark} ${job.jobname.padEnd(25)} : ${status.padEnd(12)} (Last run: ${timeStr})`);
+      console.log(
+        `  ${mark} ${job.jobname.padEnd(25)} : ${status.padEnd(12)} (Last run: ${timeStr})`,
+      );
       if (isFailed) {
-        issues.push(`Cron job "${job.jobname}" failed on last run. Details: ${job.return_message || 'None'}`);
+        issues.push(
+          `Cron job "${job.jobname}" failed on last run. Details: ${job.return_message || 'None'}`,
+        );
       }
     }
   }
@@ -88,9 +92,15 @@ async function main() {
   const failed24h = Number(data.notifications?.failed_last_24h || 0);
   const lastSent = data.notifications?.last_sent_at;
 
-  console.log(`  - Overdue notifications (>5m lag): ${pendingLag === 0 ? '✓ 0' : `⚠️ ${pendingLag} delayed`}`);
-  console.log(`  - Failed notifications (last 24h): ${failed24h === 0 ? '✓ 0' : `⚠️ ${failed24h} failed`}`);
-  console.log(`  - Last successful notification:   ${lastSent ? new Date(lastSent).toLocaleString() : 'None in history'}`);
+  console.log(
+    `  - Overdue notifications (>5m lag): ${pendingLag === 0 ? '✓ 0' : `⚠️ ${pendingLag} delayed`}`,
+  );
+  console.log(
+    `  - Failed notifications (last 24h): ${failed24h === 0 ? '✓ 0' : `⚠️ ${failed24h} failed`}`,
+  );
+  console.log(
+    `  - Last successful notification:   ${lastSent ? new Date(lastSent).toLocaleString() : 'None in history'}`,
+  );
 
   if (pendingLag > 0) {
     issues.push(`${pendingLag} notifications are pending more than 5 minutes past send_after.`);

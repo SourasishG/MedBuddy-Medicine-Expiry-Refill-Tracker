@@ -46,7 +46,7 @@ if (dbUrl) {
   args.push('--local');
 }
 
-const cmdString = `npx ${args.map(a => `"${a}"`).join(' ')}`;
+const cmdString = `npx ${args.map((a) => `"${a}"`).join(' ')}`;
 const res = spawnSync(cmdString, {
   encoding: 'utf8',
   maxBuffer: 10 * 1024 * 1024,
