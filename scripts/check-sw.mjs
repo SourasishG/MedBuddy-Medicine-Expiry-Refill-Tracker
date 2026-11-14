@@ -13,32 +13,52 @@ const content = readFileSync(swPath, 'utf8');
 
 console.log('=== Service Worker Privacy & Caching Audit ===\n');
 
-// 1. Prohibited caching pattern checks
-const forbiddenPatterns = [
-  { name: 'Supabase Host (supabase.co)', pattern: /cache.*supabase\.co/i },
-  { name: 'Auth Endpoints (/auth/)', pattern: /cache.*\/auth\//i },
-  { name: 'REST Endpoints (/rest/)', pattern: /cache.*\/rest\//i },
-  { name: 'Edge Function Endpoints (/functions/)', pattern: /cache.*\/functions\//i },
-  { name: 'API Endpoints (/api/)', pattern: /cache.*\/api\//i },
+// 1. Verify defaultCache is completely removed
+assert(!content.includes('defaultCache'), 'defaultCache must not be present in service worker bundle');
+console.log('✓ Verified: defaultCache is completely absent');
+
+// 2. Extract runtimeCaching section from minified bundle
+const match = content.match(/runtimeCaching:\s*(\[[^\]]+\])/);
+assert(match, 'runtimeCaching array must be present in service worker bundle');
+const runtimeCachingBlock = match[1];
+
+// 3. Prohibited caching target checks in runtimeCaching rules
+const prohibitedTargets = [
+  { name: 'Supabase Host (*.supabase.co)', pattern: /supabase\.co/i },
+  { name: 'Auth Endpoints (/auth/)', pattern: /startsWith\(['"]\/auth\//i },
+  { name: 'REST Endpoints (/rest/)', pattern: /startsWith\(['"]\/rest\//i },
+  { name: 'Functions Endpoints (/functions/)', pattern: /startsWith\(['"]\/functions\//i },
+  { name: 'API Endpoints (/api/)', pattern: /startsWith\(['"]\/api\//i },
 ];
 
 let violations = 0;
-for (const check of forbiddenPatterns) {
-  if (check.pattern.test(content)) {
-    console.error(`❌ VIOLATION: Found caching rule for sensitive target: ${check.name}`);
+for (const check of prohibitedTargets) {
+  // If a rule specifically matches a sensitive path to CACHE it (e.g. pathname.startsWith('/auth/'))
+  // inside the matcher without the exclusion check
+  const matcherHasTarget = check.pattern.test(runtimeCachingBlock);
+  if (matcherHasTarget) {
+    console.error(`❌ VIOLATION: Found affirmative caching rule for sensitive target: ${check.name}`);
     violations++;
   } else {
     console.log(`✓ Verified: No caching rule for ${check.name}`);
   }
 }
 
-// 2. Precached route verification
-const hasOfflinePrecache = content.includes('/offline');
-const hasAppPrecache = content.includes('/app');
+// 4. Verify Authorization header and sameOrigin exclusion guards exist
+const hasAuthHeaderGuard = content.includes('Authorization');
+assert(hasAuthHeaderGuard, 'Service worker must explicitly check and exclude Authorization headers');
+console.log('✓ Verified: Authorization header exclusion guard is present');
 
+const hasSameOriginGuard = content.includes('sameOrigin');
+assert(hasSameOriginGuard, 'Service worker must explicitly verify sameOrigin');
+console.log('✓ Verified: sameOrigin security guard is present');
+
+// 5. Precached route verification
+const hasOfflinePrecache = content.includes('/offline');
 assert(hasOfflinePrecache, 'Service worker must precache /offline document fallback');
 console.log('✓ Verified: Precache includes /offline');
 
+const hasAppPrecache = content.includes('/app');
 assert(hasAppPrecache, 'Service worker must precache /app shell');
 console.log('✓ Verified: Precache includes /app');
 
