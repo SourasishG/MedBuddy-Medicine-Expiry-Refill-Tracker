@@ -32,13 +32,15 @@
     "react-dom": "^19.3.1",
     "sass": "^1.86.0",
     "serwist": "^9.5.13",
-    "three": "^0.187.0"
+    "three": "^0.187.0",
+    "web-push": "^4.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@types/three": "^0.187.0",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9.24.0",
     "eslint-config-next": "^16.4.6",
     "eslint-config-prettier": "^10.1.1",

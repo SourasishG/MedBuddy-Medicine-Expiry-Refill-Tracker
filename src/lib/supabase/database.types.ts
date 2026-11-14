@@ -487,6 +487,33 @@ isOneToOne: false
 "fn_adjust_stock":
 { Args: { "p_delta": number,"p_item": string }; Returns: undefined
                            },
+"fn_claim_notifications":
+{ Args: { "p_limit"?: number }; Returns: {
+              "attempts": number,
+"body": string,
+"care_profile_id": string | null,
+"created_at": string,
+"dedupe_key": string,
+"dose_event_id": string | null,
+"id": string,
+"inventory_item_id": string | null,
+"kind": Database["public"]['Enums']["notif_kind"],
+"last_error": string | null,
+"send_after": string,
+"sent_at": string | null,
+"status": Database["public"]['Enums']["notif_status"],
+"title": string,
+"user_id": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "notifications"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"fn_cleanup_old_notifications":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "fn_create_care_profile":
 { Args: { "p_is_me"?: boolean,"p_name": string,"p_timezone"?: string }; Returns: string
                            },
@@ -507,6 +534,9 @@ isOneToOne: false
                            },
 "fn_export_my_data":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"fn_finish_notification":
+{ Args: { "p_error"?: string,"p_id": string,"p_ok": boolean }; Returns: undefined
                            },
 "fn_generate_dose_events":
 { Args: { "p_horizon_days"?: number,"p_schedule"?: string }; Returns: number
