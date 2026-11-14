@@ -37,7 +37,7 @@ This document provides exact, click-by-click instructions and copy-paste command
 | **5** | Custom SMTP (Brevo) | ✅ Completed | `smtp-relay.brevo.com:587` connected & verified |
 | **6** | Cloudflare Turnstile (CAPTCHA) | ⏳ Optional/Recommended | Free abuse protection setup (see Section 3.5) |
 | **7** | Web Push Keys (VAPID) | ✅ Generated & Set | NIST P-256 pair in `.env.local` and Edge Function secrets |
-| **8** | Supabase Vault Secrets | ⏳ Action Needed | `cron_secret` set; **`project_url` needs to be added** (see Section 3.1) |
+| **8** | Supabase Vault Secrets | ✅ Completed | `cron_secret` and `project_url` verified in Vault |
 | **9** | Edge Function Deployment | ✅ Deployed | Deployed with `--no-verify-jwt`; update in Phase F2 (see Section 3.3) |
 | **10** | Dev Project Isolation | ℹ️ Guidance | Guidance on second dev project vs single project (see Section 3.6) |
 
