@@ -12,7 +12,8 @@
     "format:check": "prettier --check .",
     "db:reset": "node scripts/db-reset.mjs",
     "db:test": "node scripts/db-test.mjs",
-    "db:types": "node scripts/db-types.mjs"
+    "db:types": "node scripts/db-types.mjs",
+    "health": "node scripts/health.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

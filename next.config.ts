@@ -39,24 +39,7 @@ const withSerwist = withSerwistInit({
   ],
 });
 
-const securityHeaders = [
-  {
-    key: 'Content-Security-Policy',
-    value: [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
-      "font-src 'self'",
-      "connect-src 'self'",
-      "worker-src 'self' blob:",
-      "manifest-src 'self'",
-      "object-src 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "frame-ancestors 'none'",
-    ].join('; '),
-  },
+const commonSecurityHeaders = [
   {
     key: 'Strict-Transport-Security',
     value: 'max-age=63072000; includeSubDomains; preload',
@@ -79,14 +62,77 @@ const securityHeaders = [
   },
 ];
 
+// 1. Strict CSP for marketing and public routes: strictly connect-src 'self'
+const marketingCsp = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join('; ');
+
+// 2. Extended CSP for /app and /app/:path* with exact Supabase origin (no wildcards)
+function getAppConnectSrc(): string {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) return "connect-src 'self'";
+  try {
+    const parsed = new URL(supabaseUrl);
+    const httpsOrigin = `https://${parsed.host}`;
+    const wssOrigin = `wss://${parsed.host}`;
+    return `connect-src 'self' ${httpsOrigin} ${wssOrigin}`;
+  } catch {
+    return "connect-src 'self'";
+  }
+}
+
+const appCsp = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  getAppConnectSrc(),
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join('; ');
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   async headers() {
     return [
+      // Marketing routes: strictly excludes /app and /app/*
       {
-        source: '/(.*)',
-        headers: securityHeaders,
+        source: '/((?!app(?:/|$)).*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: marketingCsp,
+          },
+          ...commonSecurityHeaders,
+        ],
+      },
+      // Application routes: /app and /app/* with extended Supabase connect-src
+      {
+        source: '/app/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: appCsp,
+          },
+          ...commonSecurityHeaders,
+        ],
       },
     ];
   },

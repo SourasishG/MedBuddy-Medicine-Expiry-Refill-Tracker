@@ -1,6 +1,6 @@
-# MedBuddy Setup & Credentials Checklist (Phase B0)
+# MedBuddy Setup & Credentials Checklist (Phase F0 Review Update)
 
-This document provides exact, click-by-click instructions for setting up the MedBuddy backend services (Supabase, Authentication, SMTP, Web Push, and Schedulers).
+This document provides exact, click-by-click instructions and copy-paste commands for setting up and verifying the MedBuddy backend services (Supabase, Authentication, SMTP, Web Push, Vault, and Edge Functions).
 
 ---
 
@@ -15,8 +15,8 @@ This document provides exact, click-by-click instructions for setting up the Med
 | `SUPABASE_SERVICE_ROLE_KEY` | 🚨 **SECRET** | `.env.local` (local admin/tests only) | **Bypasses RLS**. NEVER expose in browser or commit to Git |
 | `VAPID_PRIVATE_KEY` | 🚨 **SECRET** | `.env.local`, Supabase Edge Function Secrets | Signs push notifications. NEVER expose in browser or Git |
 | `VAPID_SUBJECT` | **Config** | `.env.local`, Supabase Edge Function Secrets | Contact mailto for push services (`mailto:...`) |
-| `CRON_SECRET` | 🚨 **SECRET** | `.env.local`, Supabase Vault, Supabase Edge Function Secrets | Authenticates internal cron trigger to sender. NEVER commit |
-| Supabase DB Password | 🚨 **SECRET** | Password Manager only | Grants superuser database access |
+| `CRON_SECRET` | 🚨 **SECRET** | `.env.local`, Supabase Vault, Edge Function Secrets | Authenticates internal cron trigger to sender. NEVER commit |
+| Supabase DB Password | 🚨 **SECRET** | Password Manager, `.env.local` (admin tests) | Grants superuser database access |
 | Brevo SMTP Password | 🚨 **SECRET** | Supabase Project Settings (Custom SMTP) | Allows sending transactional emails |
 | Google OAuth Client Secret | 🚨 **SECRET** | Supabase Authentication (Providers -> Google) | Authenticates OAuth handshake with Google |
 | Cloudflare Turnstile Secret | 🚨 **SECRET** | Supabase Authentication (Bot Protection) | Verifies CAPTCHA tokens server-side |
@@ -32,40 +32,82 @@ This document provides exact, click-by-click instructions for setting up the Med
 |---|---|---|---|
 | **1** | Supabase Project | ✅ Completed | Ref: `fenqdaymgofxozjgcppt` (Mumbai, `ap-south-1`) |
 | **2** | Google OAuth Sign-in | ✅ Completed | Configured in Google Cloud & Supabase Auth Providers |
-| **3** | Email Sign-in by Code (OTP) | ⏳ Action Needed | Template update in Supabase Dashboard (see Section 3.3) |
-| **4** | Site & Redirect URLs | ✅ Completed | `https://medbuddy-s7ven.vercel.app` & `localhost:3000` |
+| **3** | Email Sign-in by Code (OTP) | ⏳ Action Needed | Template update in Supabase Dashboard (see Section 3.4) |
+| **4** | Site & Redirect URLs | ✅ Completed | `https://medbuddy-s7ven.vercel.app` & `http://localhost:3000/**` |
 | **5** | Custom SMTP (Brevo) | ✅ Completed | `smtp-relay.brevo.com:587` connected & verified |
-| **6** | Cloudflare Turnstile (CAPTCHA) | ⏳ Optional/Recommended | Free abuse protection setup (see Section 3.6) |
-| **7** | Web Push Keys (VAPID) | ✅ Generated | NIST P-256 pair in `.env.local`; ready for Edge Function secrets |
-| **8** | Cron Secret & Vault | ⏳ Action Needed | Run SQL snippet in Supabase SQL Editor (see Section 3.8) |
-| **9** | Dev Project Isolation | ℹ️ Guidance | Use `fenqdaymgofxozjgcppt` as dev until launch (see Section 3.9) |
+| **6** | Cloudflare Turnstile (CAPTCHA) | ⏳ Optional/Recommended | Free abuse protection setup (see Section 3.5) |
+| **7** | Web Push Keys (VAPID) | ✅ Generated & Set | NIST P-256 pair in `.env.local` and Edge Function secrets |
+| **8** | Supabase Vault Secrets | ✅ Completed | `cron_secret` and `project_url` verified in Vault |
+| **9** | Edge Function Deployment | ✅ Deployed | Deployed with `--no-verify-jwt`; update in Phase F2 (see Section 3.3) |
+| **10** | Dev Project Isolation | ℹ️ Guidance | Guidance on second dev project vs single project (see Section 3.6) |
 
 ---
 
-## 3. Click-by-Click Instructions
+## 3. Action Items & Exact Commands
 
-### 3.1 Supabase Project (Completed)
-- **Region**: Mumbai (`ap-south-1`).
-- **Project Ref**: `fenqdaymgofxozjgcppt`
-- **Project URL**: `https://fenqdaymgofxozjgcppt.supabase.co`
-- **Database Password**: Stored securely in your password manager.
+### 3.1 Supabase Vault Secrets (Action Needed)
+
+The scheduler requires **two secrets** stored in Supabase Vault so `pg_net` / `pg_cron` can dynamically look them up without hardcoding credentials in migrations:
+1. `cron_secret`: Shared secret token matching Edge Function `CRON_SECRET`.
+2. `project_url`: Base URL of your Supabase project with **no trailing slash** (`https://fenqdaymgofxozjgcppt.supabase.co`).
+
+#### Exact SQL to run in Supabase SQL Editor:
+1. Open [Supabase Dashboard -> SQL Editor](https://supabase.com/dashboard/project/fenqdaymgofxozjgcppt/sql).
+2. Run the check query:
+```sql
+-- 1. Check existing vault secrets
+select id, name, created_at from vault.decrypted_secrets;
+```
+3. If `project_url` is missing, create it by running:
+```sql
+-- 2. Create project_url secret (NO trailing slash)
+select vault.create_secret('https://fenqdaymgofxozjgcppt.supabase.co', 'project_url');
+```
+4. If `cron_secret` is missing or needs updating to match your `.env.local` value:
+```sql
+-- 3. Create cron_secret (replace <your-cron-secret> with value from .env.local)
+select vault.create_secret('<your-cron-secret>', 'cron_secret');
+```
+5. Confirm both secrets appear in `vault.decrypted_secrets`:
+```sql
+select id, name, created_at from vault.decrypted_secrets;
+```
 
 ---
 
-### 3.2 Google Sign-in (Completed)
-- **Google Cloud Console**: OAuth 2.0 Web Application client created.
-- **Authorized Redirect URI**: `https://fenqdaymgofxozjgcppt.supabase.co/auth/v1/callback`
-- **Supabase Dashboard**: Authentication -> Providers -> Google enabled with Client ID & Client Secret.
+### 3.2 Edge Function Secrets (Verified & Command Reference)
+
+The `send-notifications` Edge Function requires 4 secrets. Supabase automatically injects `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+
+To update or set secrets via Supabase CLI, run:
+```bash
+npx supabase secrets set CRON_SECRET="<value-from-env-local>" VAPID_PRIVATE_KEY="<value-from-env-local>" VAPID_PUBLIC_KEY="<value-from-env-local>" VAPID_SUBJECT="<value-from-env-local>"
+```
+
+To list and verify current secrets:
+```bash
+npx supabase secrets list
+```
 
 ---
 
-### 3.3 Email Sign-in by 6-digit Code (Action Needed)
-MedBuddy uses passwordless sign-in via a 6-digit one-time code (OTP). We must ensure the email template clearly renders the 6-digit code:
+### 3.3 Deploy the Edge Function (Command Reference)
 
-1. Log in to [Supabase Dashboard](https://supabase.com/dashboard/project/fenqdaymgofxozjgcppt).
-2. Go to **Authentication** (left sidebar, key icon) -> **Email Templates**.
-3. Click on the **Magic Link** template tab.
-4. Replace the Subject and Body with the following template:
+Deploy the `send-notifications` function with JWT verification disabled (because requests are authenticated via the `x-cron-secret` header from `pg_net`):
+
+```bash
+npx supabase functions deploy send-notifications --no-verify-jwt
+```
+
+---
+
+### 3.4 Email Sign-in Code Template (Action Needed)
+
+MedBuddy uses passwordless sign-in via a 6-digit one-time code (OTP). Ensure the email template displays the 6-digit code:
+
+1. Open [Supabase Dashboard -> Authentication -> Email Templates](https://supabase.com/dashboard/project/fenqdaymgofxozjgcppt/auth/templates).
+2. Click on the **Magic Link** tab.
+3. Replace the Subject and Body:
 
 **Subject:**
 ```
@@ -84,114 +126,42 @@ Your MedBuddy verification code: {{ .Token }}
 <p style="color: #9ca3af; font-size: 12px;">MedBuddy &mdash; Every dose on time, every medicine safe.</p>
 ```
 
-5. Click **Save Changes**.
-6. Verify under **Authentication** -> **Providers** -> **Email**:
+4. Click **Save Changes**.
+5. Under **Authentication** -> **Providers** -> **Email**, verify:
    - **Enable Email provider**: ON
-   - **Confirm email**: ON (recommended)
-   - **Secure email change**: ON
+   - **Confirm email**: ON
    - **Mailer OTP expiration**: 600 seconds (10 minutes)
 
 ---
 
-### 3.4 URLs & Redirect Allow-list (Completed)
-- **Supabase Dashboard** -> **Authentication** -> **URL Configuration**:
-  - **Site URL**: `https://medbuddy-s7ven.vercel.app`
-  - **Redirect URLs**:
-    - `http://localhost:3000/**`
-    - `https://medbuddy-s7ven.vercel.app/**`
+### 3.5 Abuse Protection: Cloudflare Turnstile (Recommended)
 
----
-
-### 3.5 Custom SMTP via Brevo (Completed)
-- **Supabase Dashboard** -> **Project Settings** -> **Authentication** -> **SMTP Settings**:
-  - **Sender Email**: `ghoshsourasish1@gmail.com`
-  - **Sender Name**: `MedBuddy`
-  - **Host**: `smtp-relay.brevo.com`
-  - **Port**: `587`
-  - **User**: `c31af7001@smtp-brevo.com`
-  - **Encryption**: TLS
-- Tested and verified operational.
-
----
-
-### 3.6 Abuse Protection: Cloudflare Turnstile (Recommended)
-Cloudflare Turnstile is 100% free and provides invisible/low-friction bot protection for authentication endpoints:
-
-1. Sign up / Log in to [Cloudflare Dashboard](https://dash.cloudflare.com/).
-2. On the left menu, select **Turnstile**.
-3. Click **Add Site**:
+1. Log in to [Cloudflare Dashboard -> Turnstile](https://dash.cloudflare.com/).
+2. Click **Add Site**:
    - **Site name**: `MedBuddy Auth`
-   - **Domain**: `medbuddy-s7ven.vercel.app` (and add `localhost` for local development)
-   - **Widget Mode**: Managed (Interactive only when suspicious) or Non-interactive.
-4. Click **Create** and copy:
-   - **Site Key** (Public)
-   - **Secret Key** (Secret)
-5. In [Supabase Dashboard](https://supabase.com/dashboard/project/fenqdaymgofxozjgcppt):
-   - Go to **Authentication** -> **Bot Protection / Security**.
-   - Enable **Enable CAPTCHA protection**.
+   - **Domain**: `medbuddy-s7ven.vercel.app` (and add `localhost`)
+   - **Widget Mode**: Managed
+3. Copy **Site Key** and **Secret Key**.
+4. In [Supabase Dashboard -> Authentication -> Bot Protection](https://supabase.com/dashboard/project/fenqdaymgofxozjgcppt/auth/protection):
+   - Toggle **Enable CAPTCHA protection** to ON.
    - Provider: **Cloudflare Turnstile**.
-   - Paste **Turnstile Site Key** and **Turnstile Secret Key**.
-   - Click **Save**.
+   - Enter **Site Key** and **Secret Key**, then click **Save**.
 
 ---
 
-### 3.7 Web Push Keys (VAPID) (Ready)
-A native NIST P-256 keypair has already been generated and saved into your untracked `.env.local`:
+### 3.6 Separate Development Project Guidance
 
-- `NEXT_PUBLIC_VAPID_PUBLIC_KEY`: Used by browsers in frontend to subscribe to Web Push.
-- `VAPID_PRIVATE_KEY`: Secret key used by the Supabase Edge Function (`send-notifications`) to sign push requests.
-- `VAPID_SUBJECT`: `mailto:ghoshsourasish1@gmail.com` (identification contact for web push relays).
-
-**Action for Supabase Edge Functions** (when deploying Phase B2):
-Set these secrets in Supabase via Supabase CLI:
-```bash
-npx supabase secrets set VAPID_PRIVATE_KEY="<YOUR_VAPID_PRIVATE_KEY>" VAPID_SUBJECT="mailto:ghoshsourasish1@gmail.com"
-```
-*(Or via Supabase Dashboard -> Project Settings -> Edge Functions -> Secrets).*
+- **Recommendation:** Before real users sign up, create a second free Supabase project (e.g. `medbuddy-dev`) so automated smoke tests (`ALLOW_TEST_USERS=true`) never touch production data.
+- **Single Project Note:** If the free plan limits your account to 1 project, `fenqdaymgofxozjgcppt` can be used for testing during active development. Automated smoke tests clean up after themselves in a `finally` block. This decision is tracked in `docs/DECISIONS.md`.
 
 ---
 
-### 3.8 Cron Secret & Supabase Vault (Action Needed)
-A 32-byte hex `CRON_SECRET` has been generated:
-```
-d48ba104cbed0e4252e766799e7353e35587653ca74de3ed2b4f1bc8f44f569a
-```
+## 4. Phase F0 Action Checklist
 
-We must store this secret in Supabase Vault so the `pg_cron` / `pg_net` database scheduler can read it securely when triggering the Edge Function, without ever hardcoding it in SQL:
-
-1. Go to [Supabase Dashboard](https://supabase.com/dashboard/project/fenqdaymgofxozjgcppt) -> **SQL Editor**.
-2. Click **New Query**.
-3. Paste and run the following command:
-
-```sql
-select vault.create_secret(
-  'd48ba104cbed0e4252e766799e7353e35587653ca74de3ed2b4f1bc8f44f569a',
-  'cron_secret'
-);
-```
-
-4. Confirm it returns a UUID secret ID.
-5. In Phase B2, we will also set this as the Edge Function secret:
-```bash
-npx supabase secrets set CRON_SECRET="d48ba104cbed0e4252e766799e7353e35587653ca74de3ed2b4f1bc8f44f569a"
-```
-
----
-
-### 3.9 Development Project vs Production (Guidance)
-Supabase free tier provides up to **2 free projects** per account.
-- **Option A (Recommended if you want complete separation):** Create a second free Supabase project named `medbuddy-dev` in Mumbai (`ap-south-1`). We run migrations, `supabase/tests/schema_scenario.sql`, and `scripts/smoke-test.mjs` against `medbuddy-dev` so production remains 100% pristine.
-- **Option B (Single project):** If you prefer to use one project for now, `fenqdaymgofxozjgcppt` is completely fresh and empty. We treat it as development during Phase B1–B4, run our tests, verify everything, and run clean resets.
-
----
-
-## 4. Ready to Proceed?
-
-Once you have completed:
-1. Item 3.3 (Email template with `{{ .Token }}`)
-2. Item 3.8 (Run Vault SQL snippet in Supabase SQL Editor)
-3. Decide on Option A vs B for Item 3.9
-
-Reply with:
-- **"done"**
-- Your choice: Option A (new dev project ref) or Option B (use `fenqdaymgofxozjgcppt` as dev).
+Please perform the following actions:
+1. [ ] Run the SQL in Section 3.1 to add `project_url` to Supabase Vault:
+   ```sql
+   select vault.create_secret('https://fenqdaymgofxozjgcppt.supabase.co', 'project_url');
+   ```
+2. [ ] Confirm the Magic Link email template in Section 3.4 shows `{{ .Token }}`.
+3. [ ] Reply with **"done"** so we can proceed to Phase F1 (Database fixes migration).

@@ -238,7 +238,7 @@ async function main() {
     assert.strictEqual(dose.status, 'pending');
 
     // 6. Log dose taken
-    const { data: logRes, error: logErr } = await clientA.rpc('fn_log_dose', {
+    const { error: logErr } = await clientA.rpc('fn_log_dose', {
       p_event: dose.id,
       p_status: 'taken',
     });
@@ -299,7 +299,7 @@ async function main() {
     console.log('[Check 4] Tamper Protection: Direct bypasses and private RPCs blocked...');
     
     // Direct update of quantity_remaining (must be refused or not touch column)
-    const { data: directUpd, error: directUpdErr } = await clientA
+    await clientA
       .from('inventory_items')
       .update({ quantity_remaining: 999 })
       .eq('id', boxA.id)

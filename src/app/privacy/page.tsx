@@ -112,12 +112,14 @@ export default function PrivacyPage() {
                   </tr>
                   <tr>
                     <td>
-                      Settings saved on your device: whether you have already seen the intro
-                      animation
+                      Settings saved on your device: your Motion on/off choice (saved in local
+                      storage so your preference stays across visits), and whether you have already
+                      seen the intro animation (saved in session storage so it replays next time you
+                      open the site)
                     </td>
-                    <td>When you load the homepage</td>
-                    <td>To avoid replaying the intro in the same tab</td>
-                    <td>Your browser’s session storage only. It is never sent to us</td>
+                    <td>When you use the Motion toggle or load the intro</td>
+                    <td>To remember your choice</td>
+                    <td>Your browser’s local and session storage only. It is never sent to us</td>
                   </tr>
                   <tr>
                     <td>Site files saved by the service worker</td>
