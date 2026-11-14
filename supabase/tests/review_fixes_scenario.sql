@@ -37,9 +37,9 @@ declare
 begin
   raise notice '== T1: Push subscription failure tracking, cool-down, and recovery ==';
 
-  -- Create test profile
-  insert into profiles (id, full_name, timezone)
-  values (v_uid, 'F1 Test User', 'Asia/Kolkata')
+  -- Create test user in auth.users (trigger creates profile)
+  insert into auth.users (id, email, raw_user_meta_data)
+  values (v_uid, 'f1@medbuddy.test', '{"full_name": "F1 Test User"}')
   on conflict (id) do nothing;
 
   -- Create fresh push subscription
@@ -95,8 +95,8 @@ begin
   perform test_assert(not exists(select 1 from push_subscriptions where id = v_sub_id), 'Subscription failing > 7 days must be deleted');
   raise notice '  ✓ 7-day failure cutoff deletion verified';
 
-  -- Clean up test profile
-  delete from profiles where id = v_uid;
+  -- Clean up test profile and user
+  delete from auth.users where id = v_uid;
 end $$;
 
 -- ---------------------------------------------------------------------

@@ -61,6 +61,7 @@ const env = { ...process.env, PGPASSWORD: password };
 
 const cleanupSql = `
   drop function if exists assert(boolean, text) cascade;
+  drop function if exists test_assert(boolean, text) cascade;
   delete from care_profiles where exists (
     select 1 from care_access ca
     where ca.care_profile_id = care_profiles.id
@@ -73,7 +74,8 @@ const cleanupSql = `
   delete from auth.users where id in (
     '11111111-1111-1111-1111-111111111111',
     '22222222-2222-2222-2222-222222222222',
-    '33333333-3333-3333-3333-333333333333'
+    '33333333-3333-3333-3333-333333333333',
+    '00000000-0000-0000-0000-0000000000f1'
   );
 `;
 
