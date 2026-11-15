@@ -136,3 +136,113 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+/**
+ * Push Notification Handlers
+ *
+ * Implements Web Push reception and notification click routing.
+ * Ensures strict privacy: does not log payload details or private health information.
+ */
+
+interface PushEventPayload {
+  title?: string;
+  body?: string;
+  tag?: string;
+  url?: string;
+}
+
+interface SwPushMessageData {
+  json(): unknown;
+  text(): string;
+}
+
+interface SwExtendableEvent extends Event {
+  waitUntil(f: Promise<unknown>): void;
+}
+
+interface SwPushEvent extends SwExtendableEvent {
+  readonly data?: SwPushMessageData | null;
+}
+
+interface SwNotificationEvent extends SwExtendableEvent {
+  readonly action?: string;
+  readonly notification: Notification & {
+    data?: {
+      url?: string;
+    };
+    close(): void;
+  };
+}
+
+interface SwWindowClient {
+  url: string;
+  focus(): Promise<SwWindowClient>;
+  navigate?(url: string): Promise<SwWindowClient | null>;
+}
+
+interface SwClients {
+  matchAll(options?: {
+    type?: string;
+    includeUncontrolled?: boolean;
+  }): Promise<SwWindowClient[]>;
+  openWindow?(url: string): Promise<SwWindowClient | null>;
+}
+
+interface SwRegistration {
+  showNotification(title: string, options?: NotificationOptions): Promise<void>;
+}
+
+const swScope = self as unknown as {
+  registration: SwRegistration;
+  clients: SwClients;
+};
+
+self.addEventListener('push', ((event: SwPushEvent) => {
+  if (!event.data) return;
+
+  let payload: PushEventPayload = {};
+  try {
+    payload = event.data.json() as PushEventPayload;
+  } catch {
+    payload = {
+      body: event.data.text(),
+    };
+  }
+
+  const title = payload.title || 'MedBuddy Reminder';
+  const options: NotificationOptions = {
+    body: payload.body || 'You have a medicine reminder waiting.',
+    tag: payload.tag || 'medbuddy-reminder',
+    icon: '/icon.svg',
+    badge: '/icon.svg',
+    data: {
+      url: payload.url || '/app',
+    },
+  };
+
+  event.waitUntil(swScope.registration.showNotification(title, options));
+}) as EventListener);
+
+self.addEventListener('notificationclick', ((event: SwNotificationEvent) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || '/app';
+
+  event.waitUntil(
+    swScope.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList: SwWindowClient[]) => {
+        for (const client of clientList) {
+          if (client.url && client.url.includes('/app')) {
+            return client.focus();
+          }
+          if (client.navigate) {
+            return client.navigate(targetUrl).then((c) => c?.focus());
+          }
+        }
+        if (swScope.clients.openWindow) {
+          return swScope.clients.openWindow(targetUrl);
+        }
+      }),
+  );
+}) as EventListener);
+

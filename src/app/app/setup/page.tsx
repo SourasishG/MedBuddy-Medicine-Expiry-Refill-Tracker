@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useCareProfile } from '@/features/care-profile/CareProfileContext';
+import { subscribeToPush } from '@/features/notifications/push-utils';
 import styles from './setup.module.scss';
 
 function SetupContent() {
@@ -84,11 +85,14 @@ function SetupContent() {
       await refetchProfiles();
       setActiveProfileId(profileId);
 
-      // Offer browser notification permission if requested
-      if (enableReminders && typeof window !== 'undefined' && 'Notification' in window) {
+      // Offer browser notification permission and subscribe to Web Push if requested
+      if (enableReminders && typeof window !== 'undefined') {
         try {
-          if (Notification.permission === 'default') {
-            await Notification.requestPermission();
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (user) {
+            await subscribeToPush(supabase, user.id);
           }
         } catch {
           // Non-blocking notification permission error

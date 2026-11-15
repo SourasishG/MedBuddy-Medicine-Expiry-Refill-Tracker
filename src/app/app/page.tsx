@@ -11,6 +11,11 @@ import {
   formatTimeInTz,
   FOOD_RULE_LABELS,
 } from '@/features/schedules/schedule-utils';
+import {
+  getNotificationPermissionStatus,
+  type NotificationPermissionStatus,
+} from '@/features/notifications/push-utils';
+import { NotificationSetupModal } from '@/features/notifications/NotificationSetupModal';
 import type { Database } from '@/lib/supabase/database.types';
 import styles from './today.module.scss';
 import medStyles from './medicine/[id]/medicine-detail.module.scss';
@@ -39,6 +44,12 @@ export default function TodayPage() {
   const [prnAmount, setPrnAmount] = useState<number | ''>(1);
   const [prnFeedback, setPrnFeedback] = useState<string | null>(null);
   const [isPrnSubmitting, setIsPrnSubmitting] = useState(false);
+
+  // Notification reminder state (Phase A5)
+  const [notificationStatus, setNotificationStatus] = useState<NotificationPermissionStatus>(
+    () => (typeof window !== 'undefined' ? getNotificationPermissionStatus() : 'unsupported'),
+  );
+  const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
 
   const profileTz = activeCareProfile?.timezone || 'Asia/Kolkata';
   const missedAfterMinutes = activeCareProfile?.missed_after_minutes ?? 120;
@@ -321,27 +332,43 @@ export default function TodayPage() {
   return (
     <div className={styles.todayContainer}>
       {/* Top Banner (Reminders status) */}
-      <div className={styles.banner} role="status">
-        <div className={styles.bannerContent}>
-          <svg
-            className={styles.bannerIcon}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          <span>Reminders are off for this browser.</span>
+      {notificationStatus !== 'granted' && (
+        <div className={styles.banner} role="status">
+          <div className={styles.bannerContent}>
+            <svg
+              className={styles.bannerIcon}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <span>
+              {notificationStatus === 'denied'
+                ? 'Reminders are blocked in your browser settings.'
+                : 'Reminders are off for this browser.'}
+            </span>
+          </div>
+          {notificationStatus === 'denied' ? (
+            <Link href="/app/settings#notifications" className={styles.bannerBtn}>
+              Settings
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className={styles.bannerBtn}
+              onClick={() => setIsNotifModalOpen(true)}
+            >
+              Enable
+            </button>
+          )}
         </div>
-        <Link href="/app/settings" className={styles.bannerBtn}>
-          Enable
-        </Link>
-      </div>
+      )}
 
       {/* Header Context */}
       <header className={styles.todayHeader}>
@@ -872,6 +899,13 @@ export default function TodayPage() {
           </form>
         </div>
       )}
+
+      {/* Reminder Setup Modal */}
+      <NotificationSetupModal
+        isOpen={isNotifModalOpen}
+        onClose={() => setIsNotifModalOpen(false)}
+        onSubscribed={() => setNotificationStatus('granted')}
+      />
     </div>
   );
 }
