@@ -114,4 +114,6 @@ clearAppStateCookie(res);
 const clearedCookie = res.cookies.get(APP_STATE_COOKIE_NAME);
 assert.equal(clearedCookie.maxAge, 0, 'Cleared cookie must have maxAge 0');
 
-console.log('✓ All App State Cookie tests (including missing & short secret cases) passed successfully!');
+console.log(
+  '✓ All App State Cookie tests (including missing & short secret cases) passed successfully!',
+);

@@ -6,21 +6,21 @@ This document provides exact, click-by-click instructions and copy-paste command
 
 ## 1. Credentials Classification: Public vs Secret
 
-| Variable / Credential           | Classification | Where It Goes                                       | Exposure Risk                                               |
-| ------------------------------- | -------------- | --------------------------------------------------- | ----------------------------------------------------------- |
-| `NEXT_PUBLIC_SITE_URL`          | **Public**     | `.env.local`, Vercel (Production & Preview)         | None (Public website URL)                                   |
-| `NEXT_PUBLIC_SUPABASE_URL`      | **Public**     | `.env.local`, Vercel                                | None (PostgREST / Auth endpoint)                            |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Public**     | `.env.local`, Vercel                                | Safe in browser; RLS enforces row access                    |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`  | **Public**     | `.env.local`, Vercel                                | Safe in browser; used by browser to register push           |
-| `SUPABASE_SERVICE_ROLE_KEY`     | 🚨 **SECRET**  | `.env.local` (local admin/tests only)               | **Bypasses RLS**. NEVER expose in browser or commit to Git  |
-| `VAPID_PRIVATE_KEY`             | 🚨 **SECRET**  | `.env.local`, Supabase Edge Function Secrets        | Signs push notifications. NEVER expose in browser or Git    |
-| `VAPID_SUBJECT`                 | **Config**     | `.env.local`, Supabase Edge Function Secrets        | Contact mailto for push services (`mailto:...`)             |
-| `CRON_SECRET`                   | 🚨 **SECRET**  | `.env.local`, Supabase Vault, Edge Function Secrets | Authenticates internal cron trigger to sender. NEVER commit |
+| Variable / Credential           | Classification | Where It Goes                                       | Exposure Risk                                                        |
+| ------------------------------- | -------------- | --------------------------------------------------- | -------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`          | **Public**     | `.env.local`, Vercel (Production & Preview)         | None (Public website URL)                                            |
+| `NEXT_PUBLIC_SUPABASE_URL`      | **Public**     | `.env.local`, Vercel                                | None (PostgREST / Auth endpoint)                                     |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Public**     | `.env.local`, Vercel                                | Safe in browser; RLS enforces row access                             |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`  | **Public**     | `.env.local`, Vercel                                | Safe in browser; used by browser to register push                    |
+| `SUPABASE_SERVICE_ROLE_KEY`     | 🚨 **SECRET**  | `.env.local` (local admin/tests only)               | **Bypasses RLS**. NEVER expose in browser or commit to Git           |
+| `VAPID_PRIVATE_KEY`             | 🚨 **SECRET**  | `.env.local`, Supabase Edge Function Secrets        | Signs push notifications. NEVER expose in browser or Git             |
+| `VAPID_SUBJECT`                 | **Config**     | `.env.local`, Supabase Edge Function Secrets        | Contact mailto for push services (`mailto:...`)                      |
+| `CRON_SECRET`                   | 🚨 **SECRET**  | `.env.local`, Supabase Vault, Edge Function Secrets | Authenticates internal cron trigger to sender. NEVER commit          |
 | `APP_COOKIE_SECRET`             | 🚨 **SECRET**  | `.env.local`, Vercel (Production & Preview)         | Signs `medbuddy_app_state` cookie. Must be >= 32 chars. NEVER commit |
-| Supabase DB Password            | 🚨 **SECRET**  | Password Manager, `.env.local` (admin tests)        | Grants superuser database access                            |
-| Brevo SMTP Password             | 🚨 **SECRET**  | Supabase Project Settings (Custom SMTP)             | Allows sending transactional emails                         |
-| Google OAuth Client Secret      | 🚨 **SECRET**  | Supabase Authentication (Providers -> Google)       | Authenticates OAuth handshake with Google                   |
-| Cloudflare Turnstile Secret     | 🚨 **SECRET**  | Supabase Authentication (Bot Protection)            | Verifies CAPTCHA tokens server-side                         |
+| Supabase DB Password            | 🚨 **SECRET**  | Password Manager, `.env.local` (admin tests)        | Grants superuser database access                                     |
+| Brevo SMTP Password             | 🚨 **SECRET**  | Supabase Project Settings (Custom SMTP)             | Allows sending transactional emails                                  |
+| Google OAuth Client Secret      | 🚨 **SECRET**  | Supabase Authentication (Providers -> Google)       | Authenticates OAuth handshake with Google                            |
+| Cloudflare Turnstile Secret     | 🚨 **SECRET**  | Supabase Authentication (Bot Protection)            | Verifies CAPTCHA tokens server-side                                  |
 
 > [!CAUTION]
 > **Secrets never go in Git.** All secrets must remain in `.env.local` (which is in `.gitignore`), Supabase Vault / Secrets, or Vercel Environment Variables. Never commit `.env` or paste secrets into tracked repository files.
@@ -205,13 +205,13 @@ This section specifies the configuration needed in **Vercel** and **Supabase** f
 
 In your [Vercel Project Dashboard](https://vercel.com/) -> **Settings** -> **Environment Variables**, configure the following variables for **Production**, **Preview**, and **Development**:
 
-| Variable Name                   | Classification     | Client / Public vs Secret                                            | Purpose                                                                                                       |
-| :------------------------------ | :----------------- | :------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------ |
-| `NEXT_PUBLIC_SITE_URL`          | Public Config      | Public (Safe in bundle)                                              | Canonical origin (e.g. `https://medbuddy-s7ven.vercel.app`). Used for canonical URLs, sitemaps, and manifest. |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Public API         | Public (Safe in bundle)                                              | PostgREST / Auth endpoint (`https://fenqdaymgofxozjgcppt.supabase.co`).                                       |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public API Key     | Public (Safe in bundle)                                              | Supabase client anon key. RLS enforces security at database row level.                                        |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`  | Public Key         | Public (Safe in bundle)                                              | NIST P-256 Web Push public key. Used by the browser to register Web Push subscriptions.                       |
-| `APP_COOKIE_SECRET`             | Server-Side Secret | **Secret** (Server / Proxy only &mdash; **NEVER** `NEXT_PUBLIC_`)    | Cryptographic signing & verification of `medbuddy_app_state` HttpOnly cookie. Must be at least 32 characters. |
+| Variable Name                   | Classification     | Client / Public vs Secret                                         | Purpose                                                                                                       |
+| :------------------------------ | :----------------- | :---------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_SITE_URL`          | Public Config      | Public (Safe in bundle)                                           | Canonical origin (e.g. `https://medbuddy-s7ven.vercel.app`). Used for canonical URLs, sitemaps, and manifest. |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Public API         | Public (Safe in bundle)                                           | PostgREST / Auth endpoint (`https://fenqdaymgofxozjgcppt.supabase.co`).                                       |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public API Key     | Public (Safe in bundle)                                           | Supabase client anon key. RLS enforces security at database row level.                                        |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`  | Public Key         | Public (Safe in bundle)                                           | NIST P-256 Web Push public key. Used by the browser to register Web Push subscriptions.                       |
+| `APP_COOKIE_SECRET`             | Server-Side Secret | **Secret** (Server / Proxy only &mdash; **NEVER** `NEXT_PUBLIC_`) | Cryptographic signing & verification of `medbuddy_app_state` HttpOnly cookie. Must be at least 32 characters. |
 
 #### 4.1.1 Setting `APP_COOKIE_SECRET` in Vercel
 
