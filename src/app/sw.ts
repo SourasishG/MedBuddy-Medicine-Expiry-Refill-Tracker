@@ -151,12 +151,58 @@ interface PushEventPayload {
   url?: string;
 }
 
-self.addEventListener('push', (event: any) => {
+interface SwPushMessageData {
+  json(): unknown;
+  text(): string;
+}
+
+interface SwExtendableEvent extends Event {
+  waitUntil(f: Promise<unknown>): void;
+}
+
+interface SwPushEvent extends SwExtendableEvent {
+  readonly data?: SwPushMessageData | null;
+}
+
+interface SwNotificationEvent extends SwExtendableEvent {
+  readonly action?: string;
+  readonly notification: Notification & {
+    data?: {
+      url?: string;
+    };
+    close(): void;
+  };
+}
+
+interface SwWindowClient {
+  url: string;
+  focus(): Promise<SwWindowClient>;
+  navigate?(url: string): Promise<SwWindowClient | null>;
+}
+
+interface SwClients {
+  matchAll(options?: {
+    type?: string;
+    includeUncontrolled?: boolean;
+  }): Promise<SwWindowClient[]>;
+  openWindow?(url: string): Promise<SwWindowClient | null>;
+}
+
+interface SwRegistration {
+  showNotification(title: string, options?: NotificationOptions): Promise<void>;
+}
+
+const swScope = self as unknown as {
+  registration: SwRegistration;
+  clients: SwClients;
+};
+
+self.addEventListener('push', ((event: SwPushEvent) => {
   if (!event.data) return;
 
   let payload: PushEventPayload = {};
   try {
-    payload = event.data.json();
+    payload = event.data.json() as PushEventPayload;
   } catch {
     payload = {
       body: event.data.text(),
@@ -174,31 +220,29 @@ self.addEventListener('push', (event: any) => {
     },
   };
 
-  event.waitUntil((self as any).registration.showNotification(title, options));
-});
+  event.waitUntil(swScope.registration.showNotification(title, options));
+}) as EventListener);
 
-self.addEventListener('notificationclick', (event: any) => {
+self.addEventListener('notificationclick', ((event: SwNotificationEvent) => {
   event.notification.close();
   const targetUrl = event.notification.data?.url || '/app';
 
   event.waitUntil(
-    (self as any).clients
+    swScope.clients
       .matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clientList: any[]) => {
+      .then((clientList: SwWindowClient[]) => {
         for (const client of clientList) {
-          if ('focus' in client) {
-            if (client.url && client.url.includes('/app')) {
-              return client.focus();
-            }
-            if ('navigate' in client) {
-              return client.navigate(targetUrl).then((c: any) => c?.focus());
-            }
+          if (client.url && client.url.includes('/app')) {
+            return client.focus();
+          }
+          if (client.navigate) {
+            return client.navigate(targetUrl).then((c) => c?.focus());
           }
         }
-        if ((self as any).clients.openWindow) {
-          return (self as any).clients.openWindow(targetUrl);
+        if (swScope.clients.openWindow) {
+          return swScope.clients.openWindow(targetUrl);
         }
       }),
   );
-});
+}) as EventListener);
 
