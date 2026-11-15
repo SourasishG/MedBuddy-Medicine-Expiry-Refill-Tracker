@@ -228,10 +228,7 @@ export async function replaceScheduleTimesAtomic({
   // 5. Step C: Delete obsolete rows ONLY after inserts & updates succeed
   if (toDelete.length > 0) {
     const idsToDelete = toDelete.map((r) => r.id);
-    const { error: delErr } = await supabase
-      .from('schedule_times')
-      .delete()
-      .in('id', idsToDelete);
+    const { error: delErr } = await supabase.from('schedule_times').delete().in('id', idsToDelete);
 
     if (delErr) {
       result.error =

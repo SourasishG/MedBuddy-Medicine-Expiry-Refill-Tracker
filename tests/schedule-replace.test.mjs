@@ -81,9 +81,7 @@ console.log('2. Testing diffScheduleTimes logic...');
 
 // Test 2d: Changing schedule to as-needed (target empty)
 {
-  const existing = [
-    { id: 'st-1', time_of_day: '08:00:00', dose_amount: 1, food: 'any' },
-  ];
+  const existing = [{ id: 'st-1', time_of_day: '08:00:00', dose_amount: 1, food: 'any' }];
   const target = [];
   const diff = diffScheduleTimes(existing, target, 1);
   assert.equal(diff.toInsert.length, 0);
@@ -123,14 +121,16 @@ function createMockSupabase(overrides = {}) {
         insert(payload) {
           operations.push({ type: 'insert', table, payload });
           return {
-            select(cols) {
+            select() {
               if (table === 'schedule_times' && overrides.insertError) {
                 return Promise.resolve({ data: null, error: overrides.insertError });
               }
-              const mockInserted = (Array.isArray(payload) ? payload : [payload]).map((item, i) => ({
-                id: `new-${i + 1}`,
-                ...item,
-              }));
+              const mockInserted = (Array.isArray(payload) ? payload : [payload]).map(
+                (item, i) => ({
+                  id: `new-${i + 1}`,
+                  ...item,
+                }),
+              );
               return Promise.resolve({ data: mockInserted, error: null });
             },
           };
@@ -180,7 +180,7 @@ function createMockSupabase(overrides = {}) {
   const mockSupabase = createMockSupabase();
   const targetTimes = [
     { time: '08:00', food: 'with_food', dose_amount: 2 }, // update existing 08:00
-    { time: '14:00', food: 'any', dose_amount: 1 },       // new time
+    { time: '14:00', food: 'any', dose_amount: 1 }, // new time
     // 20:00 removed -> delete
   ];
 
@@ -284,8 +284,14 @@ function createMockSupabase(overrides = {}) {
 
   assert.equal(res.success, false);
   assert.ok(res.error?.includes('Could not load current schedule times'));
-  assert.equal(mockSupabase._operations.some((o) => o.type === 'insert'), false);
-  assert.equal(mockSupabase._operations.some((o) => o.type === 'delete_in'), false);
+  assert.equal(
+    mockSupabase._operations.some((o) => o.type === 'insert'),
+    false,
+  );
+  assert.equal(
+    mockSupabase._operations.some((o) => o.type === 'delete_in'),
+    false,
+  );
   console.log('  ✓ Failure safety: fetch error aborts immediately');
 }
 
