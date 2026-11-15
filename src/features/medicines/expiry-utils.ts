@@ -27,7 +27,7 @@ export function getEffectiveExpiryDate(
   try {
     const openedTime = new Date(`${openedOn}T00:00:00Z`).getTime();
     const shelfLifeMs = shelfLifeDays * 86400000;
-    const openedExpiryDate = new Date(openedTime + shelfLifeMs).toISOString().split('T')[0];
+    const openedExpiryDate = new Date(openedTime + shelfLifeMs).toISOString().slice(0, 10);
 
     return openedExpiryDate < expiryDate ? openedExpiryDate : expiryDate;
   } catch {
@@ -64,7 +64,7 @@ export function computeDaysLeft(
     return diffDays;
   } catch {
     // Fallback using UTC
-    const todayUtc = new Date().toISOString().split('T')[0];
+    const todayUtc = new Date().toISOString().slice(0, 10);
     const todayDate = new Date(`${todayUtc}T00:00:00Z`).getTime();
     const expDate = new Date(`${effective}T00:00:00Z`).getTime();
     return Math.round((expDate - todayDate) / 86400000);

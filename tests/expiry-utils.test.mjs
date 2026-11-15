@@ -93,6 +93,16 @@ const prnLow = formatRefillHint({ remaining: 3, unit: 'capsules' });
 assert.equal(prnLow, 'Low stock: 3 capsules left.');
 console.log('  ✓ Refill hints verified');
 
+// 6. Days left calculation & Past expiry check
+console.log('6. Verifying computeDaysLeft and isPastExpiry...');
+const futureDate = '2099-01-01';
+const pastDate = '2020-01-01';
+assert.ok(computeDaysLeft(futureDate) > 1000);
+assert.ok(computeDaysLeft(pastDate) < -1000);
+assert.equal(isPastExpiry(pastDate), true);
+assert.equal(isPastExpiry(futureDate), false);
+console.log('  ✓ computeDaysLeft and isPastExpiry verified');
+
 console.log('\n=================================================================');
 console.log('✅ ALL EXPIRY & MEDICINE UTILITY TESTS PASSED!');
 console.log('=================================================================');
