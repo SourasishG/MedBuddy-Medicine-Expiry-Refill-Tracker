@@ -233,19 +233,19 @@ export function categorizeDoseEvents<T extends DoseEventLike>(
 
   // Sort each section logically:
   // dueNow: earliest scheduled first
-  dueNow.sort(
-    (a, b) => new Date(a.scheduled_for).getTime() - new Date(b.scheduled_for).getTime(),
-  );
+  dueNow.sort((a, b) => new Date(a.scheduled_for).getTime() - new Date(b.scheduled_for).getTime());
   // laterToday: earliest scheduled / snoozed first
   laterToday.sort((a, b) => {
-    const timeA = a.snoozed_until ? new Date(a.snoozed_until).getTime() : new Date(a.scheduled_for).getTime();
-    const timeB = b.snoozed_until ? new Date(b.snoozed_until).getTime() : new Date(b.scheduled_for).getTime();
+    const timeA = a.snoozed_until
+      ? new Date(a.snoozed_until).getTime()
+      : new Date(a.scheduled_for).getTime();
+    const timeB = b.snoozed_until
+      ? new Date(b.snoozed_until).getTime()
+      : new Date(b.scheduled_for).getTime();
     return timeA - timeB;
   });
   // missed: most recent missed first
-  missed.sort(
-    (a, b) => new Date(b.scheduled_for).getTime() - new Date(a.scheduled_for).getTime(),
-  );
+  missed.sort((a, b) => new Date(b.scheduled_for).getTime() - new Date(a.scheduled_for).getTime());
   // doneToday: most recently completed first
   doneToday.sort((a, b) => {
     const timeA = a.taken_at ? new Date(a.taken_at).getTime() : new Date(a.scheduled_for).getTime();

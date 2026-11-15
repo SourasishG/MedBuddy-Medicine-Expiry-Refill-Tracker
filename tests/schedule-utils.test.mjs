@@ -28,7 +28,9 @@ assert.equal(getLocalDateString('2026-11-15T22:00:00Z', 'UTC'), '2026-11-15');
 
 // Verify formatHeaderDate
 const headerDate = formatHeaderDate('UTC', new Date('2026-11-15T12:00:00Z'));
-assert.ok(headerDate.includes('Sunday') && headerDate.includes('15') && headerDate.includes('November'));
+assert.ok(
+  headerDate.includes('Sunday') && headerDate.includes('15') && headerDate.includes('November'),
+);
 console.log('  ✓ Timezone date rollover and header formatting validated correctly');
 
 // 2. formatTimeInTz
@@ -119,36 +121,37 @@ const categorized = categorizeDoseEvents(mockEvents, 'UTC', 120, now);
 assert.equal(categorized.dueNow.length, 1, 'Should have 1 due now dose');
 assert.equal(categorized.dueNow[0].id, 'ev-due-1');
 
-assert.equal(categorized.laterToday.length, 2, 'Should have 2 later today doses (1 future + 1 snoozed)');
-assert.ok(categorized.laterToday.some(e => e.id === 'ev-later-1'));
-assert.ok(categorized.laterToday.some(e => e.id === 'ev-snoozed-1'));
+assert.equal(
+  categorized.laterToday.length,
+  2,
+  'Should have 2 later today doses (1 future + 1 snoozed)',
+);
+assert.ok(categorized.laterToday.some((e) => e.id === 'ev-later-1'));
+assert.ok(categorized.laterToday.some((e) => e.id === 'ev-snoozed-1'));
 
 assert.equal(categorized.missed.length, 1, 'Should have 1 missed dose exceeding threshold');
 assert.equal(categorized.missed[0].id, 'ev-missed-1');
 
 assert.equal(categorized.doneToday.length, 2, 'Should have 2 done doses (taken + skipped)');
-assert.ok(categorized.doneToday.some(e => e.id === 'ev-taken-1'));
-assert.ok(categorized.doneToday.some(e => e.id === 'ev-skipped-1'));
+assert.ok(categorized.doneToday.some((e) => e.id === 'ev-taken-1'));
+assert.ok(categorized.doneToday.some((e) => e.id === 'ev-skipped-1'));
 console.log('  ✓ categorizeDoseEvents correctly partitions all 4 sections');
 
 // 5. formatScheduleSummary
 console.log('5. Verifying formatScheduleSummary...');
 assert.equal(
   formatScheduleSummary('daily', [{ time_of_day: '08:00:00' }, { time_of_day: '20:00:00' }]),
-  'Daily at 8:00 AM, 8:00 PM'
+  'Daily at 8:00 AM, 8:00 PM',
 );
 assert.equal(
   formatScheduleSummary('weekdays', [{ time_of_day: '09:00:00' }], [1, 3, 5]),
-  'On Mon, Wed, Fri at 9:00 AM'
+  'On Mon, Wed, Fri at 9:00 AM',
 );
 assert.equal(
   formatScheduleSummary('interval', [{ time_of_day: '10:00:00' }], null, 3),
-  'Every 3 days at 10:00 AM'
+  'Every 3 days at 10:00 AM',
 );
-assert.equal(
-  formatScheduleSummary('as_needed'),
-  'Taken as needed (no fixed schedule)'
-);
+assert.equal(formatScheduleSummary('as_needed'), 'Taken as needed (no fixed schedule)');
 console.log('  ✓ formatScheduleSummary generates clean human-readable summaries');
 
 console.log('\n=================================================================');
