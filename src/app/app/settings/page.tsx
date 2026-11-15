@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -14,6 +14,15 @@ import {
   DEFAULT_FALLBACK_SNOOZE_MINUTES,
   PERMISSION_DENIED_MESSAGE,
 } from '@/features/care-profile/profile-settings-validation';
+import {
+  getNotificationPermissionStatus,
+  getCurrentPushSubscription,
+  subscribeToPush,
+  unsubscribeFromPush,
+  sendLocalTestNotification,
+  type NotificationPermissionStatus,
+} from '@/features/notifications/push-utils';
+import { InstallCard } from '@/features/install/InstallCard';
 import styles from './settings.module.scss';
 
 export default function SettingsPage() {
@@ -42,6 +51,205 @@ export default function SettingsPage() {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
+
+  // Notifications & Reminders state
+  const [permissionStatus, setPermissionStatus] =
+    useState<NotificationPermissionStatus>('unsupported');
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [hideNames, setHideNames] = useState(false);
+  const [notifyDue, setNotifyDue] = useState(true);
+  const [notifyMissed, setNotifyMissed] = useState(true);
+  const [notifyExpiry, setNotifyExpiry] = useState(true);
+  const [notifFeedback, setNotifFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+  const [isBusyNotif, setIsBusyNotif] = useState(false);
+
+  // Load notification settings and preferences
+  useEffect(() => {
+    async function loadNotificationSettings() {
+      // 1. Check device permission and existing PushManager subscription
+      if (typeof window !== 'undefined') {
+        const perm = getNotificationPermissionStatus();
+        setPermissionStatus(perm);
+        if (perm === 'granted') {
+          const sub = await getCurrentPushSubscription();
+          setIsSubscribed(Boolean(sub));
+        } else {
+          setIsSubscribed(false);
+        }
+      }
+
+      // 2. Fetch user profile preferences (hide_names_in_notifications)
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('hide_names_in_notifications')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profile) {
+        setHideNames(Boolean(profile.hide_names_in_notifications));
+      }
+
+      // 3. Fetch care_access alert preferences for active profile
+      if (activeCareProfile) {
+        const { data: access } = await supabase
+          .from('care_access')
+          .select('notify_due, notify_missed, notify_expiry')
+          .eq('care_profile_id', activeCareProfile.id)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (access) {
+          setNotifyDue(access.notify_due ?? true);
+          setNotifyMissed(access.notify_missed ?? true);
+          setNotifyExpiry(access.notify_expiry ?? true);
+        }
+      }
+    }
+
+    void loadNotificationSettings();
+  }, [supabase, activeCareProfile]);
+
+  const handleToggleDeviceReminders = async () => {
+    setIsBusyNotif(true);
+    setNotifFeedback(null);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      if (isSubscribed) {
+        const res = await unsubscribeFromPush(supabase, user.id);
+        if (res.ok) {
+          setIsSubscribed(false);
+          setNotifFeedback({
+            type: 'success',
+            message: 'Reminders turned off for this device.',
+          });
+        } else {
+          setNotifFeedback({
+            type: 'error',
+            message: res.error || 'Could not unsubscribe from reminders.',
+          });
+        }
+      } else {
+        const res = await subscribeToPush(supabase, user.id);
+        setPermissionStatus(res.status);
+        if (res.ok) {
+          setIsSubscribed(true);
+          setNotifFeedback({
+            type: 'success',
+            message: 'Reminders turned on for this device.',
+          });
+        } else {
+          setNotifFeedback({
+            type: 'error',
+            message: res.error || 'Could not enable reminders.',
+          });
+        }
+      }
+    } catch {
+      setNotifFeedback({
+        type: 'error',
+        message: 'An unexpected error occurred while toggling reminders.',
+      });
+    } finally {
+      setIsBusyNotif(false);
+    }
+  };
+
+  const handleToggleHideNames = async () => {
+    const nextVal = !hideNames;
+    setHideNames(nextVal);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ hide_names_in_notifications: nextVal })
+        .eq('id', user.id);
+
+      if (error) {
+        setHideNames(!nextVal);
+        setNotifFeedback({
+          type: 'error',
+          message: 'Could not update privacy setting. Please try again.',
+        });
+      }
+    } catch {
+      setHideNames(!nextVal);
+    }
+  };
+
+  const handleUpdateAlertPref = async (key: 'due' | 'missed' | 'expiry', val: boolean) => {
+    if (!activeCareProfile) return;
+    const nextDue = key === 'due' ? val : notifyDue;
+    const nextMissed = key === 'missed' ? val : notifyMissed;
+    const nextExpiry = key === 'expiry' ? val : notifyExpiry;
+
+    if (key === 'due') setNotifyDue(val);
+    if (key === 'missed') setNotifyMissed(val);
+    if (key === 'expiry') setNotifyExpiry(val);
+
+    try {
+      const { error } = await supabase.rpc('fn_set_my_notifications', {
+        p_care_profile: activeCareProfile.id,
+        p_due: nextDue,
+        p_missed: nextMissed,
+        p_expiry: nextExpiry,
+      });
+
+      if (error) {
+        setNotifFeedback({
+          type: 'error',
+          message: 'Could not update alert preferences.',
+        });
+      }
+    } catch {
+      setNotifFeedback({
+        type: 'error',
+        message: 'Could not update alert preferences.',
+      });
+    }
+  };
+
+  const handleSendTestReminder = async () => {
+    setIsBusyNotif(true);
+    setNotifFeedback(null);
+    try {
+      const sent = await sendLocalTestNotification();
+      if (sent) {
+        setNotifFeedback({
+          type: 'success',
+          message: 'Test reminder sent! Check your notification tray or lock screen.',
+        });
+      } else {
+        setNotifFeedback({
+          type: 'error',
+          message:
+            'Could not send test reminder. Please ensure notifications are enabled on this device.',
+        });
+      }
+    } catch {
+      setNotifFeedback({
+        type: 'error',
+        message: 'Error triggering test reminder.',
+      });
+    } finally {
+      setIsBusyNotif(false);
+    }
+  };
 
   const startEditing = (profile: CareProfileWithRole) => {
     // Edit form is strictly permitted for profile owners only
@@ -165,6 +373,151 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
+      </section>
+
+      {/* Notifications & Reminders (Phase A5) */}
+      <section id="notifications" className={styles.section}>
+        <div className={styles.sectionTitle}>Notifications &amp; Reminders</div>
+        <div className={styles.card}>
+          {/* Device Reminders Toggle */}
+          <div className={styles.row}>
+            <div>
+              <div
+                className={styles.rowLabel}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <span>Reminders on this device</span>
+                <span
+                  className={styles.statusBadge}
+                  data-status={
+                    permissionStatus === 'denied'
+                      ? 'blocked'
+                      : isSubscribed
+                        ? 'active'
+                        : 'off'
+                  }
+                >
+                  {permissionStatus === 'denied'
+                    ? 'Blocked'
+                    : isSubscribed
+                      ? 'Active'
+                      : 'Off'}
+                </span>
+              </div>
+              <div className={styles.rowDesc}>
+                {permissionStatus === 'denied'
+                  ? 'Notifications are blocked in your browser site settings. Allow notifications to receive dose alerts.'
+                  : 'Receive push notifications when scheduled doses are due.'}
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isSubscribed}
+              aria-label="Toggle reminders on this device"
+              className={styles.toggle}
+              data-checked={isSubscribed}
+              onClick={handleToggleDeviceReminders}
+              disabled={isBusyNotif || permissionStatus === 'denied'}
+            >
+              <div className={styles.toggleKnob} />
+            </button>
+          </div>
+
+          {/* Privacy: Hide Medicine Names */}
+          <div className={styles.row}>
+            <div>
+              <div className={styles.rowLabel}>Hide medicine names on lock screen</div>
+              <div className={styles.rowDesc}>
+                Shows &ldquo;A dose is due&rdquo; instead of specific medicine names on notification
+                banners.
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={hideNames}
+              aria-label="Hide medicine names on lock screen"
+              className={styles.toggle}
+              data-checked={hideNames}
+              onClick={handleToggleHideNames}
+            >
+              <div className={styles.toggleKnob} />
+            </button>
+          </div>
+
+          {/* Care Profile Alert Preferences */}
+          {activeCareProfile && (
+            <div className={styles.prefGroup}>
+              <div className={styles.prefGroupTitle}>
+                Alert preferences for {activeCareProfile.name}
+              </div>
+
+              <label className={styles.checkboxRow}>
+                <input
+                  type="checkbox"
+                  checked={notifyDue}
+                  onChange={(e) => handleUpdateAlertPref('due', e.target.checked)}
+                />
+                <span className={styles.checkboxLabel}>Dose due reminders</span>
+              </label>
+
+              <label className={styles.checkboxRow}>
+                <input
+                  type="checkbox"
+                  checked={notifyMissed}
+                  onChange={(e) => handleUpdateAlertPref('missed', e.target.checked)}
+                />
+                <span className={styles.checkboxLabel}>Missed dose escalation alerts</span>
+              </label>
+
+              <label className={styles.checkboxRow}>
+                <input
+                  type="checkbox"
+                  checked={notifyExpiry}
+                  onChange={(e) => handleUpdateAlertPref('expiry', e.target.checked)}
+                />
+                <span className={styles.checkboxLabel}>Low stock &amp; expiry warnings</span>
+              </label>
+            </div>
+          )}
+
+          {/* Send Test Reminder */}
+          <button
+            type="button"
+            className={styles.testNotifBtn}
+            onClick={handleSendTestReminder}
+            disabled={isBusyNotif || !isSubscribed}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <span>Send a test reminder</span>
+          </button>
+
+          {notifFeedback && (
+            <div className={styles.feedbackBox} data-variant={notifFeedback.type}>
+              {notifFeedback.message}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* App & Installation (Phase A5) */}
+      <section id="install" className={styles.section}>
+        <div className={styles.sectionTitle}>App &amp; Installation</div>
+        <InstallCard />
       </section>
 
       {/* Care Profiles Management (Phase A2) */}

@@ -94,6 +94,101 @@
     background-color 0.2s var(--ease-gallery);
 }
 
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-code);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+
+  &[data-status='active'] {
+    background: rgba(92, 242, 199, 0.12);
+    color: var(--ok);
+    border-color: rgba(92, 242, 199, 0.28);
+  }
+
+  &[data-status='blocked'] {
+    background: rgba(255, 77, 106, 0.12);
+    color: #ff94a5;
+    border-color: rgba(255, 77, 106, 0.3);
+  }
+}
+
+.prefGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.prefGroupTitle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+
+  input[type='checkbox'] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--ok);
+    cursor: pointer;
+  }
+}
+
+.checkboxLabel {
+  font-size: 0.875rem;
+  color: var(--text);
+}
+
+.testNotifBtn {
+  @include focus-ring;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--hairline);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 .profileItem {
   display: flex;
   flex-direction: column;
