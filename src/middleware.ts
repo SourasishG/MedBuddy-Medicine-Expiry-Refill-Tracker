@@ -80,24 +80,31 @@ export async function middleware(request: NextRequest) {
       .is('withdrawn_at', null)
       .limit(1);
 
-    if (!consentErr) {
-      const hasConsent = Boolean(consents && consents.length > 0);
+    if (consentErr) {
+      console.error('Middleware guard error: consent lookup failed', consentErr.message);
+      if (isSignIn) return supabaseResponse; // prevent redirect loop
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = '/app/sign-in';
+      redirectUrl.searchParams.set('error', 'service_unavailable');
+      return redirectWithCookies(redirectUrl, supabaseResponse);
+    }
 
-      if (!hasConsent) {
-        if (!isConsent) {
-          const redirectUrl = request.nextUrl.clone();
-          redirectUrl.pathname = '/app/consent';
-          return redirectWithCookies(redirectUrl, supabaseResponse);
-        }
-        return supabaseResponse;
-      }
+    const hasConsent = Boolean(consents && consents.length > 0);
 
-      // If user has consent and is navigating to /app/consent or /app/sign-in
-      if (isConsent || isSignIn) {
+    if (!hasConsent) {
+      if (!isConsent) {
         const redirectUrl = request.nextUrl.clone();
-        redirectUrl.pathname = '/app';
+        redirectUrl.pathname = '/app/consent';
         return redirectWithCookies(redirectUrl, supabaseResponse);
       }
+      return supabaseResponse;
+    }
+
+    // If user has consent and is navigating to /app/consent or /app/sign-in
+    if (isConsent || isSignIn) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = '/app';
+      return redirectWithCookies(redirectUrl, supabaseResponse);
     }
 
     // 4. Check Care Profiles
@@ -107,18 +114,34 @@ export async function middleware(request: NextRequest) {
       .eq('user_id', user.id)
       .limit(1);
 
-    if (!accessErr) {
-      const hasCareProfile = Boolean(careAccess && careAccess.length > 0);
+    if (accessErr) {
+      console.error('Middleware guard error: care access lookup failed', accessErr.message);
+      if (isSignIn) return supabaseResponse; // prevent redirect loop
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = '/app/sign-in';
+      redirectUrl.searchParams.set('error', 'service_unavailable');
+      return redirectWithCookies(redirectUrl, supabaseResponse);
+    }
 
-      if (!hasCareProfile && !isSetup) {
-        const redirectUrl = request.nextUrl.clone();
-        redirectUrl.pathname = '/app/setup';
-        return redirectWithCookies(redirectUrl, supabaseResponse);
-      }
+    const hasCareProfile = Boolean(careAccess && careAccess.length > 0);
+
+    if (!hasCareProfile && !isSetup) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = '/app/setup';
+      return redirectWithCookies(redirectUrl, supabaseResponse);
     }
   } catch (err) {
-    // Defensive fallback: do not crash middleware on unexpected network blips
-    console.error('Middleware guard error:', err);
+    console.error(
+      'Middleware guard error:',
+      err instanceof Error ? err.message : 'Unknown error',
+    );
+    if (pathname === '/app/sign-in') {
+      return supabaseResponse; // prevent redirect loop
+    }
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/app/sign-in';
+    redirectUrl.searchParams.set('error', 'service_unavailable');
+    return redirectWithCookies(redirectUrl, supabaseResponse);
   }
 
   return supabaseResponse;

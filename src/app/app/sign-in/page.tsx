@@ -27,6 +27,9 @@ function SignInContent() {
     if (urlError === 'auth_callback_failed') {
       return 'Could not sign you in with Google. Please try again or use an email code.';
     }
+    if (urlError === 'service_unavailable') {
+      return 'The service is temporarily unavailable. Please check your connection or retry in a moment.';
+    }
     return null;
   });
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -205,7 +208,22 @@ function SignInContent() {
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <span>{errorMessage}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+              <span>{errorMessage}</span>
+              {urlError === 'service_unavailable' && (
+                <button
+                  type="button"
+                  className={styles.linkBtn}
+                  style={{ alignSelf: 'flex-start' }}
+                  onClick={() => {
+                    setErrorMessage(null);
+                    router.replace(nextUrl);
+                  }}
+                >
+                  Retry
+                </button>
+              )}
+            </div>
           </div>
         )}
 
