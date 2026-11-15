@@ -4,12 +4,13 @@ import { Suspense, useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { safeNextPath } from '@/lib/safe-redirect';
 import styles from './sign-in.module.scss';
 
 function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextUrl = searchParams.get('next') || '/app';
+  const nextUrl = safeNextPath(searchParams.get('next'));
   const urlError = searchParams.get('error');
 
   const supabase = createClient();

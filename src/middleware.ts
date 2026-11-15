@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Database } from './lib/supabase/database.types';
+import { safeNextPath } from './lib/safe-redirect';
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -59,7 +60,7 @@ export async function middleware(request: NextRequest) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/app/sign-in';
     if (pathname !== '/app') {
-      redirectUrl.searchParams.set('next', pathname);
+      redirectUrl.searchParams.set('next', safeNextPath(pathname));
     }
     return NextResponse.redirect(redirectUrl);
   }
