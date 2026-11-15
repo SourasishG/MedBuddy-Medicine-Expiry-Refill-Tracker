@@ -136,3 +136,69 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+/**
+ * Push Notification Handlers
+ *
+ * Implements Web Push reception and notification click routing.
+ * Ensures strict privacy: does not log payload details or private health information.
+ */
+
+interface PushEventPayload {
+  title?: string;
+  body?: string;
+  tag?: string;
+  url?: string;
+}
+
+self.addEventListener('push', (event: any) => {
+  if (!event.data) return;
+
+  let payload: PushEventPayload = {};
+  try {
+    payload = event.data.json();
+  } catch {
+    payload = {
+      body: event.data.text(),
+    };
+  }
+
+  const title = payload.title || 'MedBuddy Reminder';
+  const options: NotificationOptions = {
+    body: payload.body || 'You have a medicine reminder waiting.',
+    tag: payload.tag || 'medbuddy-reminder',
+    icon: '/icon.svg',
+    badge: '/icon.svg',
+    data: {
+      url: payload.url || '/app',
+    },
+  };
+
+  event.waitUntil((self as any).registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event: any) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || '/app';
+
+  event.waitUntil(
+    (self as any).clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList: any[]) => {
+        for (const client of clientList) {
+          if ('focus' in client) {
+            if (client.url && client.url.includes('/app')) {
+              return client.focus();
+            }
+            if ('navigate' in client) {
+              return client.navigate(targetUrl).then((c: any) => c?.focus());
+            }
+          }
+        }
+        if ((self as any).clients.openWindow) {
+          return (self as any).clients.openWindow(targetUrl);
+        }
+      }),
+  );
+});
+
