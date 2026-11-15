@@ -78,15 +78,11 @@ export default function MedicineDetailPage({ params }: PageProps) {
   const [adjustDelta, setAdjustDelta] = useState<number | ''>('');
 
   // Schedule modal form state
-  const [schedFrequency, setSchedFrequency] = useState<
-    'daily' | 'weekdays' | 'interval' | 'as_needed'
-  >('daily');
+  const [schedFrequency, setSchedFrequency] = useState<'daily' | 'weekdays' | 'interval' | 'as_needed'>('daily');
   const [schedWeekdays, setSchedWeekdays] = useState<number[]>([1, 2, 3, 4, 5, 6, 7]);
   const [schedInterval, setSchedInterval] = useState<number | ''>(2);
   const [schedDoseAmount, setSchedDoseAmount] = useState<number | ''>(1);
-  const [schedTimes, setSchedTimes] = useState<ScheduleTimeItem[]>([
-    { time: '08:00', food: 'any' },
-  ]);
+  const [schedTimes, setSchedTimes] = useState<ScheduleTimeItem[]>([{ time: '08:00', food: 'any' }]);
   const [schedStartDate, setSchedStartDate] = useState('');
   const [schedEndDate, setSchedEndDate] = useState('');
   const [schedInstructions, setSchedInstructions] = useState('');
@@ -446,7 +442,9 @@ export default function MedicineDetailPage({ params }: PageProps) {
   };
 
   const handleFoodChange = (index: number, food: FoodRule) => {
-    setSchedTimes((prev) => prev.map((item, i) => (i === index ? { ...item, food } : item)));
+    setSchedTimes((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, food } : item)),
+    );
   };
 
   const handleSaveSchedule = async (e: React.FormEvent) => {
@@ -466,19 +464,12 @@ export default function MedicineDetailPage({ params }: PageProps) {
       }
     }
 
-    if (
-      schedFrequency !== 'as_needed' &&
-      (schedTimes.length === 0 || schedTimes.some((t) => !t.time))
-    ) {
-      setModalFeedback({
-        type: 'error',
-        message: 'Please specify at least one valid time of day.',
-      });
+    if (schedFrequency !== 'as_needed' && (schedTimes.length === 0 || schedTimes.some((t) => !t.time))) {
+      setModalFeedback({ type: 'error', message: 'Please specify at least one valid time of day.' });
       return;
     }
 
-    const cleanDoseAmt =
-      typeof schedDoseAmount === 'number' && schedDoseAmount > 0 ? schedDoseAmount : 1;
+    const cleanDoseAmt = typeof schedDoseAmount === 'number' && schedDoseAmount > 0 ? schedDoseAmount : 1;
     const cleanStartDate = schedStartDate || getTodayDateString(profileTz);
     const cleanEndDate = schedEndDate.trim() || null;
 
@@ -810,7 +801,11 @@ export default function MedicineDetailPage({ params }: PageProps) {
       <section>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Schedule &amp; Reminders</h2>
-          <button type="button" className={styles.editBtn} onClick={handleOpenEditSchedule}>
+          <button
+            type="button"
+            className={styles.editBtn}
+            onClick={handleOpenEditSchedule}
+          >
             {schedule ? 'Edit schedule' : '+ Set schedule'}
           </button>
         </div>
@@ -827,7 +822,10 @@ export default function MedicineDetailPage({ params }: PageProps) {
                     schedule.interval_days,
                   )}
                 </h3>
-                <span className={styles.scheduleStatusBadge} data-active={schedule.active}>
+                <span
+                  className={styles.scheduleStatusBadge}
+                  data-active={schedule.active}
+                >
                   {schedule.active ? 'Active' : 'Paused'}
                 </span>
               </div>
@@ -926,7 +924,10 @@ export default function MedicineDetailPage({ params }: PageProps) {
                   ) : null}
                 </div>
 
-                <span className={styles.historyBadge} data-status={dose.status}>
+                <span
+                  className={styles.historyBadge}
+                  data-status={dose.status}
+                >
                   {dose.status}
                 </span>
               </div>
@@ -1075,7 +1076,9 @@ export default function MedicineDetailPage({ params }: PageProps) {
                 step="any"
                 className={styles.input}
                 value={newBoxQty}
-                onChange={(e) => setNewBoxQty(e.target.value === '' ? '' : Number(e.target.value))}
+                onChange={(e) =>
+                  setNewBoxQty(e.target.value === '' ? '' : Number(e.target.value))
+                }
                 required
               />
             </div>
@@ -1462,7 +1465,11 @@ export default function MedicineDetailPage({ params }: PageProps) {
                     </div>
                   ))}
 
-                  <button type="button" className={addStyles.addTimeBtn} onClick={handleAddTime}>
+                  <button
+                    type="button"
+                    className={addStyles.addTimeBtn}
+                    onClick={handleAddTime}
+                  >
                     + Add another time
                   </button>
                 </div>
@@ -1527,7 +1534,11 @@ export default function MedicineDetailPage({ params }: PageProps) {
               >
                 Cancel
               </button>
-              <button type="submit" className={styles.confirmModalBtn} disabled={isActionLoading}>
+              <button
+                type="submit"
+                className={styles.confirmModalBtn}
+                disabled={isActionLoading}
+              >
                 {isActionLoading ? 'Saving…' : 'Save schedule'}
               </button>
             </div>
