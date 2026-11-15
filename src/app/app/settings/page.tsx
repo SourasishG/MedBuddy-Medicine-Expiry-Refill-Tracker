@@ -1,16 +1,99 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { useCareProfile } from '@/features/care-profile/CareProfileContext';
+import {
+  useCareProfile,
+  type CareProfileWithRole,
+} from '@/features/care-profile/CareProfileContext';
 import styles from './settings.module.scss';
 
 export default function SettingsPage() {
   const router = useRouter();
   const supabase = createClient();
-  const { isLargeText, setLargeText, activeCareProfile } = useCareProfile();
+  const {
+    isLargeText,
+    setLargeText,
+    careProfiles,
+    activeCareProfile,
+    setActiveProfileId,
+    refetchProfiles,
+  } = useCareProfile();
   const [, startTransition] = useTransition();
+
+  // Profile editing state
+  const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editTimezone, setEditTimezone] = useState('Asia/Kolkata');
+  const [editSnoozeMinutes, setEditSnoozeMinutes] = useState(15);
+  const [editMissedMinutes, setEditMissedMinutes] = useState(120);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+
+  const startEditing = (profile: CareProfileWithRole) => {
+    setEditingProfileId(profile.id);
+    setEditName(profile.name);
+    setEditTimezone(profile.timezone || 'Asia/Kolkata');
+    setEditSnoozeMinutes(profile.snooze_minutes || 15);
+    setEditMissedMinutes(profile.missed_after_minutes || 120);
+    setSaveFeedback(null);
+  };
+
+  const cancelEditing = () => {
+    setEditingProfileId(null);
+    setSaveFeedback(null);
+  };
+
+  const handleSaveProfile = async (profileId: string) => {
+    const cleanName = editName.trim();
+    if (!cleanName) {
+      setSaveFeedback({ type: 'error', message: 'Profile name cannot be empty.' });
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveFeedback(null);
+
+    try {
+      const { error } = await supabase
+        .from('care_profiles')
+        .update({
+          name: cleanName,
+          timezone: editTimezone,
+          snooze_minutes: editSnoozeMinutes,
+          missed_after_minutes: editMissedMinutes,
+        })
+        .eq('id', profileId);
+
+      if (error) {
+        setSaveFeedback({
+          type: 'error',
+          message: error.message || 'Could not update care profile.',
+        });
+        setIsSaving(false);
+        return;
+      }
+
+      await refetchProfiles();
+      setSaveFeedback({ type: 'success', message: 'Care profile updated successfully!' });
+      setIsSaving(false);
+      setTimeout(() => {
+        setEditingProfileId(null);
+        setSaveFeedback(null);
+      }, 800);
+    } catch {
+      setSaveFeedback({
+        type: 'error',
+        message: 'A network error occurred while updating profile.',
+      });
+      setIsSaving(false);
+    }
+  };
 
   const handleSignOut = async () => {
     document.cookie = 'medbuddy_app_state=; path=/app; max-age=0';
@@ -24,6 +107,7 @@ export default function SettingsPage() {
     <div className={styles.settingsContainer}>
       <h1 className={styles.heading}>Settings</h1>
 
+      {/* Appearance & Comfort */}
       <section className={styles.section}>
         <div className={styles.sectionTitle}>Appearance & Comfort</div>
         <div className={styles.card}>
@@ -48,18 +132,190 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className={styles.section}>
-        <div className={styles.sectionTitle}>Active Profile</div>
+      {/* Care Profiles Management (Phase A2) */}
+      <section id="profiles" className={styles.section}>
+        <div className={styles.sectionTitle}>Care Profiles</div>
         <div className={styles.card}>
-          <div className={styles.row}>
-            <div>
-              <div className={styles.rowLabel}>{activeCareProfile?.name || 'Care Profile'}</div>
-              <div className={styles.rowDesc}>Timezone: {activeCareProfile?.timezone}</div>
-            </div>
-          </div>
+          {careProfiles.map((profile) => {
+            const isActive = profile.id === activeCareProfile?.id;
+            const isEditing = editingProfileId === profile.id;
+            const isOwner = profile.role === 'owner';
+            const initial = (profile.name || 'P').charAt(0).toUpperCase();
+
+            return (
+              <div key={profile.id} className={styles.profileItem} data-active={isActive}>
+                <div className={styles.profileItemHeader}>
+                  <div className={styles.profileMeta}>
+                    <span className={styles.avatarInitial} aria-hidden="true">
+                      {initial}
+                    </span>
+                    <div>
+                      <div className={styles.profileName}>{profile.name}</div>
+                      <div className={styles.profileSubtext}>
+                        {profile.role || 'owner'} · {profile.timezone}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.profileActions}>
+                    {isActive ? (
+                      <span className={styles.activeBadge}>Active</span>
+                    ) : (
+                      <button
+                        type="button"
+                        className={styles.smallBtn}
+                        onClick={() => setActiveProfileId(profile.id)}
+                      >
+                        Set active
+                      </button>
+                    )}
+
+                    {isOwner && !isEditing && (
+                      <button
+                        type="button"
+                        className={styles.smallBtn}
+                        onClick={() => startEditing(profile)}
+                      >
+                        Edit
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Inline Profile Editor */}
+                {isEditing && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void handleSaveProfile(profile.id);
+                    }}
+                    className={styles.editForm}
+                  >
+                    <div className={styles.inputGroup}>
+                      <label htmlFor={`edit-name-${profile.id}`} className={styles.label}>
+                        Display Name
+                      </label>
+                      <input
+                        id={`edit-name-${profile.id}`}
+                        type="text"
+                        className={styles.input}
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        required
+                        disabled={isSaving}
+                      />
+                    </div>
+
+                    <div className={styles.inputGroup}>
+                      <label htmlFor={`edit-tz-${profile.id}`} className={styles.label}>
+                        Timezone
+                      </label>
+                      <select
+                        id={`edit-tz-${profile.id}`}
+                        className={styles.select}
+                        value={editTimezone}
+                        onChange={(e) => setEditTimezone(e.target.value)}
+                        disabled={isSaving}
+                      >
+                        <option value="Asia/Kolkata">Asia/Kolkata (IST, UTC+5:30)</option>
+                        <option value="America/New_York">America/New_York (EST/EDT)</option>
+                        <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+                        <option value="America/Denver">America/Denver (MST/MDT)</option>
+                        <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+                        <option value="Europe/London">Europe/London (GMT/BST)</option>
+                        <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+                        <option value="Asia/Dubai">Asia/Dubai (GST, UTC+4)</option>
+                        <option value="Asia/Singapore">Asia/Singapore (SGT, UTC+8)</option>
+                        <option value="Asia/Tokyo">Asia/Tokyo (JST, UTC+9)</option>
+                        <option value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</option>
+                        <option value="UTC">UTC</option>
+                      </select>
+                    </div>
+
+                    <div className={styles.formGrid}>
+                      <div className={styles.inputGroup}>
+                        <label htmlFor={`edit-snooze-${profile.id}`} className={styles.label}>
+                          Snooze duration
+                        </label>
+                        <select
+                          id={`edit-snooze-${profile.id}`}
+                          className={styles.select}
+                          value={editSnoozeMinutes}
+                          onChange={(e) => setEditSnoozeMinutes(Number(e.target.value))}
+                          disabled={isSaving}
+                        >
+                          <option value={10}>10 minutes</option>
+                          <option value={15}>15 minutes</option>
+                          <option value={20}>20 minutes</option>
+                          <option value={30}>30 minutes</option>
+                        </select>
+                      </div>
+
+                      <div className={styles.inputGroup}>
+                        <label htmlFor={`edit-missed-${profile.id}`} className={styles.label}>
+                          Mark missed after
+                        </label>
+                        <select
+                          id={`edit-missed-${profile.id}`}
+                          className={styles.select}
+                          value={editMissedMinutes}
+                          onChange={(e) => setEditMissedMinutes(Number(e.target.value))}
+                          disabled={isSaving}
+                        >
+                          <option value={60}>1 hour</option>
+                          <option value={120}>2 hours</option>
+                          <option value={180}>3 hours</option>
+                          <option value={240}>4 hours</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {saveFeedback && (
+                      <div className={styles.feedbackBox} data-variant={saveFeedback.type}>
+                        {saveFeedback.message}
+                      </div>
+                    )}
+
+                    <div className={styles.formButtonRow}>
+                      <button
+                        type="button"
+                        className={styles.cancelBtn}
+                        onClick={cancelEditing}
+                        disabled={isSaving}
+                      >
+                        Cancel
+                      </button>
+                      <button type="submit" className={styles.saveBtn} disabled={isSaving}>
+                        {isSaving ? 'Saving…' : 'Save changes'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            );
+          })}
+
+          <Link href="/app/setup?mode=new" className={styles.addProfileBtn}>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span>Add another care profile</span>
+          </Link>
         </div>
       </section>
 
+      {/* Account */}
       <section className={styles.section}>
         <div className={styles.sectionTitle}>Account</div>
         <button type="button" className={styles.signOutBtn} onClick={handleSignOut}>
