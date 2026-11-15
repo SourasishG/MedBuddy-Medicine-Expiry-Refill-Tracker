@@ -64,7 +64,6 @@ export default function ConsentPage() {
 
       const docs: ConsentDoc[] = ['terms', 'privacy', 'health_data'];
       const inserts = docs.map((doc) => ({
-        user_id: user.id,
         document: doc,
         version: '1.0',
       }));
@@ -78,9 +77,7 @@ export default function ConsentPage() {
       }
 
       // Navigate to app; middleware will guide to /app/setup or /app
-      startTransition(() => {
-        router.replace('/app');
-      });
+      window.location.href = '/app';
     } catch {
       setErrorMessage('A network error occurred. Please check your connection and try again.');
       setIsLoading(false);

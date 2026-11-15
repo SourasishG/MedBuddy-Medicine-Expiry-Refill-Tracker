@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { createServerClient } from '@supabase/ssr';
 import fs from 'fs';
 
 const envFile = fs.readFileSync('.env.local', 'utf8');
@@ -15,7 +14,7 @@ for (const line of envFile.split('\n')) {
 }
 
 const adminClient = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
-const email = 'cookie_test_' + Date.now() + '@medbuddy.internal';
+const email = 'rpc_test_' + Date.now() + '@medbuddy.internal';
 const password = 'Password123!';
 const { data: u } = await adminClient.auth.admin.createUser({
   email,
@@ -23,35 +22,21 @@ const { data: u } = await adminClient.auth.admin.createUser({
   email_confirm: true,
 });
 
-const anonClient = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-const { data: authData, error: signErr } = await anonClient.auth.signInWithPassword({
-  email,
-  password,
-});
-if (signErr) console.error('Sign in error:', signErr);
+const userClient = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+const { data: authData } = await userClient.auth.signInWithPassword({ email, password });
 
-let writtenCookies = [];
-const serverClient = createServerClient(
-  env.NEXT_PUBLIC_SUPABASE_URL,
-  env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  {
-    cookies: {
-      getAll: () => [],
-      setAll: (c) => {
-        writtenCookies = c;
-      },
-    },
-  },
-);
+// insert consent
+await userClient
+  .from('consents')
+  .insert([{ document: 'terms', version: '1.0' }]);
 
-await serverClient.auth.setSession({
-  access_token: authData.session.access_token,
-  refresh_token: authData.session.refresh_token,
+// call fn_create_care_profile
+const { data: profileId, error: rpcErr } = await userClient.rpc('fn_create_care_profile', {
+  p_name: 'Alex River',
+  p_is_me: true,
+  p_timezone: 'Asia/Kolkata',
 });
 
-console.log('Successfully written cookies:');
-for (const c of writtenCookies) {
-  console.log(`Cookie name: ${c.name}, value length: ${c.value.length}`);
-}
+console.log('RPC result:', { profileId, rpcErr });
 
 await adminClient.auth.admin.deleteUser(u.user.id);
