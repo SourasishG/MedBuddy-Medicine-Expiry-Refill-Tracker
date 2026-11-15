@@ -60,6 +60,7 @@ async function main() {
   console.log(`  ✓ Test user created with ID: ${userId}`);
 
   let browser;
+  let secondUserId = null;
   try {
     // Authenticate and get SSR cookies
     const { data: sessionData, error: authError } = await anonClient.auth.signInWithPassword({
@@ -210,27 +211,123 @@ async function main() {
     await mobilePage.waitForSelector('text=Alex River', { timeout: 5000 });
     console.log('  ✓ Successfully switched active profile back to "Alex River"!');
 
-    // Step 10: Rename care profile in Settings
-    console.log('\nStep 10: Renaming profile in Settings...');
+    // Step 10: Rename care profile in Settings with validations and permissions check
+    console.log('\nStep 10: Testing Settings profile validation and owner-only editing...');
+
+    // Create a second test user who owns a shared profile, granting our test user "viewer" role
+    const { data: secondUserData, error: secondUserErr } = await adminClient.auth.admin.createUser({
+      email: `other_owner_${timestamp}@medbuddy.internal`,
+      password: testPassword,
+      email_confirm: true,
+    });
+    if (secondUserErr || !secondUserData?.user) {
+      throw new Error(`Failed to create second test user: ${secondUserErr?.message}`);
+    }
+    const secondUserId = secondUserData.user.id;
+
+    // Create profile owned by secondUserId
+    const { data: viewerProfile, error: profileErr } = await adminClient
+      .from('care_profiles')
+      .insert({
+        name: 'Shared Family Profile (View Only)',
+        created_by: secondUserId,
+      })
+      .select('id')
+      .single();
+
+    if (profileErr || !viewerProfile) {
+      throw new Error(`Failed to create shared profile: ${profileErr?.message}`);
+    }
+
+    // Grant test user (userId) "viewer" access to this profile
+    const { error: accessErr } = await adminClient.from('care_access').insert({
+      care_profile_id: viewerProfile.id,
+      user_id: userId,
+      role: 'viewer',
+    });
+    if (accessErr) {
+      throw new Error(`Failed to grant viewer access: ${accessErr?.message}`);
+    }
+
     await mobilePage.goto(`${BASE_URL}/app/settings`, { waitUntil: 'domcontentloaded' });
     await mobilePage.waitForSelector('text=Care Profiles', { timeout: 10000 });
 
-    // Find the profile item for "Mum" and click "Edit"
-    const mumCard = mobilePage.locator('div[class*="profileItem"]', { hasText: 'Mum' });
+    // Verify viewer card has NO "Edit" button
+    const viewerCard = mobilePage
+      .locator('div[class*="profileItem_"]')
+      .filter({ hasText: 'Shared Family Profile' })
+      .first();
+    await viewerCard.waitFor({ timeout: 5000 });
+    const hasEditBtn = await viewerCard.locator('button:has-text("Edit")').count();
+    if (hasEditBtn > 0) {
+      throw new Error('Security violation: Edit button is visible for non-owner (viewer)!');
+    }
+    console.log('  ✓ Verified: Non-owner (viewer) profile does NOT show Edit button or form');
+
+    // Find the profile item for "Mum" (owned by user) and click "Edit"
+    const mumCard = mobilePage
+      .locator('div[class*="profileItem_"]')
+      .filter({ hasText: 'Mum' })
+      .first();
     await mumCard.locator('button:has-text("Edit")').click();
+
+    // Verify fallback snooze input is present
+    const snoozeInput = mumCard.locator('input[id*="edit-snooze"]');
+    const initialSnooze = await snoozeInput.inputValue();
+    console.log(`  ✓ Initial profile snooze value is: ${initialSnooze} (default fallback: 10)`);
+
+    // Test Validation 1: Snooze < 5 (e.g. 3)
+    console.log('  Testing form validation: Snooze < 5 (3)...');
+    await snoozeInput.fill('3');
+    await mumCard.locator('button:has-text("Save changes")').click();
+    await mobilePage.waitForSelector('text=Snooze duration must be between 5 and 120 minutes.', {
+      timeout: 5000,
+    });
+    console.log('  ✓ Successfully caught invalid snooze < 5');
+
+    // Test Validation 2: Snooze > 120 (e.g. 130)
+    console.log('  Testing form validation: Snooze > 120 (130)...');
+    await snoozeInput.fill('130');
+    await mumCard.locator('button:has-text("Save changes")').click();
+    await mobilePage.waitForSelector('text=Snooze duration must be between 5 and 120 minutes.', {
+      timeout: 5000,
+    });
+    console.log('  ✓ Successfully caught invalid snooze > 120');
+
+    // Restore valid snooze (20)
+    await snoozeInput.fill('20');
+
+    // Test Validation 3: Missed < 30 (e.g. 20)
+    console.log('  Testing form validation: Missed < 30 (20)...');
+    const missedInput = mumCard.locator('input[id*="edit-missed"]');
+    await missedInput.fill('20');
+    await mumCard.locator('button:has-text("Save changes")').click();
+    await mobilePage.waitForSelector(
+      'text=Missed dose cutoff must be between 30 and 720 minutes.',
+      { timeout: 5000 },
+    );
+    console.log('  ✓ Successfully caught invalid missed < 30');
+
+    // Test Validation 4: Missed <= re-nudge time (re-nudge is 30, so missed = 30)
+    console.log('  Testing form validation: Missed <= re-nudge time (30 <= 30)...');
+    await missedInput.fill('30');
+    await mumCard.locator('button:has-text("Save changes")').click();
+    await mobilePage.waitForSelector('text=Missed must be greater than the re-nudge time', {
+      timeout: 5000,
+    });
+    console.log('  ✓ Successfully caught "missed must be greater than the re-nudge time"');
+
+    // Restore valid missed (120)
+    await missedInput.fill('120');
 
     // Fill in new name "Asha (Mum)"
     const nameInput = mumCard.locator('input[id*="edit-name"]');
     await nameInput.fill('Asha (Mum)');
 
-    // Adjust snooze to 20 minutes
-    const snoozeSelect = mumCard.locator('select[id*="edit-snooze"]');
-    await snoozeSelect.selectOption('20');
-
     // Save changes
     await mumCard.locator('button:has-text("Save changes")').click();
     await mobilePage.waitForSelector('text=Care profile updated successfully!', { timeout: 5000 });
-    console.log('  ✓ Successfully saved profile rename to "Asha (Mum)"!');
+    console.log('  ✓ Successfully saved profile rename to "Asha (Mum)" with valid parameters!');
 
     await mobilePage.screenshot({
       path: path.join(ARTIFACT_DIR, 'phase-a2-settings-profiles-360px.png'),
@@ -247,6 +344,12 @@ async function main() {
     console.log(`Cleaning up test user ${userId}...`);
     await adminClient.auth.admin.deleteUser(userId);
     console.log('✓ Test user deleted cleanly.');
+
+    if (secondUserId) {
+      console.log(`Cleaning up second test user ${secondUserId}...`);
+      await adminClient.auth.admin.deleteUser(secondUserId);
+      console.log('✓ Second test user deleted cleanly.');
+    }
   }
 }
 

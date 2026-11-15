@@ -8,6 +8,12 @@ import {
   useCareProfile,
   type CareProfileWithRole,
 } from '@/features/care-profile/CareProfileContext';
+import {
+  validateProfileSettings,
+  getUpdateErrorMessage,
+  DEFAULT_FALLBACK_SNOOZE_MINUTES,
+  PERMISSION_DENIED_MESSAGE,
+} from '@/features/care-profile/profile-settings-validation';
 import styles from './settings.module.scss';
 
 export default function SettingsPage() {
@@ -27,8 +33,10 @@ export default function SettingsPage() {
   const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editTimezone, setEditTimezone] = useState('Asia/Kolkata');
-  const [editSnoozeMinutes, setEditSnoozeMinutes] = useState(15);
-  const [editMissedMinutes, setEditMissedMinutes] = useState(120);
+  const [editSnoozeMinutes, setEditSnoozeMinutes] = useState<number | ''>(
+    DEFAULT_FALLBACK_SNOOZE_MINUTES,
+  );
+  const [editMissedMinutes, setEditMissedMinutes] = useState<number | ''>(120);
   const [isSaving, setIsSaving] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<{
     type: 'success' | 'error';
@@ -36,11 +44,13 @@ export default function SettingsPage() {
   } | null>(null);
 
   const startEditing = (profile: CareProfileWithRole) => {
+    // Edit form is strictly permitted for profile owners only
+    if (profile.role !== 'owner') return;
     setEditingProfileId(profile.id);
     setEditName(profile.name);
     setEditTimezone(profile.timezone || 'Asia/Kolkata');
-    setEditSnoozeMinutes(profile.snooze_minutes || 15);
-    setEditMissedMinutes(profile.missed_after_minutes || 120);
+    setEditSnoozeMinutes(profile.snooze_minutes ?? DEFAULT_FALLBACK_SNOOZE_MINUTES);
+    setEditMissedMinutes(profile.missed_after_minutes ?? 120);
     setSaveFeedback(null);
   };
 
@@ -50,9 +60,32 @@ export default function SettingsPage() {
   };
 
   const handleSaveProfile = async (profileId: string) => {
-    const cleanName = editName.trim();
-    if (!cleanName) {
-      setSaveFeedback({ type: 'error', message: 'Profile name cannot be empty.' });
+    const targetProfile = careProfiles.find((p) => p.id === profileId);
+    if (!targetProfile || targetProfile.role !== 'owner') {
+      setSaveFeedback({
+        type: 'error',
+        message: PERMISSION_DENIED_MESSAGE,
+      });
+      return;
+    }
+
+    const validation = validateProfileSettings({
+      name: editName,
+      snoozeMinutes: editSnoozeMinutes,
+      missedMinutes: editMissedMinutes,
+      renudgeMinutes: targetProfile.renudge_after_minutes,
+    });
+
+    if (
+      !validation.isValid ||
+      !validation.cleanName ||
+      validation.snoozeMinutes === undefined ||
+      validation.missedMinutes === undefined
+    ) {
+      setSaveFeedback({
+        type: 'error',
+        message: validation.error || 'Please check your inputs and try again.',
+      });
       return;
     }
 
@@ -60,20 +93,22 @@ export default function SettingsPage() {
     setSaveFeedback(null);
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('care_profiles')
         .update({
-          name: cleanName,
+          name: validation.cleanName,
           timezone: editTimezone,
-          snooze_minutes: editSnoozeMinutes,
-          missed_after_minutes: editMissedMinutes,
+          snooze_minutes: validation.snoozeMinutes,
+          missed_after_minutes: validation.missedMinutes,
         })
-        .eq('id', profileId);
+        .eq('id', profileId)
+        .select('id');
 
-      if (error) {
+      const updateError = getUpdateErrorMessage(error, data?.length ?? 0);
+      if (updateError) {
         setSaveFeedback({
           type: 'error',
-          message: error.message || 'Could not update care profile.',
+          message: updateError,
         });
         setIsSaving(false);
         return;
@@ -182,9 +217,10 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Inline Profile Editor */}
-                {isEditing && (
+                {/* Inline Profile Editor (shown only to owners) */}
+                {isOwner && isEditing && (
                   <form
+                    noValidate
                     onSubmit={(e) => {
                       e.preventDefault();
                       void handleSaveProfile(profile.id);
@@ -235,38 +271,46 @@ export default function SettingsPage() {
                     <div className={styles.formGrid}>
                       <div className={styles.inputGroup}>
                         <label htmlFor={`edit-snooze-${profile.id}`} className={styles.label}>
-                          Snooze duration
+                          Snooze duration (5–120 mins)
                         </label>
-                        <select
+                        <input
                           id={`edit-snooze-${profile.id}`}
-                          className={styles.select}
+                          type="number"
+                          min={5}
+                          max={120}
+                          step={1}
+                          className={styles.input}
                           value={editSnoozeMinutes}
-                          onChange={(e) => setEditSnoozeMinutes(Number(e.target.value))}
+                          onChange={(e) =>
+                            setEditSnoozeMinutes(
+                              e.target.value === '' ? '' : Number(e.target.value),
+                            )
+                          }
                           disabled={isSaving}
-                        >
-                          <option value={10}>10 minutes</option>
-                          <option value={15}>15 minutes</option>
-                          <option value={20}>20 minutes</option>
-                          <option value={30}>30 minutes</option>
-                        </select>
+                          required
+                        />
                       </div>
 
                       <div className={styles.inputGroup}>
                         <label htmlFor={`edit-missed-${profile.id}`} className={styles.label}>
-                          Mark missed after
+                          Mark missed after (30–720 mins)
                         </label>
-                        <select
+                        <input
                           id={`edit-missed-${profile.id}`}
-                          className={styles.select}
+                          type="number"
+                          min={30}
+                          max={720}
+                          step={5}
+                          className={styles.input}
                           value={editMissedMinutes}
-                          onChange={(e) => setEditMissedMinutes(Number(e.target.value))}
+                          onChange={(e) =>
+                            setEditMissedMinutes(
+                              e.target.value === '' ? '' : Number(e.target.value),
+                            )
+                          }
                           disabled={isSaving}
-                        >
-                          <option value={60}>1 hour</option>
-                          <option value={120}>2 hours</option>
-                          <option value={180}>3 hours</option>
-                          <option value={240}>4 hours</option>
-                        </select>
+                          required
+                        />
                       </div>
                     </div>
 
