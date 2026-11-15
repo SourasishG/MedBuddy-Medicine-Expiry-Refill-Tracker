@@ -8,11 +8,14 @@ console.log('Testing Push & Device Installation Utility Functions...\n');
 
 // 1. Test urlBase64ToUint8Array
 console.log('1. Verifying urlBase64ToUint8Array...');
-const sampleVapidKey = 'BCvDoxO1b8sN2sI2i08u8k1g739R6e7f_J_K-L_M_N-O_P-Q_R_S-T_U-V_W-X_Y-Z0123456789abcdef';
+const sampleVapidKey =
+  'BCvDoxO1b8sN2sI2i08u8k1g739R6e7f_J_K-L_M_N-O_P-Q_R_S-T_U-V_W-X_Y-Z0123456789abcdef';
 const byteArray = urlBase64ToUint8Array(sampleVapidKey);
 assert(byteArray instanceof Uint8Array, 'Output must be a Uint8Array');
 assert(byteArray.length > 0, 'Uint8Array must not be empty');
-console.log(`  ✓ Converted VAPID string (${sampleVapidKey.length} chars) to Uint8Array (${byteArray.length} bytes)`);
+console.log(
+  `  ✓ Converted VAPID string (${sampleVapidKey.length} chars) to Uint8Array (${byteArray.length} bytes)`,
+);
 
 // 2. Test getDeviceInstallState with mock user agents
 console.log('\n2. Verifying getDeviceInstallState...');
@@ -38,7 +41,11 @@ console.log('  ✓ iOS Safari browser correctly detected (needs home screen inst
 globalThis.window.matchMedia = (query) => ({ matches: query.includes('standalone') });
 const iosStandaloneState = getDeviceInstallState(iosSafariUA);
 assert.strictEqual(iosStandaloneState.isStandalone, true, 'Must identify standalone display mode');
-assert.strictEqual(iosStandaloneState.needsIosInstallForPush, false, 'Installed iOS does not need install');
+assert.strictEqual(
+  iosStandaloneState.needsIosInstallForPush,
+  false,
+  'Installed iOS does not need install',
+);
 console.log('  ✓ Installed iOS PWA correctly detected (ready for push)');
 
 // C. Android Chrome User Agent
@@ -48,7 +55,11 @@ const androidChromeUA =
 const androidState = getDeviceInstallState(androidChromeUA);
 assert.strictEqual(androidState.isAndroid, true, 'Must identify Android');
 assert.strictEqual(androidState.isIos, false, 'Must not be iOS');
-assert.strictEqual(androidState.needsIosInstallForPush, false, 'Android does not need iOS install step');
+assert.strictEqual(
+  androidState.needsIosInstallForPush,
+  false,
+  'Android does not need iOS install step',
+);
 console.log('  ✓ Android device correctly detected');
 
 // D. Desktop Windows Chrome User Agent
@@ -57,7 +68,11 @@ const desktopUA =
 const desktopState = getDeviceInstallState(desktopUA);
 assert.strictEqual(desktopState.isIos, false, 'Desktop is not iOS');
 assert.strictEqual(desktopState.isAndroid, false, 'Desktop is not Android');
-assert.strictEqual(desktopState.needsIosInstallForPush, false, 'Desktop does not need iOS install step');
+assert.strictEqual(
+  desktopState.needsIosInstallForPush,
+  false,
+  'Desktop does not need iOS install step',
+);
 console.log('  ✓ Desktop device correctly detected');
 
 console.log('\n=================================================================');

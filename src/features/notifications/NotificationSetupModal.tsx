@@ -90,8 +90,8 @@ export function NotificationSetupModal({
             Never miss a dose
           </h2>
           <p className={styles.subtitle}>
-            Turn on browser reminders to receive timely notifications when your medicines are due
-            or running low.
+            Turn on browser reminders to receive timely notifications when your medicines are due or
+            running low.
           </p>
         </div>
 

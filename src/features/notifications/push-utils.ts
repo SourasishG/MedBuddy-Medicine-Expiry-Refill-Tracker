@@ -51,11 +51,7 @@ export function isPushSupported(): boolean {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') {
     return false;
   }
-  return (
-    'serviceWorker' in navigator &&
-    'PushManager' in window &&
-    'Notification' in window
-  );
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 }
 
 /**
@@ -73,21 +69,17 @@ export function getDeviceInstallState(customUserAgent?: string): DeviceInstallSt
   }
 
   const ua = customUserAgent || navigator.userAgent || '';
-  const isIos = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
+  const isIos = /iPad|iPhone|iPod/.test(ua) && !('MSStream' in window);
   const isAndroid = /Android/.test(ua);
 
   // Standalone detection (iOS Safari navigator.standalone or display-mode: standalone media query)
   const isStandalone =
-    (window.navigator as any).standalone === true ||
+    (window.navigator as unknown as { standalone?: boolean }).standalone === true ||
     window.matchMedia('(display-mode: standalone)').matches;
 
   // iOS Safari detection (excluding Chrome/Firefox on iOS which have CriOS/FxiOS)
   const isIosSafari =
-    isIos &&
-    /Safari/i.test(ua) &&
-    !/CriOS/i.test(ua) &&
-    !/FxiOS/i.test(ua) &&
-    !/EdgiOS/i.test(ua);
+    isIos && /Safari/i.test(ua) && !/CriOS/i.test(ua) && !/FxiOS/i.test(ua) && !/EdgiOS/i.test(ua);
 
   // On iOS, Web Push is only supported when the web app is installed to the Home Screen (iOS 16.4+)
   const needsIosInstallForPush = isIos && !isStandalone;
