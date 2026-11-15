@@ -15,9 +15,12 @@ function SignInContent() {
   const supabase = createClient();
   const [, startTransition] = useTransition();
 
-  const [email, setEmail] = useState('');
+  const queryStep = searchParams.get('step');
+  const queryEmail = searchParams.get('email') || '';
+
+  const [email, setEmail] = useState(queryEmail);
   const [otpCode, setOtpCode] = useState('');
-  const [step, setStep] = useState<'email' | 'otp'>('email');
+  const [step, setStep] = useState<'email' | 'otp'>(() => (queryStep === 'otp' ? 'otp' : 'email'));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(() => {
     if (urlError === 'auth_callback_failed') {

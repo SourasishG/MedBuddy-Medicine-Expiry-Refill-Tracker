@@ -13,10 +13,11 @@ async function main() {
     colorScheme: 'dark',
   });
   const pageMobile = await contextMobile.newPage();
-  await pageMobile.goto('http://localhost:3000/app/sign-in', { waitUntil: 'domcontentloaded' });
-  await pageMobile.fill('#email-input', 'user@example.com');
-  await pageMobile.click('button[type="submit"]');
+  await pageMobile.goto('http://localhost:3000/app/sign-in?step=otp&email=sarah%40example.com', {
+    waitUntil: 'domcontentloaded',
+  });
   await pageMobile.waitForSelector('#otp-input');
+  await pageMobile.fill('#otp-input', '842910');
   await pageMobile.screenshot({
     path: path.join(ARTIFACT_DIR, 'phase-a1-sign-in-otp-360px.png'),
     fullPage: true,
@@ -28,17 +29,18 @@ async function main() {
     colorScheme: 'dark',
   });
   const pageDesktop = await contextDesktop.newPage();
-  await pageDesktop.goto('http://localhost:3000/app/sign-in', { waitUntil: 'domcontentloaded' });
-  await pageDesktop.fill('#email-input', 'user@example.com');
-  await pageDesktop.click('button[type="submit"]');
+  await pageDesktop.goto('http://localhost:3000/app/sign-in?step=otp&email=sarah%40example.com', {
+    waitUntil: 'domcontentloaded',
+  });
   await pageDesktop.waitForSelector('#otp-input');
+  await pageDesktop.fill('#otp-input', '842910');
   await pageDesktop.screenshot({
     path: path.join(ARTIFACT_DIR, 'phase-a1-sign-in-otp-1280px.png'),
     fullPage: true,
   });
 
   await browser.close();
-  console.log('✓ Captured OTP input screenshots at 360px and 1280px');
+  console.log('✓ Captured OTP input screenshots at 360px and 1280px successfully!');
 }
 
 main().catch(console.error);
