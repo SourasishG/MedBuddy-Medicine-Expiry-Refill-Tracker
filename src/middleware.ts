@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Database } from './lib/supabase/database.types';
 import { safeNextPath } from './lib/safe-redirect';
+import { redirectWithCookies } from './lib/middleware-redirect';
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -62,7 +63,7 @@ export async function middleware(request: NextRequest) {
     if (pathname !== '/app') {
       redirectUrl.searchParams.set('next', safeNextPath(pathname));
     }
-    return NextResponse.redirect(redirectUrl);
+    return redirectWithCookies(redirectUrl, supabaseResponse);
   }
 
   // 2. Authenticated users on callback route
@@ -86,7 +87,7 @@ export async function middleware(request: NextRequest) {
         if (!isConsent) {
           const redirectUrl = request.nextUrl.clone();
           redirectUrl.pathname = '/app/consent';
-          return NextResponse.redirect(redirectUrl);
+          return redirectWithCookies(redirectUrl, supabaseResponse);
         }
         return supabaseResponse;
       }
@@ -95,7 +96,7 @@ export async function middleware(request: NextRequest) {
       if (isConsent || isSignIn) {
         const redirectUrl = request.nextUrl.clone();
         redirectUrl.pathname = '/app';
-        return NextResponse.redirect(redirectUrl);
+        return redirectWithCookies(redirectUrl, supabaseResponse);
       }
     }
 
@@ -112,7 +113,7 @@ export async function middleware(request: NextRequest) {
       if (!hasCareProfile && !isSetup) {
         const redirectUrl = request.nextUrl.clone();
         redirectUrl.pathname = '/app/setup';
-        return NextResponse.redirect(redirectUrl);
+        return redirectWithCookies(redirectUrl, supabaseResponse);
       }
     }
   } catch (err) {
