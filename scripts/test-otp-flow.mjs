@@ -46,7 +46,7 @@ async function testOtp() {
 
     // 3. Test Invalid OTP Code
     console.log('2. Testing invalid OTP code rejection...');
-    const { data: failData, error: failErr } = await anonClient.auth.verifyOtp({
+    const { error: failErr } = await anonClient.auth.verifyOtp({
       email,
       token: '000000',
       type: 'email',
@@ -74,7 +74,9 @@ async function testOtp() {
     }
 
     console.log(`  ✓ Valid OTP verified! User authenticated: ${successData.user.id}`);
-    console.log(`  ✓ Session Access Token acquired: ${successData.session.access_token.slice(0, 20)}...`);
+    console.log(
+      `  ✓ Session Access Token acquired: ${successData.session.access_token.slice(0, 20)}...`,
+    );
 
     console.log('\n✅ EMAIL OTP VERIFICATION FLOW CONFIRMED WORKING!');
   } finally {

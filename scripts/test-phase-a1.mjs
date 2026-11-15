@@ -205,7 +205,10 @@ async function main() {
     console.log('\nStep 9: Completing First-Run Setup...');
     await desktopPage.fill('#name-input', 'Alex River');
     await desktopPage.click('button:has-text("Continue")');
-    await desktopPage.waitForURL(`${BASE_URL}/app`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    await desktopPage.waitForURL(`${BASE_URL}/app`, {
+      waitUntil: 'domcontentloaded',
+      timeout: 15000,
+    });
     console.log(`  ✓ Setup completed! Landed on Today home tab: ${desktopPage.url()}`);
 
     const postSetupCookies = await desktopContext.cookies();
@@ -252,7 +255,10 @@ async function main() {
     // Step K: Sign Out Flow
     console.log('\nStep 13: Testing Sign-Out Flow...');
     await mobilePage.click('button:has-text("Sign out of MedBuddy")');
-    await mobilePage.waitForURL('**/app/sign-in', { waitUntil: 'domcontentloaded', timeout: 15000 });
+    await mobilePage.waitForURL('**/app/sign-in', {
+      waitUntil: 'domcontentloaded',
+      timeout: 15000,
+    });
     console.log(`  ✓ Signed out successfully! Navigated back to: ${mobilePage.url()}`);
 
     console.log('\n=================================================================');
