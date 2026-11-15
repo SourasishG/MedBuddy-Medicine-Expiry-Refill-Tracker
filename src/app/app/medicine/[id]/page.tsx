@@ -227,12 +227,10 @@ export default function MedicineDetailPage({ params }: PageProps) {
         medicine_id: medicine.id,
         care_profile_id: activeCareProfile.id,
         quantity_initial: qty,
-        quantity_remaining: qty,
         expiry_date: finalExpiry,
         batch_no: newBoxBatch.trim() || null,
         storage_location: newBoxLocation.trim() || null,
         opened_on: newBoxOpenedOn.trim() || null,
-        status: 'active',
       });
 
       if (error) {

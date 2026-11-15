@@ -189,7 +189,7 @@ export default function AddMedicinePage() {
         return;
       }
 
-      // 2. Insert into inventory_items
+      // 2. Insert into inventory_items (trigger auto-sets quantity_remaining and status)
       const { error: boxError } = await supabase
         .from('inventory_items')
         .insert({
@@ -197,21 +197,16 @@ export default function AddMedicinePage() {
           care_profile_id: activeCareProfile.id,
           expiry_date: finalExpiry,
           quantity_initial: qty,
-          quantity_remaining: qty,
           batch_no: batchNo.trim() || null,
           storage_location: storageLocation.trim() || null,
           opened_on: openedOn.trim() || null,
-          status: 'active',
         })
         .select('id')
         .single();
 
       if (boxError) {
-        setErrorFeedback(
-          'Medicine created, but could not record the first box. Please add a box from medicine details.',
-        );
+        setErrorFeedback('Could not record the first box. Please check the date and try again.');
         setIsSubmitting(false);
-        router.push(`/app/medicine/${medData.id}`);
         return;
       }
 
