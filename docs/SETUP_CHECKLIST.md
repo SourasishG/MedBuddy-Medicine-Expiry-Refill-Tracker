@@ -196,30 +196,72 @@ All scheduler checks passed cleanly.
 
 ---
 
-### 3.7 Verify Scheduler & Vault Health
+## 4. Phase A0: App Frontend Setup & Deployment Checklist (Vercel & Supabase)
 
-Verify that the scheduler and Vault secrets are properly configured without exposing secrets:
+This section specifies the configuration needed in **Vercel** and **Supabase** for the MedBuddy Web App (`/app`).
 
-```bash
-npm run health
-```
+### 4.1 Environment Variables to Configure in Vercel
 
-Must return:
+In your [Vercel Project Dashboard](https://vercel.com/) -> **Settings** -> **Environment Variables**, configure the following variables for **Production**, **Preview**, and **Development**:
 
-```text
-Scheduler Health Verdict: OK
-All scheduler checks passed cleanly.
-```
+| Variable Name                   | Classification | Client / Public vs Secret | Purpose                                                                                                       |
+| :------------------------------ | :------------- | :------------------------ | :------------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_SITE_URL`          | Public Config  | Public (Safe in bundle)   | Canonical origin (e.g. `https://medbuddy-s7ven.vercel.app`). Used for canonical URLs, sitemaps, and manifest. |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Public API     | Public (Safe in bundle)   | PostgREST / Auth endpoint (`https://fenqdaymgofxozjgcppt.supabase.co`).                                       |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public API Key | Public (Safe in bundle)   | Supabase client anon key. RLS enforces security at database row level.                                        |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`  | Public Key     | Public (Safe in bundle)   | NIST P-256 Web Push public key. Used by the browser to register Web Push subscriptions.                       |
+
+> [!CAUTION]
+> **Do NOT add backend secrets to Vercel:**
+>
+> - `SUPABASE_SERVICE_ROLE_KEY` must **NEVER** be added to Vercel or frontend builds.
+> - `VAPID_PRIVATE_KEY` and `CRON_SECRET` belong exclusively in Supabase Edge Function Secrets and Supabase Vault.
 
 ---
 
-## 4. Phase F0 Action Checklist
+### 4.2 Redirect URLs to Confirm in Supabase Auth
 
-Please perform the following actions:
+In [Supabase Dashboard](https://supabase.com/dashboard/project/fenqdaymgofxozjgcppt) -> **Authentication** -> **URL Configuration**:
 
-1. [x] Run the SQL in Section 3.1 to add `project_url` to Supabase Vault:
-   ```sql
-   select vault.create_secret('https://fenqdaymgofxozjgcppt.supabase.co', 'project_url');
+1. **Site URL:**
+   ```text
+   https://medbuddy-s7ven.vercel.app
    ```
-2. [x] Confirm the Magic Link email template in Section 3.4 shows `{{ .Token }}`.
-3. [x] All Phase F0 setup items completed and verified.
+2. **Redirect URLs (Allow List):**
+   Ensure the following patterns are present to support local development, production, and Vercel preview branch deployments:
+   ```text
+   http://localhost:3000/**
+   https://medbuddy-s7ven.vercel.app/**
+   https://*.vercel.app/**
+   ```
+   _(The app callback route will be `/app/auth/callback`, which is matched by the `/**` wildcards)._
+
+---
+
+### 4.3 Supabase Auth Providers Confirmation
+
+1. **Google OAuth:**
+   - Under **Authentication** -> **Providers** -> **Google**:
+     - Toggle: **ON**
+     - Client ID & Client Secret: Configured
+     - Google Cloud Console Authorized redirect URI:
+       ```text
+       https://fenqdaymgofxozjgcppt.supabase.co/auth/v1/callback
+       ```
+2. **Email OTP (6-digit Code):**
+   - Under **Authentication** -> **Providers** -> **Email**:
+     - Toggle: **ON**
+     - Confirm email: **ON**
+     - Mailer OTP expiration: **600 seconds** (10 minutes)
+   - Under **Email Templates** -> **Magic Link**:
+     - Subject and body show `{{ .Token }}` (configured in Phase F0).
+
+---
+
+## 5. Phase A0 Action Items for You
+
+Please confirm the following items, then reply with **"done"**:
+
+1. [ ] **Vercel Environment Variables:** Add `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_VAPID_PUBLIC_KEY` to Vercel (values matching your `.env.local`).
+2. [ ] **Supabase URL Configuration:** Confirm `http://localhost:3000/**`, `https://medbuddy-s7ven.vercel.app/**`, and `https://*.vercel.app/**` are in Supabase Redirect URLs.
+3. [ ] **Reply with "done"** once verified so we can proceed to **Phase A1: Foundation**.
