@@ -6,6 +6,8 @@ import {
 } from '../src/lib/app-state-cookie.ts';
 
 console.log('Testing Navigation Lookups & Cookie Caching...');
+process.env.APP_COOKIE_SECRET =
+  process.env.APP_COOKIE_SECRET || 'test-app-cookie-secret-that-is-at-least-32-chars-long!';
 assert.equal(APP_STATE_COOKIE_NAME, 'medbuddy_app_state');
 
 // Simulation of middleware execution

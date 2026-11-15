@@ -16,6 +16,7 @@ This document provides exact, click-by-click instructions and copy-paste command
 | `VAPID_PRIVATE_KEY`             | 🚨 **SECRET**  | `.env.local`, Supabase Edge Function Secrets        | Signs push notifications. NEVER expose in browser or Git    |
 | `VAPID_SUBJECT`                 | **Config**     | `.env.local`, Supabase Edge Function Secrets        | Contact mailto for push services (`mailto:...`)             |
 | `CRON_SECRET`                   | 🚨 **SECRET**  | `.env.local`, Supabase Vault, Edge Function Secrets | Authenticates internal cron trigger to sender. NEVER commit |
+| `APP_COOKIE_SECRET`             | 🚨 **SECRET**  | `.env.local`, Vercel (Production & Preview)         | Signs `medbuddy_app_state` cookie. Must be >= 32 chars. NEVER commit |
 | Supabase DB Password            | 🚨 **SECRET**  | Password Manager, `.env.local` (admin tests)        | Grants superuser database access                            |
 | Brevo SMTP Password             | 🚨 **SECRET**  | Supabase Project Settings (Custom SMTP)             | Allows sending transactional emails                         |
 | Google OAuth Client Secret      | 🚨 **SECRET**  | Supabase Authentication (Providers -> Google)       | Authenticates OAuth handshake with Google                   |
@@ -204,15 +205,29 @@ This section specifies the configuration needed in **Vercel** and **Supabase** f
 
 In your [Vercel Project Dashboard](https://vercel.com/) -> **Settings** -> **Environment Variables**, configure the following variables for **Production**, **Preview**, and **Development**:
 
-| Variable Name                   | Classification | Client / Public vs Secret | Purpose                                                                                                       |
-| :------------------------------ | :------------- | :------------------------ | :------------------------------------------------------------------------------------------------------------ |
-| `NEXT_PUBLIC_SITE_URL`          | Public Config  | Public (Safe in bundle)   | Canonical origin (e.g. `https://medbuddy-s7ven.vercel.app`). Used for canonical URLs, sitemaps, and manifest. |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Public API     | Public (Safe in bundle)   | PostgREST / Auth endpoint (`https://fenqdaymgofxozjgcppt.supabase.co`).                                       |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public API Key | Public (Safe in bundle)   | Supabase client anon key. RLS enforces security at database row level.                                        |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`  | Public Key     | Public (Safe in bundle)   | NIST P-256 Web Push public key. Used by the browser to register Web Push subscriptions.                       |
+| Variable Name                   | Classification     | Client / Public vs Secret                                            | Purpose                                                                                                       |
+| :------------------------------ | :----------------- | :------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_SITE_URL`          | Public Config      | Public (Safe in bundle)                                              | Canonical origin (e.g. `https://medbuddy-s7ven.vercel.app`). Used for canonical URLs, sitemaps, and manifest. |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Public API         | Public (Safe in bundle)                                              | PostgREST / Auth endpoint (`https://fenqdaymgofxozjgcppt.supabase.co`).                                       |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public API Key     | Public (Safe in bundle)                                              | Supabase client anon key. RLS enforces security at database row level.                                        |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`  | Public Key         | Public (Safe in bundle)                                              | NIST P-256 Web Push public key. Used by the browser to register Web Push subscriptions.                       |
+| `APP_COOKIE_SECRET`             | Server-Side Secret | **Secret** (Server / Proxy only &mdash; **NEVER** `NEXT_PUBLIC_`)    | Cryptographic signing & verification of `medbuddy_app_state` HttpOnly cookie. Must be at least 32 characters. |
+
+#### 4.1.1 Setting `APP_COOKIE_SECRET` in Vercel
+
+1. Generate a secure 32-byte secret (64 hex characters):
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
+2. In your [Vercel Project Dashboard](https://vercel.com/) -> **Settings** -> **Environment Variables**, add:
+   - **Key:** `APP_COOKIE_SECRET`
+   - **Value:** `<your-generated-32-byte-hex-string>`
+   - **Target Environments:** Production, Preview, Development
+   - **Security Requirement:** Never prefix with `NEXT_PUBLIC_`. Must be at least 32 characters long.
+3. **Fail-Closed Fallback:** If `APP_COOKIE_SECRET` is missing or shorter than 32 characters, the application safely disables state cookie caching and executes full database checks on every request, logging a single diagnostic warning without leaking sensitive data.
 
 > [!CAUTION]
-> **Do NOT add backend secrets to Vercel:**
+> **Do NOT add backend admin secrets to Vercel:**
 >
 > - `SUPABASE_SERVICE_ROLE_KEY` must **NEVER** be added to Vercel or frontend builds.
 > - `VAPID_PRIVATE_KEY` and `CRON_SECRET` belong exclusively in Supabase Edge Function Secrets and Supabase Vault.
@@ -262,6 +277,6 @@ In [Supabase Dashboard](https://supabase.com/dashboard/project/fenqdaymgofxozjgc
 
 Please confirm the following items, then reply with **"done"**:
 
-1. [ ] **Vercel Environment Variables:** Add `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_VAPID_PUBLIC_KEY` to Vercel (values matching your `.env.local`).
+1. [ ] **Vercel Environment Variables:** Add `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, and `APP_COOKIE_SECRET` (at least 32 characters) to Vercel (values matching your `.env.local`).
 2. [ ] **Supabase URL Configuration:** Confirm `http://localhost:3000/**`, `https://medbuddy-s7ven.vercel.app/**`, and `https://*.vercel.app/**` are in Supabase Redirect URLs.
 3. [ ] **Reply with "done"** once verified so we can proceed to **Phase A1: Foundation**.

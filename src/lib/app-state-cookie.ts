@@ -2,6 +2,7 @@ import type { NextResponse } from 'next/server.js';
 
 export const APP_STATE_COOKIE_NAME = 'medbuddy_app_state';
 export const APP_STATE_COOKIE_MAX_AGE = 600; // 10 minutes in seconds
+export const MIN_COOKIE_SECRET_LENGTH = 32;
 
 export interface AppStatePayload {
   uid: string;
@@ -10,12 +11,33 @@ export interface AppStatePayload {
   exp: number; // Unix timestamp in milliseconds
 }
 
-function getCookieSecret(): string {
-  return (
-    process.env.APP_COOKIE_SECRET ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    'medbuddy-internal-cookie-secret'
-  );
+let hasLoggedSecretWarning = false;
+
+export function warnInvalidCookieSecret(): void {
+  if (!hasLoggedSecretWarning) {
+    hasLoggedSecretWarning = true;
+    console.error(
+      'APP_COOKIE_SECRET is missing or shorter than 32 characters; state cookie caching disabled and falling back to database checks.',
+    );
+  }
+}
+
+export function _resetCookieSecretWarningForTesting(): void {
+  hasLoggedSecretWarning = false;
+}
+
+/**
+ * Returns the configured APP_COOKIE_SECRET if valid (>= 32 chars), or null.
+ * Logs a safe error message once if missing or too short.
+ * Never falls back to public anon keys or hard-coded strings.
+ */
+export function getCookieSecret(): string | null {
+  const secret = process.env.APP_COOKIE_SECRET;
+  if (!secret || typeof secret !== 'string' || secret.length < MIN_COOKIE_SECRET_LENGTH) {
+    warnInvalidCookieSecret();
+    return null;
+  }
+  return secret;
 }
 
 async function getHmacKey(secret: string): Promise<CryptoKey> {
@@ -31,11 +53,18 @@ async function getHmacKey(secret: string): Promise<CryptoKey> {
 
 /**
  * Signs the app state payload into a base64.signature token.
+ * Returns null if APP_COOKIE_SECRET is missing or shorter than 32 characters.
  */
 export async function signAppState(
   state: { uid: string; consent: boolean; setup: boolean; exp?: number },
-  secret = getCookieSecret(),
-): Promise<string> {
+  customSecret?: string | null,
+): Promise<string | null> {
+  const secret = customSecret !== undefined ? customSecret : getCookieSecret();
+  if (!secret || secret.length < MIN_COOKIE_SECRET_LENGTH) {
+    warnInvalidCookieSecret();
+    return null;
+  }
+
   const payload: AppStatePayload = {
     uid: state.uid,
     consent: Boolean(state.consent),
@@ -56,13 +85,20 @@ export async function signAppState(
 
 /**
  * Verifies and parses the app state cookie.
- * Returns null if missing, expired, tampered, or mismatched with expectedUid.
+ * Returns null if missing, expired, tampered, mismatched with expectedUid,
+ * or if APP_COOKIE_SECRET is missing or shorter than 32 characters.
  */
 export async function verifyAppState(
   cookieValue: string | null | undefined,
   expectedUid: string,
-  secret = getCookieSecret(),
+  customSecret?: string | null,
 ): Promise<AppStatePayload | null> {
+  const secret = customSecret !== undefined ? customSecret : getCookieSecret();
+  if (!secret || secret.length < MIN_COOKIE_SECRET_LENGTH) {
+    warnInvalidCookieSecret();
+    return null;
+  }
+
   if (!cookieValue || typeof cookieValue !== 'string') {
     return null;
   }
@@ -120,13 +156,19 @@ export async function verifyAppState(
 
 /**
  * Sets the short-lived medbuddy_app_state cookie on a response.
+ * Never sets the cookie if APP_COOKIE_SECRET is missing or shorter than 32 characters.
  */
 export async function setAppStateCookie(
   response: NextResponse,
   state: { uid: string; consent: boolean; setup: boolean },
   isSecure = true,
+  customSecret?: string | null,
 ): Promise<void> {
-  const token = await signAppState(state);
+  const token = await signAppState(state, customSecret);
+  if (!token) {
+    // Secret missing or too short: never set the cookie
+    return;
+  }
   response.cookies.set(APP_STATE_COOKIE_NAME, token, {
     httpOnly: true,
     secure: isSecure,
