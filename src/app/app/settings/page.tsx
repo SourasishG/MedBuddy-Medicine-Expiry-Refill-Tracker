@@ -428,10 +428,18 @@ export default function SettingsPage() {
                 <span
                   className={styles.statusBadge}
                   data-status={
-                    permissionStatus === 'denied' ? 'blocked' : isSubscribed ? 'active' : 'off'
+                    permissionStatus === 'denied'
+                      ? 'blocked'
+                      : isSubscribed
+                        ? 'active'
+                        : 'off'
                   }
                 >
-                  {permissionStatus === 'denied' ? 'Blocked' : isSubscribed ? 'Active' : 'Off'}
+                  {permissionStatus === 'denied'
+                    ? 'Blocked'
+                    : isSubscribed
+                      ? 'Active'
+                      : 'Off'}
                 </span>
               </div>
               <div className={styles.rowDesc}>
@@ -907,7 +915,10 @@ export default function SettingsPage() {
       </section>
 
       {/* Delete Account Modal */}
-      <DeleteAccountModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} />
+      <DeleteAccountModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+      />
     </div>
   );
 }
