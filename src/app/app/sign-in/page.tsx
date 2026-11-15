@@ -19,15 +19,13 @@ function SignInContent() {
   const [otpCode, setOtpCode] = useState('');
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [resendCooldown, setResendCooldown] = useState(0);
-
-  // If URL has error parameter, show friendly explanation
-  useEffect(() => {
+  const [errorMessage, setErrorMessage] = useState<string | null>(() => {
     if (urlError === 'auth_callback_failed') {
-      setErrorMessage('Could not sign you in with Google. Please try again or use an email code.');
+      return 'Could not sign you in with Google. Please try again or use an email code.';
     }
-  }, [urlError]);
+    return null;
+  });
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   // Check if already authenticated on mount
   useEffect(() => {

@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { Suspense, useEffect, useState, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useCareProfile } from '@/features/care-profile/CareProfileContext';
 import styles from './setup.module.scss';
 
-export default function SetupPage() {
+function SetupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const mode = searchParams.get('mode'); // e.g. 'new' when adding from sheet
@@ -206,5 +206,21 @@ export default function SetupPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function SetupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className={styles.container}>
+          <div className={styles.card}>
+            <div className={styles.title}>Loading setup…</div>
+          </div>
+        </div>
+      }
+    >
+      <SetupContent />
+    </Suspense>
   );
 }

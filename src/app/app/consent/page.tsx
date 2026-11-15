@@ -202,7 +202,7 @@ export default function ConsentPage() {
               <div className={styles.itemTitle}>Not medical advice</div>
               <div className={styles.itemDescription}>
                 MedBuddy is an adherence assistant. It does not provide medical advice or
-                prescriptions. Always follow your doctor's instructions.
+                prescriptions. Always follow your doctor&apos;s instructions.
               </div>
             </div>
           </div>

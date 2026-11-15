@@ -8,13 +8,8 @@ import { useMotionPreference } from '@/hooks/useMotionPreference';
 import styles from './AppShell.module.scss';
 
 export function ProfileSwitcherSheet() {
-  const {
-    careProfiles,
-    activeCareProfile,
-    setActiveProfileId,
-    isSwitcherOpen,
-    setSwitcherOpen,
-  } = useCareProfile();
+  const { careProfiles, activeCareProfile, setActiveProfileId, isSwitcherOpen, setSwitcherOpen } =
+    useCareProfile();
   const { motionEnabled } = useMotionPreference();
   const closeBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -84,7 +79,11 @@ export function ProfileSwitcherSheet() {
               </button>
             </div>
 
-            <div className={styles.profileList} role="radiogroup" aria-label="Select active care profile">
+            <div
+              className={styles.profileList}
+              role="radiogroup"
+              aria-label="Select active care profile"
+            >
               {careProfiles.map((profile) => {
                 const isActive = profile.id === activeCareProfile?.id;
                 const initial = (profile.name || 'P').charAt(0).toUpperCase();
