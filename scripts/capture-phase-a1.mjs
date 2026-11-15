@@ -1,6 +1,5 @@
 import { chromium } from '@playwright/test';
 import path from 'path';
-import fs from 'fs';
 
 const ARTIFACT_DIR = 'C:/Users/Sourasish/.gemini/antigravity/brain/d2b0a0e6-7e7e-45cf-bbdb-d659180f7dc1';
 const BASE_URL = 'http://localhost:3000';

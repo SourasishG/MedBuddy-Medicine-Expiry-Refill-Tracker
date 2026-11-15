@@ -83,7 +83,8 @@ function SetupContent() {
       await refetchProfiles();
       setActiveProfileId(profileId);
 
-      window.location.href = '/app';
+      router.replace('/app');
+      router.refresh();
     } catch {
       setErrorMessage('A network error occurred. Please check your connection and try again.');
       setIsSubmitting(false);

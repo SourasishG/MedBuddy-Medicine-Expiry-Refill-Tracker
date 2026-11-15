@@ -77,7 +77,8 @@ export default function ConsentPage() {
       }
 
       // Navigate to app; middleware will guide to /app/setup or /app
-      window.location.href = '/app';
+      router.replace('/app');
+      router.refresh();
     } catch {
       setErrorMessage('A network error occurred. Please check your connection and try again.');
       setIsLoading(false);
