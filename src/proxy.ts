@@ -10,7 +10,7 @@ import {
   verifyAppState,
 } from './lib/app-state-cookie';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -82,35 +82,13 @@ export async function middleware(request: NextRequest) {
   const cachedCookie = request.cookies.get(APP_STATE_COOKIE_NAME)?.value;
   const verifiedState = await verifyAppState(cachedCookie, user.id);
 
-  if (verifiedState) {
-    const { consent, setup } = verifiedState;
-
-    if (!consent) {
-      if (!isConsent) {
-        const redirectUrl = request.nextUrl.clone();
-        redirectUrl.pathname = '/app/consent';
-        return redirectWithCookies(redirectUrl, supabaseResponse);
-      }
-      return supabaseResponse;
-    }
-
-    if (!setup) {
-      if (!isSetup) {
-        const redirectUrl = request.nextUrl.clone();
-        redirectUrl.pathname = '/app/setup';
-        return redirectWithCookies(redirectUrl, supabaseResponse);
-      }
-      return supabaseResponse;
-    }
-
-    // Both consent and setup are complete
+  if (verifiedState && verifiedState.consent && verifiedState.setup) {
+    // Both consent and setup are complete: fast path (1 network call)
     if (isConsent || isSignIn) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = '/app';
       return redirectWithCookies(redirectUrl, supabaseResponse);
     }
-
-    // Single-call fast path: session valid, consent & setup verified
     return supabaseResponse;
   }
 
@@ -124,7 +102,7 @@ export async function middleware(request: NextRequest) {
       .limit(1);
 
     if (consentErr) {
-      console.error('Middleware guard error: consent lookup failed', consentErr.message);
+      console.error('Proxy guard error: consent lookup failed', consentErr.message);
       if (isSignIn) return supabaseResponse; // prevent redirect loop
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = '/app/sign-in';
@@ -144,7 +122,7 @@ export async function middleware(request: NextRequest) {
         .limit(1);
 
       if (accessErr) {
-        console.error('Middleware guard error: care access lookup failed', accessErr.message);
+        console.error('Proxy guard error: care access lookup failed', accessErr.message);
         if (isSignIn) return supabaseResponse; // prevent redirect loop
         const redirectUrl = request.nextUrl.clone();
         redirectUrl.pathname = '/app/sign-in';
@@ -155,16 +133,20 @@ export async function middleware(request: NextRequest) {
       hasCareProfile = Boolean(careAccess && careAccess.length > 0);
     }
 
-    // Cache verified state in short-lived HttpOnly cookie (10 minutes)
-    await setAppStateCookie(
-      supabaseResponse,
-      {
-        uid: user.id,
-        consent: hasConsent,
-        setup: hasCareProfile,
-      },
-      request.nextUrl.protocol === 'https:',
-    );
+    // Only cache positive fully-onboarded state; negative state falls through to database
+    if (hasConsent && hasCareProfile) {
+      await setAppStateCookie(
+        supabaseResponse,
+        {
+          uid: user.id,
+          consent: true,
+          setup: true,
+        },
+        request.nextUrl.protocol === 'https:',
+      );
+    } else {
+      clearAppStateCookie(supabaseResponse);
+    }
 
     if (!hasConsent) {
       if (!isConsent) {
@@ -209,3 +191,5 @@ export const config = {
   // Marketing routes (/, /privacy, /offline, etc.) are strictly excluded.
   matcher: ['/app', '/app/:path*'],
 };
+
+export default proxy;

@@ -268,7 +268,9 @@
 - `NextResponse.redirect` creates a fresh response object that drops cookies set by `@supabase/ssr` during session refreshes.
 - Helper `redirectWithCookies(url, sourceResponse)` copies all cookies from the source `NextResponse` onto the redirect response, preventing intermittent user session dropouts during route transitions.
 
-### 5. Next.js Routing Architecture & Convention Check
+### 5. Next.js Routing Architecture: Migration to `proxy.ts`
 
-- The project runs on Next.js 16. The build emits `ƒ Proxy (Middleware)` noting Next.js's transition toward the `proxy.ts` convention.
-- At present, `src/middleware.ts` functions fully and predictably with matcher `['/app', '/app/:path*']`. The migration to `proxy.ts` is staged for unified execution alongside Next.js canary stabilization, ensuring marketing route cookie isolation is maintained without breaking changes.
+- Next.js 16 emitted deprecation notices for the `middleware` file convention (`The "middleware" file convention is deprecated. Please use "proxy" instead`).
+- Migrated `src/middleware.ts` to `src/proxy.ts` exporting `async function proxy(request: NextRequest)`.
+- Preserved the exact matcher: `matcher: ['/app', '/app/:path*']`.
+- Verified that the deprecation warning is fully eliminated during `next build`, and zero-cookie isolation on all marketing routes (`/`, `/privacy`, `/offline`) remains strictly intact.
