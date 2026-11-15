@@ -116,7 +116,7 @@ export function formatHeaderDate(timezone = 'Asia/Kolkata', date = new Date()): 
 export function formatClockTime(time24: string): string {
   if (!time24) return '';
   const [hStr, mStr] = time24.split(':');
-  const h = Number.parseInt(hStr, 10);
+  const h = Number.parseInt(hStr || '0', 10);
   const m = Number.parseInt(mStr || '0', 10);
   if (Number.isNaN(h)) return time24;
   const period = h >= 12 ? 'PM' : 'AM';

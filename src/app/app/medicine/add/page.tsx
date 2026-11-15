@@ -6,10 +6,17 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useCareProfile } from '@/features/care-profile/CareProfileContext';
 import { parseExpiryInput, isPastExpiry } from '@/features/medicines/expiry-utils';
+import {
+  DAYS_OF_WEEK,
+  FOOD_RULE_LABELS,
+  getTodayDateString,
+  type ScheduleTimeItem,
+} from '@/features/schedules/schedule-utils';
 import type { Database } from '@/lib/supabase/database.types';
 import styles from './add-medicine.module.scss';
 
 type MedicineForm = Database['public']['Enums']['medicine_form'];
+type FoodRule = Database['public']['Enums']['food_rule'];
 
 const FORM_OPTIONS: { id: MedicineForm; label: string; defaultUnit: string }[] = [
   { id: 'tablet', label: 'Tablet', defaultUnit: 'tablets' },
@@ -37,7 +44,7 @@ export default function AddMedicinePage() {
   const supabase = createClient();
   const { activeCareProfile, isLoading: isProfileLoading } = useCareProfile();
 
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Step 1: Medicine Info
   const [name, setName] = useState('');
@@ -56,6 +63,19 @@ export default function AddMedicinePage() {
   const [openedOn, setOpenedOn] = useState('');
   const [confirmExpired, setConfirmExpired] = useState(false);
 
+  // Step 3: Schedule Info
+  const [scheduleMode, setScheduleMode] = useState<'scheduled' | 'as_needed' | 'skip'>('scheduled');
+  const [frequency, setFrequency] = useState<'daily' | 'weekdays' | 'interval'>('daily');
+  const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>([1, 2, 3, 4, 5, 6, 7]);
+  const [intervalDays, setIntervalDays] = useState<number | ''>(2);
+  const [doseAmount, setDoseAmount] = useState<number | ''>(1);
+  const [times, setTimes] = useState<ScheduleTimeItem[]>([
+    { time: '08:00', food: 'any' },
+  ]);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [instructions, setInstructions] = useState('');
+
   // Autocomplete suggestions for medicine names
   const [existingNames, setExistingNames] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -65,6 +85,15 @@ export default function AddMedicinePage() {
   const [errorFeedback, setErrorFeedback] = useState<string | null>(null);
 
   const activeProfileId = activeCareProfile?.id;
+  const profileTz = activeCareProfile?.timezone || 'Asia/Kolkata';
+
+  // Initialize start date in care profile timezone
+  useEffect(() => {
+    if (!startDate && profileTz) {
+      setStartDate(getTodayDateString(profileTz));
+    }
+  }, [profileTz, startDate]);
+
   // Fetch previous medicine names for autocomplete suggestions
   useEffect(() => {
     if (!activeProfileId) return;
@@ -105,8 +134,8 @@ export default function AddMedicinePage() {
 
   const isExpired = useMemo(() => {
     if (!parsedExpiry || !/^\d{4}-\d{2}-\d{2}$/.test(parsedExpiry)) return false;
-    return isPastExpiry(parsedExpiry, activeCareProfile?.timezone || 'Asia/Kolkata');
-  }, [parsedExpiry, activeCareProfile?.timezone]);
+    return isPastExpiry(parsedExpiry, profileTz);
+  }, [parsedExpiry, profileTz]);
 
   const handleStep1Submit = (e: FormEvent) => {
     e.preventDefault();
@@ -118,21 +147,9 @@ export default function AddMedicinePage() {
     setStep(2);
   };
 
-  const handleSaveMedicine = async (e: FormEvent) => {
+  const handleStep2Submit = (e: FormEvent) => {
     e.preventDefault();
     setErrorFeedback(null);
-
-    if (!activeCareProfile) {
-      setErrorFeedback('No active care profile selected.');
-      return;
-    }
-
-    const cleanName = name.trim();
-    if (!cleanName) {
-      setErrorFeedback('Please enter a medicine name.');
-      setStep(1);
-      return;
-    }
 
     const qty = Number(quantityInitial);
     if (!Number.isFinite(qty) || qty <= 0) {
@@ -151,6 +168,95 @@ export default function AddMedicinePage() {
         'This box has expired. Please check the date or confirm below that this box is already expired.',
       );
       return;
+    }
+
+    setErrorFeedback(null);
+    setStep(3);
+  };
+
+  const handleToggleWeekday = (dayId: number) => {
+    setSelectedWeekdays((prev) =>
+      prev.includes(dayId) ? prev.filter((d) => d !== dayId) : [...prev, dayId].sort(),
+    );
+  };
+
+  const handleAddTime = () => {
+    setTimes((prev) => [...prev, { time: '20:00', food: 'any' }]);
+  };
+
+  const handleRemoveTime = (index: number) => {
+    setTimes((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleTimeChange = (index: number, newTime: string) => {
+    setTimes((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, time: newTime } : item)),
+    );
+  };
+
+  const handleFoodChange = (index: number, food: FoodRule) => {
+    setTimes((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, food } : item)),
+    );
+  };
+
+  const handleSaveMedicine = async (skipSchedule = false) => {
+    setErrorFeedback(null);
+
+    if (!activeCareProfile) {
+      setErrorFeedback('No active care profile selected.');
+      return;
+    }
+
+    const cleanName = name.trim();
+    if (!cleanName) {
+      setErrorFeedback('Please enter a medicine name.');
+      setStep(1);
+      return;
+    }
+
+    const qty = Number(quantityInitial);
+    if (!Number.isFinite(qty) || qty <= 0) {
+      setErrorFeedback('Please enter a valid initial quantity greater than 0.');
+      setStep(2);
+      return;
+    }
+
+    const finalExpiry = parseExpiryInput(expiryInput);
+    if (!finalExpiry || !/^\d{4}-\d{2}-\d{2}$/.test(finalExpiry)) {
+      setErrorFeedback('Please enter a valid expiry date (e.g. YYYY-MM or YYYY-MM-DD).');
+      setStep(2);
+      return;
+    }
+
+    if (isExpired && !confirmExpired) {
+      setErrorFeedback(
+        'This box has expired. Please check the date or confirm below that this box is already expired.',
+      );
+      setStep(2);
+      return;
+    }
+
+    // Schedule validations if scheduled
+    const shouldSchedule = !skipSchedule && scheduleMode === 'scheduled';
+    const isPrn = !skipSchedule && scheduleMode === 'as_needed';
+
+    if (shouldSchedule) {
+      if (frequency === 'weekdays' && selectedWeekdays.length === 0) {
+        setErrorFeedback('Please select at least one day of the week for this schedule.');
+        return;
+      }
+      if (frequency === 'interval') {
+        const intervalNum = Number(intervalDays);
+        if (!Number.isFinite(intervalNum) || intervalNum < 2 || intervalNum > 365) {
+          setErrorFeedback('Interval days must be between 2 and 365.');
+          return;
+        }
+      }
+      if (times.length === 0 || times.some((t) => !t.time)) {
+        setErrorFeedback('Please specify at least one valid time of day.');
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -210,6 +316,57 @@ export default function AddMedicinePage() {
         return;
       }
 
+      // 3. Insert schedule if requested
+      if (shouldSchedule) {
+        const cleanDoseAmount = typeof doseAmount === 'number' && doseAmount > 0 ? doseAmount : 1;
+        const cleanStartDate = startDate || getTodayDateString(profileTz);
+        const cleanEndDate = endDate.trim() || null;
+
+        const { data: schedData, error: schedError } = await supabase
+          .from('schedules')
+          .insert({
+            care_profile_id: activeCareProfile.id,
+            medicine_id: medData.id,
+            frequency,
+            days_of_week: frequency === 'weekdays' ? selectedWeekdays : null,
+            interval_days: frequency === 'interval' ? Number(intervalDays) : null,
+            start_date: cleanStartDate,
+            end_date: cleanEndDate,
+            dose_amount: cleanDoseAmount,
+            instructions: instructions.trim() || null,
+            active: true,
+          })
+          .select('id')
+          .single();
+
+        if (!schedError && schedData) {
+          // Insert schedule_times
+          const timesPayload = times.map((t) => ({
+            schedule_id: schedData.id,
+            care_profile_id: activeCareProfile.id,
+            time_of_day: t.time.length === 5 ? `${t.time}:00` : t.time,
+            dose_amount: cleanDoseAmount,
+            food: t.food,
+          }));
+
+          await supabase.from('schedule_times').insert(timesPayload);
+
+          // Resync schedule to generate future dose events
+          await supabase.rpc('fn_resync_schedule', { p_schedule: schedData.id });
+        }
+      } else if (isPrn) {
+        // Record as-needed schedule
+        await supabase.from('schedules').insert({
+          care_profile_id: activeCareProfile.id,
+          medicine_id: medData.id,
+          frequency: 'as_needed',
+          start_date: startDate || getTodayDateString(profileTz),
+          dose_amount: typeof doseAmount === 'number' && doseAmount > 0 ? doseAmount : 1,
+          instructions: instructions.trim() || null,
+          active: true,
+        });
+      }
+
       // Success: redirect to medicine details
       router.push(`/app/medicine/${medData.id}`);
     } catch {
@@ -246,156 +403,254 @@ export default function AddMedicinePage() {
           <span>Cancel</span>
         </Link>
 
-        <span className={styles.stepIndicator}>Step {step} of 2</span>
+        <span className={styles.stepIndicator}>Step {step} of 3</span>
       </header>
 
-      {step === 1 ? (
-        <>
-          <h1 className={styles.heading}>Add a medicine</h1>
-          <p className={styles.subheading}>
-            Adding to <strong>{activeCareProfile?.name}</strong>’s cabinet.
-          </p>
+      {/* STEP 1: Medicine Details */}
+      {step === 1 && (
+        <form onSubmit={handleStep1Submit} className={styles.card}>
+          <div>
+            <h1 className={styles.heading}>Add a medicine</h1>
+            <p className={styles.subheading}>
+              Enter the basic medicine info. In the next steps you will record your first box and set
+              optional schedules.
+            </p>
+          </div>
 
-          <form onSubmit={handleStep1Submit} className={styles.card} noValidate>
-            {/* Medicine Name */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="med-name" className={styles.label}>
-                Medicine name *
-              </label>
-              <input
-                id="med-name"
-                type="text"
-                className={styles.input}
-                placeholder="e.g. Paracetamol, Metformin"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setShowSuggestions(true);
-                }}
-                onFocus={() => setShowSuggestions(true)}
-                required
-                autoComplete="off"
-              />
+          {/* Name Field with Autocomplete */}
+          <div className={styles.inputGroup}>
+            <label htmlFor="med-name" className={styles.label}>
+              Medicine name *
+            </label>
+            <input
+              id="med-name"
+              type="text"
+              required
+              autoFocus
+              autoComplete="off"
+              className={styles.input}
+              placeholder="e.g. Paracetamol, Metformin, Eye Drops"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+            />
 
-              {showSuggestions && filteredSuggestions.length > 0 && (
-                <ul className={styles.suggestionsList}>
-                  {filteredSuggestions.map((item) => (
-                    <li
-                      key={item}
-                      className={styles.suggestionItem}
-                      onClick={() => {
-                        setName(item);
-                        setShowSuggestions(false);
-                      }}
-                    >
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {/* Strength */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="med-strength" className={styles.label}>
-                Strength (optional)
-              </label>
-              <input
-                id="med-strength"
-                type="text"
-                className={styles.input}
-                placeholder="e.g. 500 mg, 1000 IU, 10 ml"
-                value={strength}
-                onChange={(e) => setStrength(e.target.value)}
-              />
-            </div>
-
-            {/* Form Selection */}
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>Form</label>
-              <div className={styles.pillsRow} role="radiogroup" aria-label="Medicine Form">
-                {FORM_OPTIONS.map((f) => (
+            {showSuggestions && filteredSuggestions.length > 0 && (
+              <div className={styles.autocompleteList} role="listbox">
+                {filteredSuggestions.map((item) => (
                   <button
-                    key={f.id}
+                    key={item}
                     type="button"
-                    role="radio"
-                    aria-checked={form === f.id}
-                    data-selected={form === f.id}
-                    className={styles.pillBtn}
-                    onClick={() => handleFormSelect(f.id)}
+                    className={styles.autocompleteItem}
+                    onClick={() => {
+                      setName(item);
+                      setShowSuggestions(false);
+                    }}
                   >
-                    {f.label}
+                    {item}
                   </button>
                 ))}
               </div>
-            </div>
-
-            {/* Purpose */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="med-purpose" className={styles.label}>
-                What is this for? (optional)
-              </label>
-              <span className={styles.helperText}>Keep this short, avoid private details.</span>
-              <input
-                id="med-purpose"
-                type="text"
-                className={styles.input}
-                placeholder="e.g. Blood pressure, Daily vitamin"
-                value={purpose}
-                maxLength={200}
-                onChange={(e) => setPurpose(e.target.value)}
-              />
-            </div>
-
-            {/* Notes */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="med-notes" className={styles.label}>
-                Notes (optional)
-              </label>
-              <span className={styles.helperText}>Keep this short, avoid private details.</span>
-              <textarea
-                id="med-notes"
-                className={styles.textarea}
-                placeholder="e.g. Take with water after food"
-                value={notes}
-                maxLength={500}
-                onChange={(e) => setNotes(e.target.value)}
-              />
-            </div>
-
-            {/* Optional Shelf life after opening */}
-            {(form === 'syrup' || form === 'drops' || form === 'ointment') && (
-              <div className={styles.inputGroup}>
-                <label htmlFor="med-shelflife" className={styles.label}>
-                  Shelf life after opening (days)
-                </label>
-                <span className={styles.helperText}>
-                  e.g. 28 days for opened eye drops or liquid syrups.
-                </span>
-                <input
-                  id="med-shelflife"
-                  type="number"
-                  min={1}
-                  max={365}
-                  className={styles.input}
-                  placeholder="e.g. 28"
-                  value={shelfLifeDays}
-                  onChange={(e) =>
-                    setShelfLifeDays(e.target.value === '' ? '' : Number(e.target.value))
-                  }
-                />
-              </div>
             )}
+            <span className={styles.helperText}>Generic or brand name from the packaging.</span>
+          </div>
 
-            {errorFeedback && (
-              <div className={styles.feedbackBox} data-variant="error">
-                {errorFeedback}
-              </div>
-            )}
+          {/* Strength Field */}
+          <div className={styles.inputGroup}>
+            <label htmlFor="med-strength" className={styles.label}>
+              Strength (optional)
+            </label>
+            <input
+              id="med-strength"
+              type="text"
+              className={styles.input}
+              placeholder="e.g. 500 mg, 0.5% w/v, 10 ml"
+              value={strength}
+              onChange={(e) => setStrength(e.target.value)}
+            />
+            <span className={styles.helperText}>Leave empty if not applicable or unknown.</span>
+          </div>
 
-            <div className={styles.buttonRow}>
-              <button type="submit" className={styles.primaryBtn}>
-                <span>Next: First box details</span>
+          {/* Form Selector */}
+          <div className={styles.inputGroup}>
+            <span className={styles.label}>Dosage form *</span>
+            <div className={styles.formGrid} role="radiogroup" aria-label="Medicine Form">
+              {FORM_OPTIONS.map((item) => {
+                const isSelected = form === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    data-selected={isSelected}
+                    className={styles.formOptionBtn}
+                    onClick={() => handleFormSelect(item.id)}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Unit customization */}
+          <div className={styles.inputGroup}>
+            <label htmlFor="med-unit" className={styles.label}>
+              Package unit *
+            </label>
+            <input
+              id="med-unit"
+              type="text"
+              required
+              className={styles.input}
+              placeholder="e.g. tablets, ml, puffs"
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+            />
+            <span className={styles.helperText}>How remaining doses or quantities are measured.</span>
+          </div>
+
+          {/* Purpose */}
+          <div className={styles.inputGroup}>
+            <label htmlFor="med-purpose" className={styles.label}>
+              Purpose (optional)
+            </label>
+            <input
+              id="med-purpose"
+              type="text"
+              className={styles.input}
+              placeholder="e.g. Blood pressure, Headaches, Allergies"
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
+            />
+          </div>
+
+          {/* Notes */}
+          <div className={styles.inputGroup}>
+            <label htmlFor="med-notes" className={styles.label}>
+              Notes (optional)
+            </label>
+            <textarea
+              id="med-notes"
+              className={styles.textarea}
+              placeholder="Keep this short, avoid private details."
+              value={notes}
+              maxLength={250}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+            <span className={styles.helperText}>
+              Keep this short and avoid private details (max 250 characters).
+            </span>
+          </div>
+
+          {/* Shelf Life After Opening */}
+          <div className={styles.inputGroup}>
+            <label htmlFor="med-shelflife" className={styles.label}>
+              Shelf life after opening in days (optional)
+            </label>
+            <input
+              id="med-shelflife"
+              type="number"
+              min="1"
+              max="365"
+              className={styles.input}
+              placeholder="e.g. 28 (common for eye drops and syrups)"
+              value={shelfLifeDays}
+              onChange={(e) =>
+                setShelfLifeDays(e.target.value === '' ? '' : Number(e.target.value))
+              }
+            />
+            <span className={styles.helperText}>
+              If specified, opened boxes will expire after this many days if earlier than printed date.
+            </span>
+          </div>
+
+          {errorFeedback && (
+            <div className={styles.feedbackBox} data-variant="error">
+              {errorFeedback}
+            </div>
+          )}
+
+          <div className={styles.buttonRow}>
+            <button type="submit" className={styles.primaryBtn}>
+              <span>Next: First box details</span>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* STEP 2: First Box Details */}
+      {step === 2 && (
+        <form onSubmit={handleStep2Submit} className={styles.card}>
+          <div>
+            <h1 className={styles.heading}>First box details</h1>
+            <p className={styles.subheading}>
+              Add the first package in your cabinet for <strong>{name}</strong>.
+            </p>
+          </div>
+
+          {/* Quantity Initial */}
+          <div className={styles.inputGroup}>
+            <label htmlFor="box-qty" className={styles.label}>
+              Initial quantity ({unit}) *
+            </label>
+            <input
+              id="box-qty"
+              type="number"
+              required
+              min="1"
+              step="any"
+              className={styles.input}
+              value={quantityInitial}
+              onChange={(e) =>
+                setQuantityInitial(e.target.value === '' ? '' : Number(e.target.value))
+              }
+            />
+            <span className={styles.helperText}>
+              Total number of {unit} in this new or open container.
+            </span>
+          </div>
+
+          {/* Expiry Date */}
+          <div className={styles.inputGroup}>
+            <label htmlFor="box-expiry" className={styles.label}>
+              Expiry date *
+            </label>
+            <input
+              id="box-expiry"
+              type="text"
+              required
+              className={styles.input}
+              placeholder="YYYY-MM or YYYY-MM-DD (e.g. 2027-08)"
+              value={expiryInput}
+              onChange={(e) => setExpiryInput(e.target.value)}
+            />
+            <span className={styles.helperText}>
+              Printed date on the box or blister pack. Month &amp; year (e.g. 2027-08) is treated as the end of that month.
+            </span>
+          </div>
+
+          {/* Past Expiry Warning & Confirmation */}
+          {isExpired && (
+            <div className={styles.warningBox}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <svg
                   width="18"
                   height="18"
@@ -407,177 +662,488 @@ export default function AddMedicinePage() {
                   strokeLinejoin="round"
                   aria-hidden="true"
                 >
-                  <polyline points="9 18 15 12 9 6" />
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
-              </button>
-            </div>
-          </form>
-        </>
-      ) : (
-        <>
-          <h1 className={styles.heading}>First box details</h1>
-          <p className={styles.subheading}>
-            Add the initial quantity, unit, and expiry date for{' '}
-            <strong>{name || 'this medicine'}</strong>.
-          </p>
-
-          <form onSubmit={handleSaveMedicine} className={styles.card} noValidate>
-            {/* Quantity and Unit */}
-            <div className={styles.formGrid}>
-              <div className={styles.inputGroup}>
-                <label htmlFor="box-qty" className={styles.label}>
-                  Quantity *
-                </label>
+                <strong>This date has already passed.</strong>
+              </div>
+              <div>
+                According to the date entered, this box has already expired. If this is an existing expired item you are tracking, please confirm below.
+              </div>
+              <label className={styles.confirmCheckbox}>
                 <input
-                  id="box-qty"
-                  type="number"
-                  min={1}
-                  step={1}
-                  className={styles.input}
-                  value={quantityInitial}
-                  onChange={(e) =>
-                    setQuantityInitial(e.target.value === '' ? '' : Number(e.target.value))
-                  }
-                  required
+                  type="checkbox"
+                  checked={confirmExpired}
+                  onChange={(e) => setConfirmExpired(e.target.checked)}
                 />
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label htmlFor="box-unit" className={styles.label}>
-                  Unit *
-                </label>
-                <input
-                  id="box-unit"
-                  type="text"
-                  className={styles.input}
-                  placeholder="tablets"
-                  value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Expiry Date */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="box-expiry" className={styles.label}>
-                Expiry date *
+                <span>Yes, this medicine box is already expired.</span>
               </label>
-              <span className={styles.helperText}>
-                Enter Month &amp; Year (e.g. 2027-05) or exact date.
-              </span>
-              <input
-                id="box-expiry"
-                type="text"
-                className={styles.input}
-                placeholder="YYYY-MM (e.g. 2027-05)"
-                value={expiryInput}
-                onChange={(e) => {
-                  setExpiryInput(e.target.value);
-                  setConfirmExpired(false);
-                }}
-                required
-              />
             </div>
+          )}
 
-            {/* Expired warning and confirmation */}
-            {isExpired && (
-              <div className={styles.warningBox}>
-                <div>
-                  <strong>Notice:</strong> This box has already expired ({parsedExpiry}). Check the
-                  date or confirm below if you intend to record an expired package.
-                </div>
-                <label className={styles.confirmCheckbox}>
-                  <input
-                    type="checkbox"
-                    checked={confirmExpired}
-                    onChange={(e) => setConfirmExpired(e.target.checked)}
-                  />
-                  <span>This is already expired</span>
-                </label>
-              </div>
-            )}
-
-            {/* Storage Location */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="box-location" className={styles.label}>
-                Storage location (optional)
-              </label>
-              <input
-                id="box-location"
-                type="text"
-                className={styles.input}
-                placeholder="e.g. Medicine Cabinet, Bedside"
-                value={storageLocation}
-                onChange={(e) => setStorageLocation(e.target.value)}
-              />
-              <div className={styles.pillsRow} style={{ marginTop: '4px' }}>
-                {COMMON_LOCATIONS.map((loc) => (
-                  <button
-                    key={loc}
-                    type="button"
-                    className={styles.pillBtn}
-                    onClick={() => setStorageLocation(loc)}
-                  >
-                    {loc}
-                  </button>
-                ))}
-              </div>
+          {/* Storage Location */}
+          <div className={styles.inputGroup}>
+            <label htmlFor="box-location" className={styles.label}>
+              Storage location (optional)
+            </label>
+            <input
+              id="box-location"
+              type="text"
+              className={styles.input}
+              placeholder="e.g. Medicine Cabinet, Fridge, Bedside"
+              value={storageLocation}
+              onChange={(e) => setStorageLocation(e.target.value)}
+            />
+            <div className={styles.quickLocations}>
+              {COMMON_LOCATIONS.map((loc) => (
+                <button
+                  key={loc}
+                  type="button"
+                  className={styles.quickLocBtn}
+                  onClick={() => setStorageLocation(loc)}
+                >
+                  {loc}
+                </button>
+              ))}
             </div>
+          </div>
 
-            {/* Batch Number */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="box-batch" className={styles.label}>
-                Batch / Lot number (optional)
-              </label>
-              <input
-                id="box-batch"
-                type="text"
-                className={styles.input}
-                placeholder="e.g. B2409"
-                value={batchNo}
-                onChange={(e) => setBatchNo(e.target.value)}
-              />
+          {/* Batch Number */}
+          <div className={styles.inputGroup}>
+            <label htmlFor="box-batch" className={styles.label}>
+              Batch number (optional)
+            </label>
+            <input
+              id="box-batch"
+              type="text"
+              className={styles.input}
+              placeholder="e.g. B-81092"
+              value={batchNo}
+              onChange={(e) => setBatchNo(e.target.value)}
+            />
+          </div>
+
+          {/* Opened On */}
+          <div className={styles.inputGroup}>
+            <label htmlFor="box-opened" className={styles.label}>
+              Opened on date (optional)
+            </label>
+            <input
+              id="box-opened"
+              type="date"
+              className={styles.input}
+              value={openedOn}
+              onChange={(e) => setOpenedOn(e.target.value)}
+            />
+            <span className={styles.helperText}>
+              For medicines whose shelf life shortens after opening.
+            </span>
+          </div>
+
+          {errorFeedback && (
+            <div className={styles.feedbackBox} data-variant="error">
+              {errorFeedback}
             </div>
+          )}
 
-            {/* Opened on Date */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="box-opened" className={styles.label}>
-                Opened on (optional)
-              </label>
-              <input
-                id="box-opened"
-                type="date"
-                className={styles.input}
-                value={openedOn}
-                onChange={(e) => setOpenedOn(e.target.value)}
-              />
-            </div>
-
-            {errorFeedback && (
-              <div className={styles.feedbackBox} data-variant="error">
-                {errorFeedback}
-              </div>
-            )}
-
-            <div className={styles.buttonRow}>
-              <button
-                type="button"
-                className={styles.secondaryBtn}
-                onClick={() => {
-                  setErrorFeedback(null);
-                  setStep(1);
-                }}
-                disabled={isSubmitting}
+          <div className={styles.buttonRow}>
+            <button
+              type="button"
+              className={styles.secondaryBtn}
+              onClick={() => {
+                setErrorFeedback(null);
+                setStep(1);
+              }}
+              disabled={isSubmitting}
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              className={styles.secondaryBtn}
+              onClick={() => handleSaveMedicine(true)}
+              disabled={isSubmitting}
+            >
+              Skip schedule &amp; Save
+            </button>
+            <button type="submit" className={styles.primaryBtn} disabled={isSubmitting}>
+              <span>Next: Set schedule</span>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
               >
-                Back
-              </button>
-              <button type="submit" className={styles.primaryBtn} disabled={isSubmitting}>
-                {isSubmitting ? 'Saving…' : 'Save medicine'}
-              </button>
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* STEP 3: Schedule Details */}
+      {step === 3 && (
+        <div className={styles.card}>
+          <div>
+            <h1 className={styles.heading}>Set a schedule</h1>
+            <p className={styles.subheading}>
+              Set up daily reminders for <strong>{name}</strong> or log doses as needed.
+            </p>
+          </div>
+
+          {/* Mode Selector */}
+          <div className={styles.modeCardGroup} role="radiogroup" aria-label="Schedule Type">
+            <label
+              className={styles.modeCard}
+              data-active={scheduleMode === 'scheduled'}
+              onClick={() => setScheduleMode('scheduled')}
+            >
+              <input
+                type="radio"
+                name="sched-mode"
+                checked={scheduleMode === 'scheduled'}
+                onChange={() => setScheduleMode('scheduled')}
+              />
+              <div className={styles.modeCardContent}>
+                <span className={styles.modeCardTitle}>Regular schedule</span>
+                <span className={styles.modeCardDesc}>
+                  Daily, chosen weekdays, or every few days with calm time-of-day reminders.
+                </span>
+              </div>
+            </label>
+
+            <label
+              className={styles.modeCard}
+              data-active={scheduleMode === 'as_needed'}
+              onClick={() => setScheduleMode('as_needed')}
+            >
+              <input
+                type="radio"
+                name="sched-mode"
+                checked={scheduleMode === 'as_needed'}
+                onChange={() => setScheduleMode('as_needed')}
+              />
+              <div className={styles.modeCardContent}>
+                <span className={styles.modeCardTitle}>As needed (PRN)</span>
+                <span className={styles.modeCardDesc}>
+                  No set schedule or clock reminders. Easily logged from the Today screen when taken.
+                </span>
+              </div>
+            </label>
+          </div>
+
+          {scheduleMode === 'scheduled' && (
+            <>
+              {/* Frequency Selector */}
+              <div className={styles.inputGroup}>
+                <span className={styles.label}>Frequency</span>
+                <div className={styles.freqGrid}>
+                  <button
+                    type="button"
+                    className={styles.freqBtn}
+                    data-active={frequency === 'daily'}
+                    onClick={() => setFrequency('daily')}
+                  >
+                    Daily
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.freqBtn}
+                    data-active={frequency === 'weekdays'}
+                    onClick={() => setFrequency('weekdays')}
+                  >
+                    Specific days
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.freqBtn}
+                    data-active={frequency === 'interval'}
+                    onClick={() => setFrequency('interval')}
+                  >
+                    Every few days
+                  </button>
+                </div>
+              </div>
+
+              {/* Specific days pills */}
+              {frequency === 'weekdays' && (
+                <div className={styles.inputGroup}>
+                  <span className={styles.label}>Choose days of the week</span>
+                  <div className={styles.weekdaysRow}>
+                    {DAYS_OF_WEEK.map((d) => {
+                      const isSelected = selectedWeekdays.includes(d.id);
+                      return (
+                        <button
+                          key={d.id}
+                          type="button"
+                          className={styles.weekdayChip}
+                          data-active={isSelected}
+                          aria-label={d.fullName}
+                          onClick={() => handleToggleWeekday(d.id)}
+                        >
+                          {d.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Interval Days */}
+              {frequency === 'interval' && (
+                <div className={styles.inputGroup}>
+                  <label htmlFor="sched-interval" className={styles.label}>
+                    Take dose every N days
+                  </label>
+                  <input
+                    id="sched-interval"
+                    type="number"
+                    min="2"
+                    max="365"
+                    className={styles.input}
+                    placeholder="e.g. 2 for alternate days, 3 for every 3 days"
+                    value={intervalDays}
+                    onChange={(e) =>
+                      setIntervalDays(e.target.value === '' ? '' : Number(e.target.value))
+                    }
+                  />
+                </div>
+              )}
+
+              {/* Dose Amount */}
+              <div className={styles.inputGroup}>
+                <label htmlFor="sched-dose-amt" className={styles.label}>
+                  Dose amount ({unit})
+                </label>
+                <input
+                  id="sched-dose-amt"
+                  type="number"
+                  min="0.25"
+                  step="any"
+                  className={styles.input}
+                  value={doseAmount}
+                  onChange={(e) =>
+                    setDoseAmount(e.target.value === '' ? '' : Number(e.target.value))
+                  }
+                />
+                <span className={styles.helperText}>
+                  Default amount to take at each scheduled time.
+                </span>
+              </div>
+
+              {/* Times of Day List */}
+              <div className={styles.inputGroup}>
+                <span className={styles.label}>Times of day &amp; food rules</span>
+                <div className={styles.timesList}>
+                  {times.map((item, idx) => (
+                    <div key={idx} className={styles.timeItemCard}>
+                      <div className={styles.timeItemTop}>
+                        <input
+                          type="time"
+                          required
+                          className={styles.timeInput}
+                          value={item.time}
+                          onChange={(e) => handleTimeChange(idx, e.target.value)}
+                        />
+                        {times.length > 1 && (
+                          <button
+                            type="button"
+                            className={styles.removeTimeBtn}
+                            onClick={() => handleRemoveTime(idx)}
+                            aria-label={`Remove time ${item.time}`}
+                          >
+                            <svg
+                              width="18"
+                              height="18"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <line x1="18" y1="6" x2="6" y2="18" />
+                              <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Food rule chips */}
+                      <div className={styles.foodChipsRow}>
+                        {(['any', 'before_food', 'with_food', 'after_food'] as FoodRule[]).map(
+                          (food) => (
+                            <button
+                              key={food}
+                              type="button"
+                              className={styles.foodChip}
+                              data-active={item.food === food}
+                              onClick={() => handleFoodChange(idx, food)}
+                            >
+                              {FOOD_RULE_LABELS[food]}
+                            </button>
+                          ),
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    className={styles.addTimeBtn}
+                    onClick={handleAddTime}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    <span>Add another time</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Start Date */}
+              <div className={styles.inputGroup}>
+                <label htmlFor="sched-start" className={styles.label}>
+                  Start date
+                </label>
+                <input
+                  id="sched-start"
+                  type="date"
+                  required
+                  className={styles.input}
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+
+              {/* End Date (optional) */}
+              <div className={styles.inputGroup}>
+                <label htmlFor="sched-end" className={styles.label}>
+                  End date (optional)
+                </label>
+                <input
+                  id="sched-end"
+                  type="date"
+                  className={styles.input}
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+                <span className={styles.helperText}>
+                  Leave blank for continuous ongoing medication.
+                </span>
+              </div>
+
+              {/* Instructions */}
+              <div className={styles.inputGroup}>
+                <label htmlFor="sched-instructions" className={styles.label}>
+                  Instructions (optional)
+                </label>
+                <input
+                  id="sched-instructions"
+                  type="text"
+                  maxLength={200}
+                  className={styles.input}
+                  placeholder="e.g. Take with a full glass of water, do not chew"
+                  value={instructions}
+                  onChange={(e) => setInstructions(e.target.value)}
+                />
+              </div>
+            </>
+          )}
+
+          {scheduleMode === 'as_needed' && (
+            <div className={styles.inputGroup}>
+              <label htmlFor="prn-dose-amt" className={styles.label}>
+                Default single dose ({unit})
+              </label>
+              <input
+                id="prn-dose-amt"
+                type="number"
+                min="0.25"
+                step="any"
+                className={styles.input}
+                value={doseAmount}
+                onChange={(e) =>
+                  setDoseAmount(e.target.value === '' ? '' : Number(e.target.value))
+                }
+              />
+              <span className={styles.helperText}>
+                Amount pre-filled when logging an as-needed dose.
+              </span>
             </div>
-          </form>
-        </>
+          )}
+
+          {errorFeedback && (
+            <div className={styles.feedbackBox} data-variant="error">
+              {errorFeedback}
+            </div>
+          )}
+
+          <div className={styles.buttonRow}>
+            <button
+              type="button"
+              className={styles.secondaryBtn}
+              onClick={() => {
+                setErrorFeedback(null);
+                setStep(2);
+              }}
+              disabled={isSubmitting}
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              className={styles.secondaryBtn}
+              onClick={() => handleSaveMedicine(true)}
+              disabled={isSubmitting}
+            >
+              Skip schedule
+            </button>
+            <button
+              type="button"
+              className={styles.primaryBtn}
+              onClick={() => handleSaveMedicine(false)}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                'Saving…'
+              ) : (
+                <>
+                  <span>Save medicine</span>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
