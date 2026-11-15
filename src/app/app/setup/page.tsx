@@ -83,6 +83,9 @@ function SetupContent() {
       await refetchProfiles();
       setActiveProfileId(profileId);
 
+      // Invalidate cached state so middleware recognizes setup is complete
+      document.cookie = 'medbuddy_app_state=; path=/app; max-age=0';
+
       router.replace('/app');
       router.refresh();
     } catch {

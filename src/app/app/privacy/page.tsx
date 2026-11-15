@@ -32,8 +32,18 @@ export default function AppPrivacyPage() {
           maintain your signed-in session securely across requests.
         </p>
         <p>
-          We also store your active care profile ID in <code>localStorage</code> to restore your
-          view when you reopen the app.
+          To ensure fast, calm page navigation, we also set an essential, short-lived (10-minute),
+          HMAC-signed, HttpOnly cookie named <code>medbuddy_app_state</code> scoped strictly to{' '}
+          <code>/app</code>. It securely caches your verified user identifier and status flags
+          (whether health data consent and first-time setup are complete) to avoid repetitive
+          database queries on every screen transition. It contains zero medication names, health
+          details, or personal information, and is cleared immediately upon sign-out, consent
+          withdrawal, or profile deletion. Real data authorization is always enforced by Supabase
+          Row-Level Security (RLS) on the database.
+        </p>
+        <p>
+          We also store your active care profile ID in <code>localStorage</code> under{' '}
+          <code>medbuddy-active-care-profile</code> to restore your view when you reopen the app.
         </p>
       </section>
 

@@ -13,6 +13,7 @@ export default function SettingsPage() {
   const [, startTransition] = useTransition();
 
   const handleSignOut = async () => {
+    document.cookie = 'medbuddy_app_state=; path=/app; max-age=0';
     await supabase.auth.signOut();
     startTransition(() => {
       router.replace('/app/sign-in');

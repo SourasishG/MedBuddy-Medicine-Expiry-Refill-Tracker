@@ -233,3 +233,42 @@
    - Disabled `[db.seed]` in `supabase/config.toml` (`enabled = false`) and provided an empty `supabase/seed.sql` with explanatory comments.
 4. **Dependency Audit Scope:**
    - Documented build-time isolation of `@serwist/next` dependencies (`glob`, `zod`, `minimatch`) in `SECURITY.md`, prohibiting `--force` downgrades.
+
+## Phase A1: Foundation & Navigation Performance Optimization
+
+### 1. Open Redirect Prevention (`safeNextPath`)
+
+- All post-auth destinations (`?next=`) are validated through `safeNextPath` in `src/lib/safe-redirect.ts`.
+- Validates that paths strictly begin with `/app` (or `/app/`), disallowing backslashes, double slashes (`//`), protocol schemes (`://`), path traversal (`..`), control characters, whitespace, and percent-encoded variations (`%2F%2F`).
+- Unsafe or off-site destinations fail closed and default to `/app`.
+
+### 2. Fail-Closed Route Guards
+
+- Route guards in middleware do not fail open when database queries fail or throw exceptions.
+- Failures during consent or care profile lookups redirect to `/app/sign-in?error=service_unavailable` with a user-friendly retry button, preventing unconsented or unconfigured access to protected views.
+- Error handling specifically avoids redirect loops when accessing `/app/sign-in`.
+- Error logs strictly emit operational status messages without logging user IDs, emails, or personal identifiers.
+
+### 3. Navigation Performance & App State Caching (`medbuddy_app_state`)
+
+- **Problem**: Querying `supabase.auth.getUser()`, `consents`, and `care_access` on every page request incurred **3 network roundtrips per navigation**, slowing screen transitions.
+- **Decision**: Implemented Option A (short-lived, 10-minute HMAC-SHA256 signed HttpOnly cookie `medbuddy_app_state` scoped to `/app`).
+- **Network Calls Comparison**:
+  - **Before**: 3 network calls on every navigation tap.
+  - **After**: **1 network call** (`supabase.auth.getUser()`) for standard in-session navigations. Consent and care profile database queries occur only once per 10-minute window or upon initial login/cache miss.
+- **Convenience Boundary**: The cookie is treated purely as a routing performance optimization; actual data access and mutation authorization remains strictly enforced by Supabase database Row-Level Security (RLS).
+- **Cache Invalidation**:
+  - Sign-out (via `/app/auth/sign-out` route or client-side action) immediately clears `medbuddy_app_state`.
+  - Recording consent on `/app/consent` clears the cookie to trigger re-evaluation for care profile setup.
+  - Creating a care profile on `/app/setup` clears the cookie to trigger immediate transition to the Today screen.
+  - Future consent withdrawal or account deletion actions similarly invalidate this cookie.
+
+### 4. Preserving Auth Cookies Across Middleware Redirects (`redirectWithCookies`)
+
+- `NextResponse.redirect` creates a fresh response object that drops cookies set by `@supabase/ssr` during session refreshes.
+- Helper `redirectWithCookies(url, sourceResponse)` copies all cookies from the source `NextResponse` onto the redirect response, preventing intermittent user session dropouts during route transitions.
+
+### 5. Next.js Routing Architecture & Convention Check
+
+- The project runs on Next.js 16. The build emits `ƒ Proxy (Middleware)` noting Next.js's transition toward the `proxy.ts` convention.
+- At present, `src/middleware.ts` functions fully and predictably with matcher `['/app', '/app/:path*']`. The migration to `proxy.ts` is staged for unified execution alongside Next.js canary stabilization, ensuring marketing route cookie isolation is maintained without breaking changes.

@@ -3,6 +3,12 @@ import { NextResponse, type NextRequest } from 'next/server';
 import type { Database } from './lib/supabase/database.types';
 import { safeNextPath } from './lib/safe-redirect';
 import { redirectWithCookies } from './lib/middleware-redirect';
+import {
+  APP_STATE_COOKIE_NAME,
+  clearAppStateCookie,
+  setAppStateCookie,
+  verifyAppState,
+} from './lib/app-state-cookie';
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -55,6 +61,7 @@ export async function middleware(request: NextRequest) {
 
   // 1. Unauthenticated users
   if (!user) {
+    clearAppStateCookie(supabaseResponse);
     if (isSignIn || isAuthCallback) {
       return supabaseResponse;
     }
@@ -71,8 +78,44 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
+  // 3. Fast Path: Check cached app state cookie (Issue 3)
+  const cachedCookie = request.cookies.get(APP_STATE_COOKIE_NAME)?.value;
+  const verifiedState = await verifyAppState(cachedCookie, user.id);
+
+  if (verifiedState) {
+    const { consent, setup } = verifiedState;
+
+    if (!consent) {
+      if (!isConsent) {
+        const redirectUrl = request.nextUrl.clone();
+        redirectUrl.pathname = '/app/consent';
+        return redirectWithCookies(redirectUrl, supabaseResponse);
+      }
+      return supabaseResponse;
+    }
+
+    if (!setup) {
+      if (!isSetup) {
+        const redirectUrl = request.nextUrl.clone();
+        redirectUrl.pathname = '/app/setup';
+        return redirectWithCookies(redirectUrl, supabaseResponse);
+      }
+      return supabaseResponse;
+    }
+
+    // Both consent and setup are complete
+    if (isConsent || isSignIn) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = '/app';
+      return redirectWithCookies(redirectUrl, supabaseResponse);
+    }
+
+    // Single-call fast path: session valid, consent & setup verified
+    return supabaseResponse;
+  }
+
   try {
-    // 3. Check Consent
+    // 4. Slow Path: Check Consent via database
     const { data: consents, error: consentErr } = await supabase
       .from('consents')
       .select('id')
@@ -91,10 +134,51 @@ export async function middleware(request: NextRequest) {
 
     const hasConsent = Boolean(consents && consents.length > 0);
 
+    let hasCareProfile = false;
+    if (hasConsent) {
+      // 5. Check Care Profiles via database
+      const { data: careAccess, error: accessErr } = await supabase
+        .from('care_access')
+        .select('care_profile_id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (accessErr) {
+        console.error('Middleware guard error: care access lookup failed', accessErr.message);
+        if (isSignIn) return supabaseResponse; // prevent redirect loop
+        const redirectUrl = request.nextUrl.clone();
+        redirectUrl.pathname = '/app/sign-in';
+        redirectUrl.searchParams.set('error', 'service_unavailable');
+        return redirectWithCookies(redirectUrl, supabaseResponse);
+      }
+
+      hasCareProfile = Boolean(careAccess && careAccess.length > 0);
+    }
+
+    // Cache verified state in short-lived HttpOnly cookie (10 minutes)
+    await setAppStateCookie(
+      supabaseResponse,
+      {
+        uid: user.id,
+        consent: hasConsent,
+        setup: hasCareProfile,
+      },
+      request.nextUrl.protocol === 'https:',
+    );
+
     if (!hasConsent) {
       if (!isConsent) {
         const redirectUrl = request.nextUrl.clone();
         redirectUrl.pathname = '/app/consent';
+        return redirectWithCookies(redirectUrl, supabaseResponse);
+      }
+      return supabaseResponse;
+    }
+
+    if (!hasCareProfile) {
+      if (!isSetup) {
+        const redirectUrl = request.nextUrl.clone();
+        redirectUrl.pathname = '/app/setup';
         return redirectWithCookies(redirectUrl, supabaseResponse);
       }
       return supabaseResponse;
@@ -106,35 +190,8 @@ export async function middleware(request: NextRequest) {
       redirectUrl.pathname = '/app';
       return redirectWithCookies(redirectUrl, supabaseResponse);
     }
-
-    // 4. Check Care Profiles
-    const { data: careAccess, error: accessErr } = await supabase
-      .from('care_access')
-      .select('care_profile_id')
-      .eq('user_id', user.id)
-      .limit(1);
-
-    if (accessErr) {
-      console.error('Middleware guard error: care access lookup failed', accessErr.message);
-      if (isSignIn) return supabaseResponse; // prevent redirect loop
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = '/app/sign-in';
-      redirectUrl.searchParams.set('error', 'service_unavailable');
-      return redirectWithCookies(redirectUrl, supabaseResponse);
-    }
-
-    const hasCareProfile = Boolean(careAccess && careAccess.length > 0);
-
-    if (!hasCareProfile && !isSetup) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = '/app/setup';
-      return redirectWithCookies(redirectUrl, supabaseResponse);
-    }
   } catch (err) {
-    console.error(
-      'Middleware guard error:',
-      err instanceof Error ? err.message : 'Unknown error',
-    );
+    console.error('Middleware guard error:', err instanceof Error ? err.message : 'Unknown error');
     if (pathname === '/app/sign-in') {
       return supabaseResponse; // prevent redirect loop
     }

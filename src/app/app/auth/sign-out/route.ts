@@ -29,5 +29,8 @@ export async function POST(request: NextRequest) {
     await supabase.auth.signOut();
   }
 
+  // Clear navigation state cache on sign out
+  cookieStore.set('medbuddy_app_state', '', { path: '/app', maxAge: 0 });
+
   return NextResponse.redirect(new URL('/app/sign-in', request.url));
 }

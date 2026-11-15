@@ -76,6 +76,9 @@ export default function ConsentPage() {
         return;
       }
 
+      // Invalidate cached state so middleware re-evaluates care profile
+      document.cookie = 'medbuddy_app_state=; path=/app; max-age=0';
+
       // Navigate to app; middleware will guide to /app/setup or /app
       router.replace('/app');
       router.refresh();
