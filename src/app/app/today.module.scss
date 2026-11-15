@@ -1,0 +1,114 @@
+@use '../../styles/mixins.scss' as *;
+
+.todayContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(31, 75, 255, 0.08);
+  border: 1px solid rgba(31, 75, 255, 0.25);
+  border-radius: var(--radius-card-sm);
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.bannerContent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bannerIcon {
+  width: 20px;
+  height: 20px;
+  color: #7b9cff;
+  flex-shrink: 0;
+}
+
+.bannerBtn {
+  @include focus-ring;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  padding: 6px 12px;
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.18);
+  }
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 48px 20px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  margin-top: 12px;
+}
+
+.emptyIconRing {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(92, 242, 199, 0.06);
+  border: 1px solid rgba(92, 242, 199, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ok);
+}
+
+.emptyTitle {
+  font-family: var(--font-body);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.emptyText {
+  font-size: 0.9375rem;
+  color: var(--muted);
+  line-height: 1.5;
+  max-width: 320px;
+  margin: 0;
+}
+
+.addBtn {
+  @include focus-ring;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 24px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, var(--ok) 0%, #34d399 100%);
+  color: #090c12;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(92, 242, 199, 0.35);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 22px rgba(92, 242, 199, 0.5);
+  }
+}
