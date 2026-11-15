@@ -139,6 +139,7 @@ export interface DoseEventLike {
   stock_shortfall?: number | null;
   as_needed?: boolean;
   note?: string | null;
+  is_snoozed?: boolean;
 }
 
 export interface CategorizedDoses<T extends DoseEventLike> {
@@ -203,7 +204,7 @@ export function categorizeDoseEvents<T extends DoseEventLike>(
         // As long as it is still relevant for today
         const snoozedDateStr = getLocalDateString(event.snoozed_until!, timezone);
         if (snoozedDateStr === todayStr || schedDateStr === todayStr) {
-          laterToday.push(event);
+          laterToday.push({ ...event, is_snoozed: true });
         }
         continue;
       }

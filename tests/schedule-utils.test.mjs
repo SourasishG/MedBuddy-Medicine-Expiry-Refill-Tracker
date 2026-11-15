@@ -21,7 +21,15 @@ assert.equal(kolkataDate, '2026-11-16', 'Should roll over to next day in Asia/Ko
 // In America/New_York (UTC-5), this is 2026-11-15 at 15:30!
 const nyDate = getTodayDateString('America/New_York', testDate);
 assert.equal(nyDate, '2026-11-15', 'Should stay on 2026-11-15 in America/New_York');
-console.log('  ✓ Timezone date rollover validated correctly');
+
+// Verify getLocalDateString
+assert.equal(getLocalDateString('2026-11-15T22:00:00Z', 'Asia/Kolkata'), '2026-11-16');
+assert.equal(getLocalDateString('2026-11-15T22:00:00Z', 'UTC'), '2026-11-15');
+
+// Verify formatHeaderDate
+const headerDate = formatHeaderDate('UTC', new Date('2026-11-15T12:00:00Z'));
+assert.ok(headerDate.includes('Sunday') && headerDate.includes('15') && headerDate.includes('November'));
+console.log('  ✓ Timezone date rollover and header formatting validated correctly');
 
 // 2. formatTimeInTz
 console.log('2. Verifying formatTimeInTz...');

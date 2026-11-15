@@ -87,13 +87,6 @@ export default function AddMedicinePage() {
   const activeProfileId = activeCareProfile?.id;
   const profileTz = activeCareProfile?.timezone || 'Asia/Kolkata';
 
-  // Initialize start date in care profile timezone
-  useEffect(() => {
-    if (!startDate && profileTz) {
-      setStartDate(getTodayDateString(profileTz));
-    }
-  }, [profileTz, startDate]);
-
   // Fetch previous medicine names for autocomplete suggestions
   useEffect(() => {
     if (!activeProfileId) return;
@@ -1027,7 +1020,7 @@ export default function AddMedicinePage() {
                   type="date"
                   required
                   className={styles.input}
-                  value={startDate}
+                  value={startDate || getTodayDateString(profileTz)}
                   onChange={(e) => setStartDate(e.target.value)}
                 />
               </div>
