@@ -5,7 +5,17 @@ import { useCareProfile } from '@/features/care-profile/CareProfileContext';
 import styles from '../today.module.scss';
 
 export default function CabinetPage() {
-  const { activeCareProfile } = useCareProfile();
+  const { activeCareProfile, isLoading } = useCareProfile();
+
+  if (isLoading) {
+    return (
+      <div className={styles.skeletonContainer} aria-busy="true" aria-label="Loading cabinet">
+        <div className={styles.skeletonCard}>
+          <div className={styles.shimmer} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.todayContainer}>
