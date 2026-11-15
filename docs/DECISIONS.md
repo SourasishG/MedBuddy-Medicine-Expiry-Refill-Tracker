@@ -3,7 +3,7 @@
 ## Phase 0: Foundation
 
 1. **Next.js 16 + React 19 + TypeScript Strict**
-   - Uses App Router (`src/app/(site)/page.tsx` for the landing page, `src/app/app/page.tsx` planned for the PWA placeholder in Phase 5).
+   - Uses App Router (`src/app/(site)/page.tsx` for the landing page, `src/app/app/page.tsx` for the authenticated PWA).
    - TypeScript `strict: true`, `noUncheckedIndexedAccess: true`, `noImplicitOverride: true`, `noFallthroughCasesInSwitch: true`.
 
 2. **Styling Architecture**
@@ -17,260 +17,147 @@
    - `JetBrains_Mono` for decorative spec labels and counters (`--font-mono`).
 
 4. **Motion System (`MotionProvider` + Lenis + GSAP)**
-   - `useMotionPreference` persists user preference in `localStorage` under `medbuddy-motion` (`'on' | 'off'`) inside `try/catch`, falling back to `!(prefers-reduced-motion: reduce)`.
+   - `useMotionPreference` persists user preference in `localStorage` under `medbuddy-motion` (`'on' | 'off'`), falling back to `!(prefers-reduced-motion: reduce)`.
    - Cross-tab and programmatic updates broadcast via a custom `medbuddy-motion-change` event and `storage` event listener.
    - `MotionProvider` syncs `data-motion="on" | "off"` on `<html>`.
    - `MotionToggle` in `Nav` provides an accessible toggle control (`aria-pressed`).
    - Lenis smooth scroll is wired directly to GSAP `ScrollTrigger` via `lenis.on('scroll', ScrollTrigger.update)` and `gsap.ticker.add((t) => lenis.raf(t * 1000))` with `gsap.ticker.lagSmoothing(0)`.
-   - When Motion is `off`, Lenis is not initialized (or destroyed immediately) so native scrolling and static layout apply cleanly without animation lag.
-   - Native browser scrollbar is hidden (`scrollbar-width: none`, `::-webkit-scrollbar { display: none }`) to preserve the dark gallery canvas without a grey OS scrollbar track while keeping wheel, keyboard, and touch scrolling active.
+   - When Motion is `off`, Lenis is not initialized so native scrolling and static layout apply cleanly without animation lag.
 
 5. **Linting & Formatting**
    - ESLint 9 flat config using `eslint-config-next/core-web-vitals`, `eslint-config-next/typescript`, and `eslint-config-prettier`.
    - Prettier configured with single quotes, trailing commas, and 100-char line width.
 
-## Phase 1: Hero Without 3D
+---
+
+## Phases 1–5: Website, 3D Canvas, Demos & Early-Access PWA Shell
 
 1. **Server-Rendered Landing Page & LCP Poster**
-   - `src/app/(site)/page.tsx` stays a Server Component so the hero headline, hairline columns, glass cards, CTAs, and `public/posters/hero-poster.svg` (`next/image` with `priority`) paint immediately without waiting for client hydration.
-   - `public/posters/hero-poster.svg` depicts the dark graphite phone (Cabinet UI labelled `Illustrative`), glowing white ring halo, deep `#1F4BFF` ambient glow, and frosted-glass/chrome pill helix as a crisp vector poster.
+   - `src/app/(site)/page.tsx` stays a Server Component so the hero headline, glass cards, CTAs, and `public/posters/hero-poster.svg` paint immediately without waiting for client hydration.
+2. **Procedural 3D Objects & Fallback Tiers**
+   - Deferred dynamic loading (`ssr: false`) after first rAF. Three.js / React Three Fiber scene with adaptive quality tiers (`detect-gpu`), pausing frameloop when hidden or scrolled offscreen.
+3. **Interactive Demos & Caregiver Timeline**
+   - `CabinetDemo` (0–90 days expiry slider) and `Caregivers` (missed dose simulation with glowing thread and alert signal).
+4. **PWA Shell & Serwist Service Worker**
+   - Web App Manifest (`start_url: '/app'`, `display: 'standalone'`). Precached `/offline` document fallback.
 
-2. **Preloader (`00`)**
-   - Uses `useSyncExternalStore` + `sessionStorage` (`medbuddy-preloader-seen` inside `try/catch`) so repeat visits and Motion-off sessions skip the preloader immediately and SSR never blocks initial paint.
-   - Animates 12 pills, a `000`–`100` mono counter, wordmark reveal, and a single `<250ms` scan-line pulse under 1.8s total.
+---
 
-3. **Nav, Cursor & Micro-Interactions**
-   - `Nav` renders wordmark left, anchor links centered, `Install` pill (revealing via `IntersectionObserver` once scrolled past `#hero`), `MotionToggle`, and a Framer Motion mobile drawer under 960px.
-   - `Cursor` runs GSAP `quickTo` strictly on fine pointers when Motion is enabled.
-   - `PillButton` uses GSAP `quickTo` for subtle magnetic hover on desktop; `GlassCard` uses Framer Motion `AnimatePresence` exclusively for expand/collapse (never mixing GSAP and Framer Motion on the same element).
+## Phase A1: Application Foundation & Scoped Authentication
 
-## Phase 2: 3D Scene & Fallback Tiers
+1. **Strictly Scoped Middleware & Zero Marketing Cookies**
+   - The marketing website (`/`, `/privacy`, `/offline`) sets **zero cookies** and runs completely stateless.
+   - All session cookie handling is strictly scoped to `/app/*`.
+   - Session management uses `@supabase/ssr` with HttpOnly, secure, SameSite=Lax cookies.
 
-1. **Deferred Dynamic Loading (`ssr: false`)**
-   - `SceneLoader` uses `next/dynamic` (`ssr: false`) triggered after first `requestAnimationFrame` paint, keeping the Three.js/R3F chunk completely out of the initial JS payload while `hero-poster.svg` renders immediately as the LCP element.
+2. **Tamper-Resistant App State Cookie (`medbuddy_app_state`)**
+   - High-frequency navigation between app screens requires checking user consent and profile creation status.
+   - Rather than executing 3 redundant database lookups on every page navigation, middleware sets a short-lived (10-minute), HMAC-SHA256 signed cookie named `medbuddy_app_state`.
+   - It caches only the user UUID and two binary flags (`hasConsent`, `hasProfile`).
+   - Requires `APP_COOKIE_SECRET` (at least 32 characters). If missing or short, the system securely fails open to direct database lookups.
+   - Cleared immediately upon sign-out, consent withdrawal, or account deletion.
 
-2. **Procedural 3D Objects & Custom GLSL Shaders**
-   - **Phone (`Phone.tsx` + `PhoneScreen.tsx` + `bakedPhoneTexture.ts`)**: Dark graphite chrome `RoundedBox` (`metalness: 1, roughness: 0.2, clearcoat: 1`), camera bump, side buttons, and four React UI screens (`cabinet`, `reminder`, `refill`, `family`) rendered via drei `<Html transform occlude="blending">`, with automatic fallback to procedural `CanvasTexture` (`createBakedScreenTexture`) on FPS decline.
-   - **RingHalo (`RingHalo.tsx`)**: Emissive white torus (`toneMapped: false`) caught by Bloom, additive `#1F4BFF` halo disc, animated background grain/gradient-mesh shader (`src/shaders/grain.ts`), and `<300ms` scan-line glitch plane (`src/shaders/glitch.ts`).
-   - **PillHelix (`PillHelix.tsx`)**: Dual instanced capsule meshes (80 total on High desktop, 40 on High mobile / 44 Medium desktop, 24 Medium mobile) alternating physical iridescent glass and custom GLSL Fresnel-iridescence chrome (`src/shaders/chrome.ts`), reacting to pointer and `DeviceOrientationEvent`.
-   - **FloatingTiles (`FloatingTiles.tsx`)**: Orbiting frosted-glass depth tiles + single-frame `<ContactShadows frames={1}>`.
-   - **Effects (`Effects.tsx`)**: Procedural `<Environment>` with `<Lightformer>` studio panels (no external HDR download), cool left key / warm right rim lights, `Bloom`, and desktop High-tier `ChromaticAberration`.
+3. **Fail-Closed Route Guards**
+   - Any database lookup failure or unverified session fails closed, securely redirecting to `/app/sign-in`.
+   - Unconsented sessions redirect to `/app/consent`. Users without a profile redirect to `/app/setup`.
 
-3. **Fallback Tiers & Performance Controls**
-   - `useGpuTier` runs `detect-gpu` asynchronously (with optional `?tier=high|medium|low` inspection override), checks WebGL support, and respects `useMotionPreference`.
-   - **High**: Full scene with transmission, iridescence, bloom, and desktop chromatic aberration.
-   - **Medium**: Drops transmission and chromatic aberration, halves capsule count, lighter bloom.
-   - **Low / WebGL failure / Motion Off**: Unmounts 3D canvas and displays the static poster with CSS parallax (`Motion On`) or static layout (`Motion Off`).
-   - Pauses rendering (`frameloop="never"`) when the tab is hidden or canvas is off-screen, clamps DPR (`[1, 1.75]` desktop / `[1, 1.25]` mobile), and steps down quality via `PerformanceMonitor`.
+---
 
-## Phase 3: Scroll Choreography & Sections 01–03
+## Phase A2: Care Profiles & First-Run Setup
 
-1. **Master ScrollTrigger Choreography (`src/lib/scrollTimeline.ts`)**
-   - Uses a single `gsap.context` timeline mutating `sceneTargets` (`src/lib/sceneState.ts`) so 60fps R3F `useFrame` reads remain decoupled from React state.
-   - **Hero → 01 Problem**: Loosens capsule helix (`helixSpread: 0.92`), dims halo ring (`ringOpacity: 0.28`), tilts and offsets the phone right on desktop so the oversized statement list stays unobstructed.
-   - **02 How It Works**: Pins `#how-it-works` on desktop when Motion is enabled, scrubs through 4 steps (`cabinet → reminder → refill → family`), updates the DOM step indicator, and locks 1 chrome capsule per step (`lockedPills: 1 → 4`) around the phone. On mobile or with Motion Off, renders as a static vertical story stack with clickable step previews.
-   - **03 Features**: Centers and recesses the phone (`tilesLift: 1`) while the 8 expandable `GlassCard` features frame it in depth-layered columns.
+1. **First-Run Onboarding Flow**
+   - Guided single-step profile creation on `/app/setup` capturing display name and timezone (defaulting to browser IANA timezone).
+   - Automatically provisions owner access in `care_access` via `fn_create_care_profile`.
 
-2. **Content & Honesty Alignment**
-   - Problem statements (`01`–`03`) and all 8 feature cards stay strictly within listed product capabilities without invented metrics or medical claims.
+2. **Care Profile Switcher & Settings**
+   - Profile switcher bottom sheet accessible from app header.
+   - Settings validation for adherence parameters: snooze (5–120 mins, default 10 mins), missed-after (30–720 mins), ensuring missed threshold strictly exceeds re-nudge interval.
+   - Row update verification to enforce that only care profile owners can update settings, masking raw database errors with friendly guidance.
 
-## Phase 4: Sections 04 to 08 and Footer
+---
 
-1. **Interactive Demos (`04 CabinetDemo` & `05 Caregivers`)**
-   - `CabinetDemo` (`#cabinet-demo`) implements an accessible `0`–`90` `"Days from today"` slider and quick-jump day presets (`Today`, `+14d`, `+45d`, `+90d`), driving live `In date` (>30d), `Use soon` (1–30d), and `Expired` (<=0d, with `--alert` glow & safe-disposal callout) bottle statuses plus Framer Motion layout re-sorting in the `"Use these first"` priority list.
-   - `Caregivers` (`#family`) links an illustrative parent phone and caregiver phone via a glowing thread with both automatic scroll-in playback and a manual `"Simulate missed dose"` / `"Reset to dose taken"` control. Triggering the missed-dose event dims the parent card, animates the `--alert` signal node along the connecting thread (respecting Motion On/Off), triggers a single `<300ms` `glitchPulse` (`0.26s`), and surfaces the caregiver alert without invented statistics.
+## Phase A3: Medicine Cabinet & FEFO Inventory Engine
 
-2. **Trust, FAQ, Early-Access Install & Footer (`06 Privacy`, `07 Faq`, `08 Install`, `Footer`)**
-   - `Privacy` (`#privacy`) lays out three mono-headed spec columns (`WHAT MEDBUDDY DOES`, `WHAT IT NEVER DOES`, `YOUR CONTROLS`), staying strictly within product facts.
-   - `Faq` (`#faq`) implements a 7-item Framer Motion accordion (`AnimatePresence`) covering sign-in, cross-platform installation, family visibility, non-medical boundary, deletion controls, direct web install, and early-access behavior.
-   - `Install` (`#install`) centers the OUI-scale chrome `MEDBUDDY` wordmark above the platform-aware early-access install card and desktop QR preview slot, while the semantic `<footer>` carries anchor navigation, privacy/contact placeholders, and the verbatim required disclaimer.
+1. **First-Expiry-First-Out (FEFO) Inventory Architecture**
+   - Medicines store general metadata (name, strength, form, category, notes, PRN flag).
+   - Inventory is tracked in distinct physical boxes (`inventory_items`) with batch numbers, storage locations, initial quantities, and expiry dates.
+   - Doses automatically consume stock from the earliest-expiring available box.
 
-3. **3D Scene Handoff & Ring Re-formation**
-   - Extended `scrollTimeline.ts` so the helix recolours by status (`helixStatusBlend: 1`) while the ring and phone recede quietly behind Sections 04–07, then returns the phone to center with the re-formed forward-facing pill ring (`helixRingMode: 1`) and brightened halo at Section 08. Also removed redundant continuous Y-axis group rotation in `PillHelix.tsx` so the re-formed Install ring always faces the camera.
+2. **Clinical Expiry Bands**
+   - 4 standardized visual bands with clear color tokens and WCAG-compliant contrast:
+     - `Expired` (<= 0 days left): Crimson alert badge.
+     - `Urgent` (1–7 days left): Amber urgency badge.
+     - `Soon` (8–30 days left): Soft warning badge.
+     - `Fresh` (> 30 days left): Calm green badge.
+   - Shelf-life after opening: computed dynamically as `min(expiry_date, opened_on + shelf_life_days)`.
 
-## Phase 5: PWA & Install Flow
+3. **Stock Adjustments & Discard Management**
+   - Non-destructive box discards via dedicated `fn_discard_inventory_item` RPC.
+   - Audit trail maintained in `stock_movements` with typed reasons (`dose_taken`, `manual_correction`, `discarded_expired`, etc.).
 
-1. **Web App Manifest & Generated PNG Icons**
-   - Added `src/app/manifest.ts` serving `MedBuddy` (`start_url: '/app'`, `scope: '/'`, `display: 'standalone'`, `#090C12` background and theme colors).
-   - Generated PNG icons (`public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, and `apple-touch-icon.png`) directly from the simple dark obsidian capsule-and-ring vector mark.
+---
 
-2. **Serwist Service Worker & Offline / Early-Access Routes**
-   - Added `src/app/sw.ts` using `@serwist/next/worker` (`defaultCache`, `skipWaiting: true`, `clientsClaim: true`, `navigationPreload: true`, and `/offline` document fallback).
-   - Wrapped `next.config.ts` with `withSerwistInit` (`disable: process.env.NODE_ENV !== 'production'`) and updated `package.json` `"build"` to `next build --webpack` so Serwist generates `public/sw.js` cleanly in production builds without interfering with Turbopack `next dev`.
-   - Added `src/app/app/page.tsx` (`start_url` launching-soon shell with return link) and `src/app/offline/page.tsx`.
+## Phase A4: Schedules & Today View
 
-3. **Platform-Aware Install Flow (`useInstallPrompt` + `InstallModal`)**
-   - `src/hooks/useInstallPrompt.ts` handles `beforeinstallprompt`, `appinstalled`, `display-mode: standalone` (`Open MedBuddy` link to `/app`), Android/Chromium native prompt, iPhone/iPad Safari 3-step guide, iOS non-Safari extra first step, desktop QR (`qrcode.react`), and unsupported browser guidance.
-   - Wired live into `Nav`, `Hero`, and Section 08 (`Install`), including a desktop `QRCodeSVG` panel in Section 08 and `InstallModal` dialog.
+1. **Flexible Schedule Engine**
+   - Supports daily schedules, weekday schedules (e.g., Mon/Wed/Fri), interval schedules (every N days), and as-needed (PRN) regimens.
+   - Timezone resilience: times stored in local care profile timezone and converted accurately for dose generation.
 
-## Phase 6: Polish, Bundle Budget, SEO & Accessibility
+2. **Today Clinical Sections & Lifecycle**
+   - Partitions daily doses into clinical sections:
+     - `Due now`: Scheduled doses within current time window or pending adherence.
+     - `Later today`: Future scheduled doses for today.
+     - `Missed`: Doses unrecorded past the care profile's missed threshold.
+     - `Done today`: Logged intakes (taken, skipped).
+     - `As needed`: Quick PRN dose logging with remaining supply count and shortfall indicators.
+   - Actions: `Taken` (decrements FEFO stock), `Undo` (restores stock), `Snooze` (postpones reminder), `Skip` (records non-intake reason without stock decrement).
 
-1. **Bundle Optimization (< 200 KB Gzipped Initial JS)**
-   - Switched Framer Motion usage across interactive UI and section components (`Nav`, `GlassCard`, `CabinetDemo`, `Caregivers`, `Faq`, `InstallModal`) from `motion` to `m` inside a root `LazyMotion` provider loading `domMax` asynchronously.
-   - Dynamically imported `InstallModal`, `QRCodeSVG`, `Lenis`, `SplitText`, and `ScrollTrigger` after initial paint, reducing initial synchronous JS on `/` before the 3D chunk from `263.1 KB` (and `302.7 KB` including `nomodule` polyfills) down to **`177.0 KB` gzipped**.
-   - Deferred `detect-gpu` execution in `useGpuTier.ts` to `requestIdleCallback`, removed the duplicate synchronous WebGL context check before `getGPUTier()`, and reduced `<Environment resolution={64}>` cubemap size, cutting Lighthouse Mobile Total Blocking Time from `1,910 ms` to `630 ms` (**Performance 84**).
+---
 
-2. **Accessibility, SEO & Open Graph**
-   - Added focus management and focus restoration on open/close in `InstallModal` and Escape focus return in `Nav`.
-   - Fixed `QRCodeSVG` SVG accessible title (`svg-img-alt`) and `MotionToggle` spacing/label conformance (`label-content-name-mismatch`), bringing both Mobile and Desktop Lighthouse Accessibility scores to **100**.
-   - Added full `openGraph`, `twitter`, `robots`, canonical `metadataBase`, dynamic `src/app/opengraph-image.tsx`, `src/app/robots.ts`, `src/app/sitemap.ts`, and `README.md`.
+## Phase A5: Web Push Notifications & Home Screen Install
 
-## Backend Architecture & Build Phases (Supabase)
+1. **Privacy-Preserving Web Push (VAPID)**
+   - Custom Serwist service worker listeners (`push` and `notificationclick`).
+   - Lock-screen privacy toggle (`hide_names_in_notifications`): replaces specific medication names with discreet generic reminders (e.g. "Time for your scheduled medication") on device lock screens.
+   - Subscription cool-down and automatic removal of 410/404 expired endpoints.
 
-### Phase B0: Environment & Cloud Project Setup
+2. **Platform-Aware Installation Flow**
+   - Today install banner dynamically detects iOS Safari vs. installed standalone PWA.
+   - Provides step-by-step visual iOS "Add to Home Screen" modal with share-sheet guidance.
+   - Android `beforeinstallprompt` hook integration.
 
-1. **Cloud Project Configuration:**
-   - Hosted on Supabase Cloud in Mumbai (`ap-south-1`) for Indian latency and data residency standards.
-   - Comprehensive checklist prepared in `docs/SETUP_CHECKLIST.md` detailing Google OAuth, passwordless 6-digit email OTP, Web Push VAPID key pairs, and Supabase Vault secrets.
+---
 
-### Phase B1: Schema Application & Portability
+## Phase A6: Data Rights, Export & Account Deletion
 
-1. **Portable PostgreSQL Tooling:**
-   - On Windows development environments lacking native PostgreSQL installations, standalone portable PostgreSQL 16.6 binaries were placed in `C:\Users\Sourasish\pgsql\bin` and registered in the user PATH.
-2. **Idempotent Test Execution (`scripts/db-test.mjs`):**
-   - Supabase schema scenario tests (`supabase/tests/schema_scenario.sql`) require repeated runs. Added pre- and post-test cleanup in `scripts/db-test.mjs` that drops test care profiles and helper functions (`assert`), allowing idempotent runs that pass with `ALL TESTS PASSED`.
-3. **Strict Typed Interfaces:**
-   - Generated `src/lib/supabase/database.types.ts` (791 lines) directly from the live remote PostgreSQL schema via `supabase gen types typescript`.
+1. **Comprehensive Data Export (`fn_export_my_data`)**
+   - Exports complete, machine-readable JSON archive containing profile, consents, care profiles, medicines, inventory items, schedules, dose events, and adherence logs.
+   - Zero internal user authentication UUID leakage in export payloads.
 
-### Phase B2: Notification Sender & Service Role Privileges
+2. **Permanent Account Deletion (`fn_delete_my_data`)**
+   - Two-step deletion modal requiring explicit uppercase typed confirmation (`DELETE`).
+   - Clean database cascade across all 9 relational tables. Shared care profiles transfer ownership to other active owners; sole-owned profiles are erased completely.
+   - Verified zero database residuals.
 
-1. **Service Role Explicit Grants in Migration 2 (`20261114000001_notification_sender.sql`):**
-   - _PostgreSQL Nuance:_ In PostgreSQL, `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM public` revokes privileges from all non-owner roles, including Supabase's `service_role`.
-   - _Resolution:_ Migration 2 explicitly granted table, sequence, and routine privileges to `service_role` while leaving `anon` and `authenticated` locked down. This restored backend worker privileges without weakening the client security boundary.
-2. **Atomic Queue Claim with Visibility Timeout:**
-   - `fn_claim_notifications(p_limit int)` claims up to 50 pending notifications using `FOR UPDATE SKIP LOCKED`, advancing `send_after` by 2 minutes as a visibility timeout to prevent duplicate dispatch during concurrent or crashed runs.
-3. **Deno vs Next.js TypeScript Boundaries:**
-   - Edge Functions in `supabase/functions/` run on Deno with URL imports. Excluded `supabase/functions` from root `tsconfig.json` and ESLint flat config, configuring `supabase/functions/deno.json` for independent type checking and deployment.
+---
 
-### Phase B3: Scheduler (pg_cron & pg_net)
+## Phase A7: Polish, Verification & Proof
 
-1. **Dynamic Vault Secret Lookup:**
-   - In Migration 3 (`20261114000002_scheduler.sql`), the `medbuddy-send` job reads `CRON_SECRET` dynamically from `vault.decrypted_secrets` using a subquery:
-     ```sql
-     (select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret')
-     ```
-     This completely eliminates hardcoded credentials from SQL files and migration history.
-2. **Edge Function Invocation & Constant-Time Verification:**
-   - Deployed `send-notifications` with `--no-verify-jwt`. Requests are authenticated via `x-cron-secret` header verified using constant-time string comparison (`crypto.subtle.timingSafeEqual`) to prevent timing attacks.
-3. **End-to-End Delivery:**
-   - Verified automated execution of 5 cron jobs (`medbuddy-enqueue-due`, `medbuddy-send`, `medbuddy-generate-doses`, `medbuddy-expiry`, `medbuddy-cleanup`), achieving full dispatch in under 25 seconds.
+1. **Mandatory Refusal Guard**
+   - Automated end-to-end tests refuse to run unless `ALLOW_TEST_USERS=true` is explicitly set, preventing accidental execution against production databases.
 
-### Phase B4: Security Verification & Audit
+2. **Full Golden Path Playwright E2E Suite (`scripts/test-phase-a7.mjs`)**
+   - Verified complete user lifecycle: user provisioning -> consent -> profile setup -> add medicine with schedule -> verify initial stock -> log dose taken -> verify stock decrement -> undo dose -> verify stock restored -> delete account -> verify zero residuals.
 
-1. **Isolated Real-Stack Client Testing (`scripts/smoke-test.mjs`):**
-   - Configured separate client instances for `anonClient` (never authenticated), `clientA`, and `clientB` to ensure sessions do not bleed across client objects in memory.
-   - Enforced `ALLOW_TEST_USERS=true` guard to protect production data.
-2. **Audit & Advisor Findings (`docs/BACKEND_SECURITY_CHECK.md`):**
-   - Documented and approved `care_members` `SECURITY DEFINER` view (safe membership directory without exposing entire `profiles` table).
-   - Documented and justified client-callable `SECURITY DEFINER` RPC functions (`fn_log_dose`, `fn_create_care_profile`, etc.) as the core security model preventing direct table manipulation.
+3. **Lighthouse Audit & Performance Verification**
+   - Mobile `/app`:
+     - **Accessibility: 100 / 100** (Target: $\ge 95$)
+     - **Performance: 87 / 100** (Target: $\ge 85$)
+     - **Best Practices: 100 / 100**
+   - Mobile `/offline`:
+     - **Accessibility: 100 / 100**
+     - **Performance: 100 / 100**
 
-### Phase B5: Handover & Typed SSR Client Helpers
-
-1. **Next.js 16 SSR & Async Cookie Storage:**
-   - In Next.js 16 App Router, `cookies()` is an asynchronous function returning a Promise.
-   - `src/lib/supabase/server.ts` uses `await cookies()` with safe `try/catch` cookie writing to permit read operations in Server Components while enabling seamless session refresh in Server Actions and Route Handlers.
-   - **Service Role Key Isolation:** `src/lib/supabase/client.ts` and `server.ts` are strictly client and anon helpers. `SUPABASE_SERVICE_ROLE_KEY` is strictly forbidden from being imported or referenced under `src/` or bundled into client code. Automated enforcement is provided via `scripts/check-no-service-key.mjs`.
-   - **Marketing vs App Route Cookie Separation:** The future authenticated app (`/app/*`) will set HTTP-only session cookies managed by `@supabase/ssr` to authenticate users with Supabase Auth. Marketing and public routes (`/`, `/privacy`, `/offline`) remain strictly separate: zero cookies, zero auth middleware, and `connect-src 'self'` CSP restrictions. When the full app launches, `/app` will present its own session and privacy disclosure upon sign-in.
-2. **Browser Client Helper:**
-   - `src/lib/supabase/client.ts` wraps `createBrowserClient<Database>` for type-safe client-side queries.
-3. **Comprehensive API Reference:**
-   - Authored `docs/API.md` providing exact specifications, schemas, error codes, and TypeScript examples for every RPC function and table.
-
-## Review Fixes & Hardening (Phases F0 to F4)
-
-### Phase F0: Vault Secrets & Configuration
-
-- Stored `project_url` and `cron_secret` in Supabase Vault (`vault.create_secret`) to decouple database triggers and pg_cron from static project URLs.
-- Standardized passwordless 6-digit OTP email template and Cloudflare Turnstile bot protection guidance.
-
-### Phase F1: Database Robustness & Health (`20261114000003_review_fixes.sql`)
-
-1. **Push Subscription Resilience:**
-   - Added `first_failure_at` and `last_failure_at` columns to `push_subscriptions`.
-   - Created `eligible_push_subscriptions` view implementing the 1-hour cool-down rule (`failure_count < 5 OR last_failure_at < now() - interval '1 hour'`) and automatically pruning subscriptions that fail continuously for > 7 days.
-   - Implemented `fn_record_push_failure` and `fn_record_push_success` (`service_role` only).
-2. **Scheduler Observability & Dynamic Invocation:**
-   - Added `fn_scheduler_health() returns jsonb` to inspect Vault secrets status (booleans only), cron job run details, and overdue notifications without exposing secrets.
-   - Refactored `fn_trigger_notification_sender()` to read `project_url` and `cron_secret` dynamically from Vault, raising explicit errors upon missing configuration.
-   - Rescheduled `medbuddy-cleanup` to call `fn_cleanup_old_notifications()`.
-3. **Search Path Hardening:**
-   - Enforced fixed immutable search paths on `is_valid_tz` and `trg_inventory_init` (`SET search_path = public`).
-
-### Phase F2: Notification Sender Edge Function Hardening
-
-1. **Upfront VAPID Validation:**
-   - Added strict validation returning 500 before claiming notifications if `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, or `VAPID_SUBJECT` is absent. Removed placeholder `admin@example.com` default.
-2. **Subscription Error Classification:**
-   - 200 OK: calls `fn_record_push_success`.
-   - 404 / 410 Gone: immediately deletes stale subscription.
-   - 400 / 401 / 403: logs status without penalizing subscription.
-   - 429 / 5xx / Network error: calls `fn_record_push_failure` to trigger cool-down.
-3. **Concurrency Limiting:**
-   - Dispatches notifications to a user's subscriptions in parallel batches limited to 5 concurrent requests.
-
-### Phase F3: Website Privacy & Security Boundary
-
-1. **Service Worker Privacy:**
-   - Replaced `defaultCache` with explicit same-origin static caching rules (`/_next/static/`, fonts, images, icons).
-   - Strictly excluded `Authorization` headers, cross-origin requests, `*.supabase.co`, `/auth/`, `/rest/`, `/functions/`, and `/api/`.
-2. **Mutually Exclusive CSP:**
-   - Configured separate CSP headers in `next.config.ts`:
-     - Marketing routes (`/`, `/privacy`, `/offline`): `connect-src 'self'`.
-     - App routes (`/app/:path*`): `connect-src 'self' https://<ref>.supabase.co wss://<ref>.supabase.co`.
-3. **Service Role Key Isolation:**
-   - Created automated audit guard `scripts/check-no-service-key.mjs` verifying that `SUPABASE_SERVICE_ROLE_KEY` is never imported under `src/` or bundled in `.next/static`.
-4. **Persistent Motion Preference:**
-   - Persisted `medbuddy-motion` in `localStorage` inside `try/catch` with fallback to `prefers-reduced-motion`.
-   - Updated `src/app/privacy/page.tsx` table to detail both device storage keys (motion choice and intro seen) while maintaining zero cookies affirmation.
-
-### Phase F4: Hygiene & Dependency Assurance
-
-1. **Formatting:**
-   - Added `src/lib/supabase/database.types.ts` to `.prettierignore` and formatted all project code cleanly with Prettier.
-2. **Smoke Test Assertions:**
-   - Added explicit assertions in `scripts/smoke-test.mjs` validating `fn_log_dose` response data and ensuring direct updates of `quantity_remaining` are blocked.
-3. **Seed File Configuration:**
-   - Disabled `[db.seed]` in `supabase/config.toml` (`enabled = false`) and provided an empty `supabase/seed.sql` with explanatory comments.
-4. **Dependency Audit Scope:**
-   - Documented build-time isolation of `@serwist/next` dependencies (`glob`, `zod`, `minimatch`) in `SECURITY.md`, prohibiting `--force` downgrades.
-
-## Phase A1: Foundation & Navigation Performance Optimization
-
-### 1. Open Redirect Prevention (`safeNextPath`)
-
-- All post-auth destinations (`?next=`) are validated through `safeNextPath` in `src/lib/safe-redirect.ts`.
-- Validates that paths strictly begin with `/app` (or `/app/`), disallowing backslashes, double slashes (`//`), protocol schemes (`://`), path traversal (`..`), control characters, whitespace, and percent-encoded variations (`%2F%2F`).
-- Unsafe or off-site destinations fail closed and default to `/app`.
-
-### 2. Fail-Closed Route Guards
-
-- Route guards in middleware do not fail open when database queries fail or throw exceptions.
-- Failures during consent or care profile lookups redirect to `/app/sign-in?error=service_unavailable` with a user-friendly retry button, preventing unconsented or unconfigured access to protected views.
-- Error handling specifically avoids redirect loops when accessing `/app/sign-in`.
-- Error logs strictly emit operational status messages without logging user IDs, emails, or personal identifiers.
-
-### 3. Navigation Performance & App State Caching (`medbuddy_app_state`)
-
-- **Problem**: Querying `supabase.auth.getUser()`, `consents`, and `care_access` on every page request incurred **3 network roundtrips per navigation**, slowing screen transitions.
-- **Decision**: Implemented Option A (short-lived, 10-minute HMAC-SHA256 signed HttpOnly cookie `medbuddy_app_state` scoped to `/app`).
-- **Network Calls Comparison**:
-  - **Before**: 3 network calls on every navigation tap.
-  - **After**: **1 network call** (`supabase.auth.getUser()`) for standard in-session navigations. Consent and care profile database queries occur only once per 10-minute window or upon initial login/cache miss.
-- **Convenience Boundary**: The cookie is treated purely as a routing performance optimization; actual data access and mutation authorization remains strictly enforced by Supabase database Row-Level Security (RLS).
-- **Cache Invalidation**:
-  - Sign-out (via `/app/auth/sign-out` route or client-side action) immediately clears `medbuddy_app_state`.
-  - Recording consent on `/app/consent` clears the cookie to trigger re-evaluation for care profile setup.
-  - Creating a care profile on `/app/setup` clears the cookie to trigger immediate transition to the Today screen.
-  - Future consent withdrawal or account deletion actions similarly invalidate this cookie.
-
-### 4. Preserving Auth Cookies Across Middleware Redirects (`redirectWithCookies`)
-
-- `NextResponse.redirect` creates a fresh response object that drops cookies set by `@supabase/ssr` during session refreshes.
-- Helper `redirectWithCookies(url, sourceResponse)` copies all cookies from the source `NextResponse` onto the redirect response, preventing intermittent user session dropouts during route transitions.
-
-### 5. Next.js Routing Architecture: Migration to `proxy.ts`
-
-- Next.js 16 emitted deprecation notices for the `middleware` file convention (`The "middleware" file convention is deprecated. Please use "proxy" instead`).
-- Migrated `src/middleware.ts` to `src/proxy.ts` exporting `async function proxy(request: NextRequest)`.
-- Preserved the exact matcher: `matcher: ['/app', '/app/:path*']`.
-- Verified that the deprecation warning is fully eliminated during `next build`, and zero-cookie isolation on all marketing routes (`/`, `/privacy`, `/offline`) remains strictly intact.
+4. **Service Worker Cache Privacy Audit**
+   - Service worker runtime caching is strictly restricted to same-origin static assets (`/_next/static/`, fonts, images, icons).
+   - Verified 0 cached endpoints for Supabase, APIs, auth tokens, or private medical data.

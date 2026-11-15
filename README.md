@@ -2,257 +2,188 @@
 
 > **Every dose. Every expiry. Every loved one.**
 
-Marketing and early-access PWA website for **MedBuddy** — a calm medicine expiry, opened-bottle countdown, dose reminder, refill, and family adherence tracker.
+A calm, privacy-first medicine expiry, refill, and adherence tracker built with Next.js 16, React 19, TypeScript, Supabase, and Serwist PWA.
 
 [![Live on Vercel](https://img.shields.io/badge/Live%20Demo-medbuddy--s7ven.vercel.app-090C12?style=for-the-badge&logo=vercel&logoColor=white)](https://medbuddy-s7ven.vercel.app/)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.4-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![React 19](https://img.shields.io/badge/React-19.3-149ECA?style=for-the-badge&logo=react&logoColor=white)](https://react.dev/)
 [![TypeScript 5](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Database%20%26%20Auth-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Serwist-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://serwist.pages.dev/)
 
 ---
 
-## Live App
+## Overview
+
+MedBuddy is designed to eliminate the anxiety of managing prescription medicines, opened syrups, eye drops, and refills. It combines a state-of-the-art marketing landing experience with a fully functional, privacy-first web application.
 
 - **Production URL:** [https://medbuddy-s7ven.vercel.app/](https://medbuddy-s7ven.vercel.app/)
-- **Key Routes:**
-  - `/` — Landing experience, interactive 3D cabinet hero, expiry demo slider, caregiver flow & FAQ
-  - `/app` — Installed PWA early-access launch shell (`start_url`)
-  - `/privacy` — Website privacy notice
-  - `/offline` — Precached offline fallback screen
-  - `/manifest.webmanifest` — Web App Manifest (`standalone`, `192px` / `512px` / `maskable` icons)
+- **Core Routes:**
+  - `/` — Marketing site with interactive 3D capsule canvas, expiry demo slider, and caregiver timeline.
+  - `/app` — Today adherence screen (Due now, Later today, Missed, Done today, As needed).
+  - `/app/cabinet` — Medicine inventory list with 4 clinical expiry bands and stock counters.
+  - `/app/medicine/[id]` — Medicine detail view with box ledger, schedules, and stock adjustment tools.
+  - `/app/medicine/add` — Guided 3-step medicine onboarding (info -> physical box -> schedule).
+  - `/app/settings` — Care profile settings, notification preferences, VAPID push setup, JSON data export, and permanent account deletion.
+  - `/app/privacy` — App Privacy Notice (_"Draft: needs legal review before launch"_).
+  - `/privacy` — Website privacy notice (explicitly documenting zero cookies on marketing routes).
+  - `/offline` — Precached service worker offline fallback screen.
+
+---
+
+## Application Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Browser / Client PWA                     │
+│  - App Shell & Navigation (/app, /app/cabinet, /settings)   │
+│  - Serwist Service Worker (Static assets precache only)     │
+│  - React Query (Optimistic mutations & cache invalidation)  │
+└──────────────┬───────────────────────────────┬──────────────┘
+               │ HTTPS                         │ Web Push (VAPID)
+               ▼                               ▼
+┌──────────────────────────────┐ ┌────────────────────────────┐
+│      Next.js 16 Server       │ │     Supabase Backend       │
+│  - Scoped Middleware:        │ │  - PostgreSQL 16 with RLS  │
+│    * /: Zero cookies         │ │  - Supabase Auth (SSR)     │
+│    * /app: medbuddy_app_state│ │  - Security Definer RPCs   │
+│  - Fail-Closed Route Guards  │ │  - pg_cron Schedule Engine │
+│  - Dynamic SSR Metadata      │ │  - Notification Pipeline   │
+└──────────────────────────────┘ └────────────────────────────┘
+```
+
+### Key Technical Pillars
+
+1. **Scoped Middleware & Cookie Isolation**:
+   - The marketing site (`/`, `/privacy`, `/offline`) sets **zero cookies** and runs completely stateless.
+   - The authenticated app (`/app/*`) uses HttpOnly, Secure, SameSite=Lax `@supabase/ssr` cookies.
+   - An essential HMAC-SHA256 signed `medbuddy_app_state` cookie caches verified onboarding state (10-minute TTL) to eliminate redundant database queries on page navigation.
+
+2. **First-Expiry-First-Out (FEFO) Inventory Engine**:
+   - Doses automatically deduct stock from the earliest-expiring available box.
+   - Opened bottle countdowns dynamically calculate `min(expiry_date, opened_on + shelf_life_days)`.
+   - Undo restores consumed stock back to the original physical batch box.
+
+3. **Privacy-Preserving Web Push (VAPID)**:
+   - Direct browser push notifications with zero third-party trackers or cross-site analytics.
+   - Lock-screen privacy toggle (`hide_names_in_notifications`) sanitizes notification text on device lock screens.
+
+4. **Self-Service Data Rights**:
+   - One-click machine-readable JSON data export (`fn_export_my_data`).
+   - Permanent account deletion (`fn_delete_my_data`) with typed confirmation (`DELETE`), executing a clean cascade across all database tables with verified zero residuals.
+
+5. **Strict Service Worker Privacy**:
+   - Serwist precaches only same-origin static assets (`/_next/static/`, fonts, images, icons, `/offline`, `/app`).
+   - Explicitly rejects caching any cross-origin requests, `/api/`, `/rest/`, `/auth/`, or requests with Authorization headers.
 
 ---
 
 ## Tech Stack
 
-### Core & Styling
-
-| Technology                                                                                                      | Role                                                                                                                 | Version   |
-| --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------- |
-| ![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)        | App Router, static pre-rendering, metadata, dynamic Open Graph image (`next/og`), `next/font` self-hosted typography | `^16.4.6` |
-| ![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)               | UI component architecture & client interactive states                                                                | `^19.3.1` |
-| ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white) | Strict static type checking across UI, hooks, metadata, and 3D scene                                                 | `^5.8.3`  |
-| ![Sass](https://img.shields.io/badge/Sass%20%2F%20SCSS-CC6699?style=flat-square&logo=sass&logoColor=white)      | Component-scoped SCSS modules, dark glassmorphism tokens, fluid type ramp & responsive mixins                        | `^1.86.0` |
-
-### 3D, WebGL & Motion
-
-| Technology                                                                                                                                 | Role                                                                                                    | Version              |
-| ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | -------------------- |
-| ![Three.js](https://img.shields.io/badge/Three.js-000000?style=flat-square&logo=threedotjs&logoColor=white)                                | 3D capsule geometry, chrome ring halo, procedural textures & WebGL rendering                            | `^0.187.0`           |
-| ![React Three Fiber](https://img.shields.io/badge/React%20Three%20Fiber%20%26%20Drei-0B0F17?style=flat-square&logo=react&logoColor=5CF2C7) | Declarative R3F canvas (`@react-three/fiber` + `@react-three/drei`) synced to scroll progress           | `^9.8.2` / `^10.7.9` |
-| ![WebGL](https://img.shields.io/badge/Postprocessing%20%26%20GLSL-990000?style=flat-square&logo=webgl&logoColor=white)                     | Custom chrome/grain/glitch shaders, `@react-three/postprocessing` + `detect-gpu` adaptive quality tiers | `^3.2.2` / `^5.0.70` |
-| ![GSAP](https://img.shields.io/badge/GSAP%20%2B%20ScrollTrigger-88CE02?style=flat-square&logo=greensock&logoColor=090C12)                  | Scroll-driven 3D camera choreography and continuous timeline progress                                   | `^3.15.1`            |
-| ![Framer Motion](https://img.shields.io/badge/Framer%20Motion-0055FF?style=flat-square&logo=framer&logoColor=white)                        | `LazyMotion` micro-interactions, accordion panels, modals, and card reveals                             | `^14.12.0`           |
-| ![Lenis](https://img.shields.io/badge/Lenis-111827?style=flat-square&logo=scrollreveal&logoColor=5CF2C7)                                   | Smooth inertial scrolling synced cleanly with ScrollTrigger                                             | `^1.3.27`            |
-
-### PWA, Hosting & Tooling
-
-| Technology                                                                                                   | Role                                                                                                     | Version   |
-| ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | --------- |
-| ![PWA Serwist](https://img.shields.io/badge/Serwist%20PWA-5A0FC8?style=flat-square&logo=pwa&logoColor=white) | Service worker (`@serwist/next`), static + `/app` + `/offline` precaching, and offline document fallback | `^9.5.13` |
-| ![QR Code](https://img.shields.io/badge/qrcode.react-090C12?style=flat-square&logo=react&logoColor=EAF0F6)   | Client-side SVG QR code generation for desktop-to-phone install flow (zero third-party requests)         | `^4.2.0`  |
-| ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)          | Production & preview HTTPS hosting (`medbuddy-s7ven.vercel.app`)                                         | —         |
-| ![ESLint](https://img.shields.io/badge/ESLint-4B32C3?style=flat-square&logo=eslint&logoColor=white)          | Static code linting (`eslint-config-next` + `eslint-config-prettier`)                                    | `^9.24.0` |
-| ![Prettier](https://img.shields.io/badge/Prettier-F7B93E?style=flat-square&logo=prettier&logoColor=111827)   | Consistent code and stylesheet formatting                                                                | `^3.5.3`  |
+| Domain              | Technologies                                                                                |
+| :------------------ | :------------------------------------------------------------------------------------------ |
+| **Framework**       | Next.js 16.4.6 (App Router, Webpack), React 19.3.1, TypeScript 5.8.3                        |
+| **Styling**         | SCSS Modules, CSS Custom Properties, Dark Glassmorphism, Zero CSS Frameworks                |
+| **Backend**         | Supabase (PostgreSQL 16, Row Level Security, pg_cron, Database Functions)                   |
+| **State & Data**    | TanStack React Query 5.107, `@supabase/ssr` 0.12, Zod 4.6                                   |
+| **PWA & Offline**   | Serwist 9.5 (`@serwist/next`), Web App Manifest, Service Worker                             |
+| **3D & Motion**     | Three.js 0.187, React Three Fiber 9.8, Drei 10.7, GSAP 3.15, Framer Motion 14.12, Lenis 1.3 |
+| **Quality & Tests** | Playwright 1.65, Node Test Runner, ESLint 9, Prettier 3                                     |
 
 ---
 
-## Quick Start
+## Local Development Setup
 
-### 1. Install dependencies
+### 1. Prerequisites
+
+- Node.js 20+ (Node 22 or 24 recommended)
+- PostgreSQL client (`psql`) installed and in PATH (for database scenario testing)
+
+### 2. Clone and Install
 
 ```bash
+git clone https://github.com/SourasishG/MedBuddy-Medicine-Expiry-Refill-Tracker.git
+cd MedBuddy-Medicine-Expiry-Refill-Tracker
 npm install
 ```
 
-### 2. Run in development
+### 3. Environment Variables
+
+Create `.env.local` based on `.env.example`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+APP_COOKIE_SECRET=your-32-char-random-secret-key-here
+ALLOW_TEST_USERS=true
+TEST_BASE_URL=http://localhost:3000
+```
+
+### 4. Run Development Server
 
 ```bash
 npm run dev
 ```
 
-Opens at `http://localhost:3000`. Note that the Serwist service worker is disabled in development (`NODE_ENV !== 'production'`) so Next.js fast refresh works without caching stale chunks.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 3. Verify typecheck, lint & formatting
+---
+
+## Verification & Test Suite
+
+MedBuddy includes a comprehensive automated test matrix spanning unit tests, database scenarios, security audits, and Playwright end-to-end user journeys:
+
+### Complete Test Matrix
 
 ```bash
+# 1. Typecheck & Lint
 npm run typecheck
 npm run lint
+
+# 2. Code Style Formatting
 npm run format:check
-```
 
-### 4. Build & run the full production PWA locally
-
-```bash
+# 3. Production Build
 npm run build
-npm run start
-```
 
-`npm run build` runs `next build --webpack` so Serwist compiles `public/sw.js` with precaching (`/offline`, `/app`, static assets) and the `/offline` document fallback. Test PWA installability, `/manifest.webmanifest`, `/sw.js`, `/app`, and offline support against `npm run start`.
-
----
-
-## Deploying to Vercel (Free Tier)
-
-1. Push this repository to GitHub, GitLab, or Bitbucket.
-2. Import the project in **Vercel** (`Framework Preset: Next.js`).
-3. Leave Build Command (`npm run build`) and Output Directory (`.next`) as defaults.
-4. Set the optional environment variable (see `.env.example`) so canonical URLs, `robots.txt`, `sitemap.xml`, and Open Graph metadata match your domain:
-   - `NEXT_PUBLIC_SITE_URL=https://medbuddy-s7ven.vercel.app`
-5. Deploy. Vercel serves HTTPS automatically, which enables Android/Chrome `beforeinstallprompt`, iPhone Safari _Add to Home Screen_, and the Serwist service worker.
-
-> **PWA preview helpers:** Append `?installPreview=ios-safari`, `?installPreview=ios-non-safari`, `?installPreview=desktop-qr`, or `?installPreview=standalone` to the URL when inspecting platform install UIs on desktop. Append `?tier=high`, `?tier=medium`, or `?tier=low` to inspect 3D quality fallback tiers.
-
----
-
-## Where to Edit Copy & Design Tokens
-
-All copy lives directly inside each section component under `src/components/sections/` and `src/app/`:
-
-| Section / Area                                                               | File                                                                                |
-| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| Canonical site URL & OG image config                                         | `src/lib/site.ts`, `.env.example`                                                   |
-| Brand palette, typography, type ramp & layout tokens                         | `src/styles/tokens.scss`, `src/styles/base.scss`                                    |
-| SEO metadata, Open Graph & Twitter card text                                 | `src/app/layout.tsx`, `src/app/opengraph-image.tsx`                                 |
-| Navigation links & mobile drawer                                             | `src/components/ui/Nav.tsx`                                                         |
-| `00` Hero headline, cards, spec sheet & CTAs                                 | `src/components/sections/Hero.tsx`                                                  |
-| `01` Problem statements                                                      | `src/components/sections/Problem.tsx`                                               |
-| `02` How It Works 4-step walkthrough                                         | `src/components/sections/HowItWorks.tsx`                                            |
-| `03` 8 Expandable feature cards (`Illustrative` demo specs)                  | `src/components/sections/Features.tsx`                                              |
-| `04` Interactive expiry slider cabinet demo                                  | `src/components/sections/CabinetDemo.tsx`                                           |
-| `05` Caregiver missed-dose demo                                              | `src/components/sections/Caregivers.tsx`                                            |
-| `06` Privacy spec columns (`WHAT MEDBUDDY DOES` / `NEVER DOES` / `CONTROLS`) | `src/components/sections/Privacy.tsx`                                               |
-| `07` FAQ accordion items                                                     | `src/components/sections/Faq.tsx`                                                   |
-| `08` Install panel, QR & Footer disclaimer                                   | `src/components/sections/Install.tsx`                                               |
-| Privacy Notice page (`/privacy`)                                             | `src/app/privacy/page.tsx`, `src/app/privacy/privacy.module.scss`                   |
-| iOS & Desktop install modal instructions                                     | `src/components/ui/InstallModal.tsx`                                                |
-| Early-access PWA launch shell (`/app`) & Offline page                        | `src/app/app/page.tsx`, `src/app/offline/page.tsx`                                  |
-| PWA manifest icons & metadata                                                | `src/app/manifest.ts`, `public/icons/`                                              |
-| Interactive 3D phone screen demo data (`Illustrative`)                       | `src/components/scene/PhoneScreen.tsx`, `src/components/scene/bakedPhoneTexture.ts` |
-
----
-
-## Backend Development & Operations (Supabase)
-
-MedBuddy uses a Supabase backend with Row Level Security (RLS), atomic `SECURITY DEFINER` RPC functions, `pg_cron` scheduling, and an Edge Function notification dispatcher.
-
-### 1. Environment Configuration
-
-Copy `.env.example` to `.env.local` and populate your project credentials:
-
-```bash
-cp .env.example .env.local
-```
-
-See [.env.example](.env.example) and [docs/SETUP_CHECKLIST.md](docs/SETUP_CHECKLIST.md) for full variable explanations.
-
-### 2. Database Migrations & Reset
-
-- Apply migrations to remote Supabase project:
-  ```bash
-  npx supabase db push
-  ```
-- Reset database locally or on remote dev instance:
-  ```bash
-  npm run db:reset
-  ```
-
-### 3. Running Database Scenario Tests
-
-Runs the full 11-step PostgreSQL test suite (`supabase/tests/schema_scenario.sql`) validating profiles, FEFO stock deduction, RLS boundaries, caregiver invites, snoozing, and GDPR deletion:
-
-```bash
+# 4. Database Scenario Tests (PSQL + RLS)
 npm run db:test
-```
 
-Requires `psql` and database credentials in `.env.local`. Must output `ALL TESTS PASSED`.
-
-### 4. Running Real-Stack Security Smoke Tests
-
-Executes end-to-end security verification creating real authenticated users and testing RLS isolation:
-
-```bash
-node scripts/smoke-test.mjs
-```
-
-Requires `ALLOW_TEST_USERS=true` in `.env.local`.
-
-### 5. Checking Scheduler & Vault Health
-
-Validates background scheduling status and Supabase Vault secrets without exposing sensitive credentials:
-
-```bash
-npm run health
-```
-
-Calls `fn_scheduler_health()` using the `service_role` key and outputs a plain-language health verdict.
-
-### 6. Testing Notification Sender Edge Function
-
-Executes isolated scenario tests for the notification dispatcher across 6 error and success cases (cool-down, 410 removal, 403 ignore, concurrency limits, idempotent dispatch):
-
-```bash
+# 5. Push Notification Sender Verification
 node scripts/test-notification-sender.mjs
+
+# 6. Backend & Scheduler Health Check
+npm run health
+
+# 7. Security Audit (No Service Role Key in Client)
+node scripts/check-no-service-key.mjs
+
+# 8. Service Worker Privacy Audit
+node scripts/check-sw.mjs
+
+# 9. Playwright End-to-End Golden Path Suite
+node scripts/test-phase-a7.mjs
 ```
-
-### 7. Security & Privacy Audit Scripts
-
-- Verify service worker static-only caching and zero private data rules:
-  ```bash
-  node scripts/check-sw.mjs
-  ```
-- Guard against accidental references to `SUPABASE_SERVICE_ROLE_KEY` in frontend source code and client bundles:
-  ```bash
-  node scripts/check-no-service-key.mjs
-  ```
-
-### 8. Regenerating TypeScript Types
-
-Updates database type definitions in `src/lib/supabase/database.types.ts`:
-
-```bash
-npm run db:types
-```
-
-### 9. Deploying the Notification Sender Edge Function
-
-Deploy the Deno Edge Function without JWT verification (secured via `x-cron-secret` and Supabase Vault):
-
-```bash
-npx supabase functions deploy send-notifications --no-verify-jwt
-```
-
-Set secrets via Supabase CLI:
-
-```bash
-npx supabase secrets set CRON_SECRET=... VAPID_PRIVATE_KEY=... VAPID_PUBLIC_KEY=... VAPID_SUBJECT=...
-```
-
-### 10. Typed Client Usage in Application Code
-
-- **Browser (Client Components):**
-  ```typescript
-  import { createClient } from '@/lib/supabase/client';
-  const supabase = createClient();
-  const { data } = await supabase.from('medicines').select('*');
-  ```
-- **Server (Server Components, Server Actions, Route Handlers):**
-  ```typescript
-  import { createClient } from '@/lib/supabase/server';
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  ```
-
-For the complete API, RPC endpoints, and permission reference, see [docs/API.md](docs/API.md).
 
 ---
 
-## Content & Safety Reminders
+## Lighthouse & Accessibility Benchmark
 
-- Review [src/app/privacy/page.tsx](src/app/privacy/page.tsx) and update server log retention if upgrading your Vercel plan or adding any third-party analytics later.
-- Retain explicit **Illustrative** tags on sample cabinet/phone data and paired icon + text labels (`In date`, `Use soon`, `Expired`).
-- Retain the medical disclaimer verbatim in the footer (`Install.tsx`), `/privacy` (`src/app/privacy/page.tsx`), and `/app` shell (`src/app/app/page.tsx`):
-  > _MedBuddy is a reminder and tracking tool. It does not provide medical advice, diagnosis or treatment. Always follow your doctor’s instructions._
+Tested with mobile device emulation against production build:
+
+| Metric                           | Score         | Target   | Result   |
+| :------------------------------- | :------------ | :------- | :------- |
+| **Accessibility (/app)**         | **100 / 100** | $\ge 95$ | **PASS** |
+| **Performance (/app Mobile)**    | **87 / 100**  | $\ge 85$ | **PASS** |
+| **Best Practices (/app)**        | **100 / 100** | —        | **PASS** |
+| **Accessibility (/offline)**     | **100 / 100** | $\ge 95$ | **PASS** |
+| **Performance (/offline)**       | **100 / 100** | $\ge 85$ | **PASS** |
+| **Accessibility (/app/sign-in)** | **100 / 100** | $\ge 95$ | **PASS** |
+| **Performance (/app/sign-in)**   | **87 / 100**  | $\ge 85$ | **PASS** |
+
+---
+
+## Medical Disclaimer
+
+MedBuddy is a medication adherence, expiry, and refill tracking tool. It is not a medical device and does not provide medical advice, diagnosis, or clinical recommendations. Always consult your physician or pharmacist for clinical guidance.

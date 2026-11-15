@@ -17,7 +17,8 @@ export default function AppPrivacyPage() {
         <p>When you use the MedBuddy application, we store the following data in Supabase:</p>
         <ul>
           <li>
-            <strong>Account & Session:</strong> Your email address and authenticated user identifier.
+            <strong>Account & Session:</strong> Your email address and authenticated user
+            identifier.
           </li>
           <li>
             <strong>Care Profiles:</strong> Profile name, timezone, and adherence configuration
@@ -51,23 +52,27 @@ export default function AppPrivacyPage() {
       <section className={styles.section}>
         <h2>2. Cookies Set by Sign-In</h2>
         <p>
-          The marketing website at <code>/</code>, <code>/privacy</code>, and <code>/offline</code> sets
-          zero cookies. The authenticated MedBuddy application at <code>/app</code> uses strictly
-          essential sign-in cookies:
+          The marketing website at <code>/</code>, <code>/privacy</code>, and <code>/offline</code>{' '}
+          sets zero cookies. The authenticated MedBuddy application at <code>/app</code> uses
+          strictly essential sign-in cookies:
         </p>
         <ul>
           <li>
-            <strong>Supabase Auth Tokens (<code>sb-*-auth-token</code>):</strong> Essential HttpOnly
-            session tokens that securely authenticate requests between your browser and the
-            Supabase backend.
+            <strong>
+              Supabase Auth Tokens (<code>sb-*-auth-token</code>):
+            </strong>{' '}
+            Essential HttpOnly session tokens that securely authenticate requests between your
+            browser and the Supabase backend.
           </li>
           <li>
-            <strong>App State Cookie (<code>medbuddy_app_state</code>):</strong> A short-lived
-            (10-minute), HMAC-SHA256 signed, HttpOnly, SameSite=Lax cookie scoped strictly to{' '}
-            <code>/app</code>. It caches only your verified user ID and two binary onboarding flags
-            (consent given and profile created) to eliminate redundant database queries on page
-            navigation. It never contains medication names, medical notes, or personal health
-            details, and is cleared upon sign-out or account deletion.
+            <strong>
+              App State Cookie (<code>medbuddy_app_state</code>):
+            </strong>{' '}
+            A short-lived (10-minute), HMAC-SHA256 signed, HttpOnly, SameSite=Lax cookie scoped
+            strictly to <code>/app</code>. It caches only your verified user ID and two binary
+            onboarding flags (consent given and profile created) to eliminate redundant database
+            queries on page navigation. It never contains medication names, medical notes, or
+            personal health details, and is cleared upon sign-out or account deletion.
           </li>
         </ul>
       </section>
@@ -116,11 +121,14 @@ export default function AppPrivacyPage() {
             <code>true</code> or <code>false</code>).
           </li>
           <li>
-            <code>medbuddy_pwa_dismissed</code>: Timestamp recording if you dismissed the home screen
-            install prompt.
+            <code>medbuddy_pwa_dismissed</code>: Timestamp recording if you dismissed the home
+            screen install prompt.
           </li>
         </ul>
-        <p>No medication records or health logs are ever saved in local storage or unencrypted browser caches.</p>
+        <p>
+          No medication records or health logs are ever saved in local storage or unencrypted
+          browser caches.
+        </p>
       </section>
 
       <section className={styles.section}>
@@ -134,9 +142,7 @@ export default function AppPrivacyPage() {
 
       <section className={styles.section}>
         <h2>6. Your Data Rights</h2>
-        <p>
-          Under our data protection principles, you retain full ownership of your data:
-        </p>
+        <p>Under our data protection principles, you retain full ownership of your data:</p>
         <ul>
           <li>
             <strong>Download My Data:</strong> You can export a comprehensive, machine-readable JSON

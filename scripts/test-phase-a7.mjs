@@ -74,7 +74,9 @@ async function testRefusalGuard() {
     encoding: 'utf8',
   });
   if (resDenied.status !== 1 || !resDenied.stderr.includes('REFUSAL')) {
-    throw new Error('Refusal guard failed: script did not exit with code 1 when ALLOW_TEST_USERS=false');
+    throw new Error(
+      'Refusal guard failed: script did not exit with code 1 when ALLOW_TEST_USERS=false',
+    );
   }
   console.log('  ✓ Verified refusal when ALLOW_TEST_USERS is false or omitted (exit code 1)');
 
@@ -84,7 +86,9 @@ async function testRefusalGuard() {
     encoding: 'utf8',
   });
   if (resAllowed.status !== 0 || !resAllowed.stdout.includes('ALLOWED')) {
-    throw new Error('Refusal guard failed: script did not exit with code 0 when ALLOW_TEST_USERS=true');
+    throw new Error(
+      'Refusal guard failed: script did not exit with code 0 when ALLOW_TEST_USERS=true',
+    );
   }
   console.log('  ✓ Verified pass when ALLOW_TEST_USERS is true (exit code 0)\n');
 }
@@ -264,8 +268,10 @@ async function main() {
     // -------------------------------------------------------------------------
     // 5. Golden Path: Log Dose (Taken) -> Verify Stock Decrement -> Undo -> Verify Stock Restored
     // -------------------------------------------------------------------------
-    console.log('\n[5/10] Testing clinical dose lifecycle: Due -> Taken -> Stock Decrement -> Undo -> Stock Restored...');
-    
+    console.log(
+      '\n[5/10] Testing clinical dose lifecycle: Due -> Taken -> Stock Decrement -> Undo -> Stock Restored...',
+    );
+
     // Provision a Due Now dose event 10 minutes ago
     const dueTime = new Date(Date.now() - 10 * 60 * 1000).toISOString();
     await adminClient.from('dose_events').insert({
@@ -288,14 +294,19 @@ async function main() {
     console.log('  ✓ Captured Today screen with Due now at 360px');
 
     // Click "Taken"
-    const dueCard = mobilePage.locator('article[data-status="due"]:has-text("Amoxicillin")').first();
+    const dueCard = mobilePage
+      .locator('article[data-status="due"]:has-text("Amoxicillin")')
+      .first();
     await dueCard.locator('button:has-text("Taken")').click();
     await mobilePage.waitForTimeout(1000);
 
     // Verify moved to Done today
-    await mobilePage.waitForSelector('section:has-text("Done today") >> article:has-text("Amoxicillin")', {
-      timeout: 5000,
-    });
+    await mobilePage.waitForSelector(
+      'section:has-text("Done today") >> article:has-text("Amoxicillin")',
+      {
+        timeout: 5000,
+      },
+    );
     console.log('  ✓ Dose marked Taken and moved to "Done today" section');
 
     // Verify Stock Decrement in DB: 20 -> 19
@@ -305,7 +316,9 @@ async function main() {
       .eq('medicine_id', amoxicillinId)
       .single();
     const stockAfterTaken = Number(boxAfterTaken.quantity_remaining);
-    console.log(`  ✓ Stock verified after dose: ${stockAfterTaken} (decremented by 1 from ${stockInitial})`);
+    console.log(
+      `  ✓ Stock verified after dose: ${stockAfterTaken} (decremented by 1 from ${stockInitial})`,
+    );
     if (stockAfterTaken !== 19) {
       throw new Error(`Expected stock 19 after taking dose, got ${stockAfterTaken}`);
     }
@@ -319,7 +332,9 @@ async function main() {
 
     // Click "Undo" on the taken dose
     console.log('  Clicking "Undo" to reverse dose intake...');
-    const doneCard = mobilePage.locator('section:has-text("Done today") >> article:has-text("Amoxicillin")').first();
+    const doneCard = mobilePage
+      .locator('section:has-text("Done today") >> article:has-text("Amoxicillin")')
+      .first();
     await doneCard.locator('button:has-text("Undo")').click();
     await mobilePage.waitForTimeout(1000);
 
@@ -336,7 +351,9 @@ async function main() {
       .eq('medicine_id', amoxicillinId)
       .single();
     const stockAfterUndo = Number(boxAfterUndo.quantity_remaining);
-    console.log(`  ✓ Stock verified after undo: ${stockAfterUndo} (restored back to ${stockInitial})`);
+    console.log(
+      `  ✓ Stock verified after undo: ${stockAfterUndo} (restored back to ${stockInitial})`,
+    );
     if (stockAfterUndo !== 20) {
       throw new Error(`Expected stock 20 after undo, got ${stockAfterUndo}`);
     }
@@ -362,12 +379,16 @@ async function main() {
     // Verify semantic landmarks and ARIA attributes
     const hasMain = await desktopPage.$('main#main-content');
     const hasNav = await desktopPage.$('nav[aria-label*="Navigation"]');
-    console.log(`  ✓ Landmarks verified: <main#main-content>: ${Boolean(hasMain)}, <nav>: ${Boolean(hasNav)}`);
+    console.log(
+      `  ✓ Landmarks verified: <main#main-content>: ${Boolean(hasMain)}, <nav>: ${Boolean(hasNav)}`,
+    );
 
     // Add Medicine Accessibility Pass
     await desktopPage.goto(`${BASE_URL}/app/medicine/add`, { waitUntil: 'domcontentloaded' });
     await desktopPage.waitForSelector('label[for="med-name"]', { timeout: 10000 });
-    const nameLabelFor = await desktopPage.$eval('label[for="med-name"]', (el) => el.textContent?.trim());
+    const nameLabelFor = await desktopPage.$eval('label[for="med-name"]', (el) =>
+      el.textContent?.trim(),
+    );
     console.log(`  ✓ Form accessibility: Label for #med-name verified ("${nameLabelFor}")`);
 
     // -------------------------------------------------------------------------
@@ -385,7 +406,9 @@ async function main() {
     const isReducedMotionActive = await rmPage.evaluate(() => {
       return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     });
-    console.log(`  ✓ prefers-reduced-motion: reduce active in browser media query: ${isReducedMotionActive}`);
+    console.log(
+      `  ✓ prefers-reduced-motion: reduce active in browser media query: ${isReducedMotionActive}`,
+    );
     await reducedMotionContext.close();
 
     // -------------------------------------------------------------------------
@@ -394,9 +417,11 @@ async function main() {
     console.log('\n[8/10] Testing large-text mode scaling and layout stability...');
     await desktopPage.goto(`${BASE_URL}/app/settings`, { waitUntil: 'domcontentloaded' });
     await desktopPage.waitForSelector('text=Large text', { timeout: 10000 });
-    
+
     // Toggle large text switch in settings
-    const largeTextBtn = desktopPage.locator('div:has(> div:text("Large text")) button[role="switch"]').first();
+    const largeTextBtn = desktopPage
+      .locator('div:has(> div:text("Large text")) button[role="switch"]')
+      .first();
     if (await largeTextBtn.isVisible()) {
       await largeTextBtn.click();
       await desktopPage.waitForTimeout(500);
@@ -417,7 +442,9 @@ async function main() {
     // -------------------------------------------------------------------------
     // 9. Offline Shell Verification & Cache Privacy Audit
     // -------------------------------------------------------------------------
-    console.log('\n[9/10] Testing offline fallback shell & verifying zero cached medical records...');
+    console.log(
+      '\n[9/10] Testing offline fallback shell & verifying zero cached medical records...',
+    );
     await mobilePage.goto(`${BASE_URL}/offline`, { waitUntil: 'domcontentloaded' });
     await mobilePage.waitForSelector('text=You appear to be offline.', { timeout: 5000 });
     await mobilePage.waitForSelector('button:has-text("Try again")', { timeout: 5000 });
@@ -461,7 +488,9 @@ async function main() {
     console.log(`  ✓ Caches inspected: [${cacheAudit.cacheNames.join(', ')}]`);
     console.log(`  ✓ Private health data cache violations: ${cacheAudit.violations.length}`);
     if (cacheAudit.violations.length > 0) {
-      throw new Error(`Privacy violation: cached private endpoints: ${cacheAudit.violations.join(', ')}`);
+      throw new Error(
+        `Privacy violation: cached private endpoints: ${cacheAudit.violations.join(', ')}`,
+      );
     }
 
     // -------------------------------------------------------------------------
@@ -508,12 +537,36 @@ async function main() {
 
     const tables = [
       { name: 'profiles', query: adminClient.from('profiles').select('id').eq('id', userId) },
-      { name: 'care_profiles', query: adminClient.from('care_profiles').select('id').eq('id', careProfileId) },
-      { name: 'care_access', query: adminClient.from('care_access').select('id').eq('care_profile_id', careProfileId) },
-      { name: 'medicines', query: adminClient.from('medicines').select('id').eq('care_profile_id', careProfileId) },
-      { name: 'inventory_items', query: adminClient.from('inventory_items').select('id').eq('care_profile_id', careProfileId) },
-      { name: 'dose_events', query: adminClient.from('dose_events').select('id').eq('care_profile_id', careProfileId) },
-      { name: 'schedules', query: adminClient.from('schedules').select('id').eq('care_profile_id', careProfileId) },
+      {
+        name: 'care_profiles',
+        query: adminClient.from('care_profiles').select('id').eq('id', careProfileId),
+      },
+      {
+        name: 'care_access',
+        query: adminClient
+          .from('care_access')
+          .select('care_profile_id')
+          .eq('care_profile_id', careProfileId),
+      },
+      {
+        name: 'medicines',
+        query: adminClient.from('medicines').select('id').eq('care_profile_id', careProfileId),
+      },
+      {
+        name: 'inventory_items',
+        query: adminClient
+          .from('inventory_items')
+          .select('id')
+          .eq('care_profile_id', careProfileId),
+      },
+      {
+        name: 'dose_events',
+        query: adminClient.from('dose_events').select('id').eq('care_profile_id', careProfileId),
+      },
+      {
+        name: 'schedules',
+        query: adminClient.from('schedules').select('id').eq('care_profile_id', careProfileId),
+      },
     ];
 
     for (const t of tables) {

@@ -13,7 +13,9 @@
     "db:reset": "node scripts/db-reset.mjs",
     "db:test": "node scripts/db-test.mjs",
     "db:types": "node scripts/db-types.mjs",
-    "health": "node scripts/health.mjs"
+    "health": "node scripts/health.mjs",
+    "test:e2e": "node scripts/test-phase-a7.mjs",
+    "test:sender": "node scripts/test-notification-sender.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
