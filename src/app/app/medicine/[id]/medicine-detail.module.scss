@@ -35,6 +35,49 @@
   }
 }
 
+.feedbackBox {
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  &[data-variant='error'] {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+  }
+
+  &[data-variant='success'] {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #6ee7b7;
+  }
+}
+
+.feedbackDismissBtn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  opacity: 0.8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
 .medHeaderCard {
   background: rgba(14, 19, 28, 0.84);
   backdrop-filter: blur(16px);

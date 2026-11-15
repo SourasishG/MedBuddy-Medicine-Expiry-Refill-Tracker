@@ -21,6 +21,7 @@ import {
   getTodayDateString,
   type ScheduleTimeItem,
 } from '@/features/schedules/schedule-utils';
+import { replaceScheduleTimesAtomic } from '@/features/schedules/schedule-replace-utils';
 import type { Database } from '@/lib/supabase/database.types';
 import styles from './medicine-detail.module.scss';
 import todayStyles from '../../today.module.scss';
