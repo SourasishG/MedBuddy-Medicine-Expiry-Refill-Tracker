@@ -147,9 +147,10 @@ export default function PrivacyPage() {
               Cookies and browser storage
             </h2>
             <p className={styles.body}>
-              The site does not set cookies. It uses the browser storage described above, which
-              exists only to provide features you chose. You can clear it at any time in your
-              browser’s settings, and the site will keep working.
+              The marketing website does not set cookies. The separate MedBuddy application at{' '}
+              <code>/app</code> uses essential sign-in cookies to maintain your authenticated session
+              while the marketing website itself sets none. You can clear your browser storage at any
+              time in your browser’s settings, and the website will keep working.
             </p>
           </section>
 
