@@ -390,10 +390,18 @@ export default function SettingsPage() {
                 <span
                   className={styles.statusBadge}
                   data-status={
-                    permissionStatus === 'denied' ? 'blocked' : isSubscribed ? 'active' : 'off'
+                    permissionStatus === 'denied'
+                      ? 'blocked'
+                      : isSubscribed
+                        ? 'active'
+                        : 'off'
                   }
                 >
-                  {permissionStatus === 'denied' ? 'Blocked' : isSubscribed ? 'Active' : 'Off'}
+                  {permissionStatus === 'denied'
+                    ? 'Blocked'
+                    : isSubscribed
+                      ? 'Active'
+                      : 'Off'}
                 </span>
               </div>
               <div className={styles.rowDesc}>

@@ -46,8 +46,8 @@ export default function TodayPage() {
   const [isPrnSubmitting, setIsPrnSubmitting] = useState(false);
 
   // Notification reminder state (Phase A5)
-  const [notificationStatus, setNotificationStatus] = useState<NotificationPermissionStatus>(() =>
-    typeof window !== 'undefined' ? getNotificationPermissionStatus() : 'unsupported',
+  const [notificationStatus, setNotificationStatus] = useState<NotificationPermissionStatus>(
+    () => (typeof window !== 'undefined' ? getNotificationPermissionStatus() : 'unsupported'),
   );
   const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
 
@@ -77,9 +77,7 @@ export default function TodayPage() {
           .from('dose_events')
           .select('*, schedule_times(*), schedules(*)')
           .eq('care_profile_id', activeProfileId)
-          .or(
-            `status.eq.pending,status.eq.missed,and(scheduled_for.gte.${windowStart},scheduled_for.lte.${windowEnd})`,
-          ),
+          .or(`status.eq.pending,status.eq.missed,and(scheduled_for.gte.${windowStart},scheduled_for.lte.${windowEnd})`),
         supabase
           .from('medicines')
           .select('*')
@@ -143,11 +141,7 @@ export default function TodayPage() {
       // Optimistic cache update
       queryClient.setQueryData(
         ['today-doses', activeProfileId],
-        (
-          old:
-            | { doses: EnrichedDoseEvent[]; medicines: Medicine[]; asNeededMeds: Medicine[] }
-            | undefined,
-        ) => {
+        (old: { doses: EnrichedDoseEvent[]; medicines: Medicine[]; asNeededMeds: Medicine[] } | undefined) => {
           if (!old) return old;
           return {
             ...old,
@@ -184,11 +178,7 @@ export default function TodayPage() {
       // Optimistic update
       queryClient.setQueryData(
         ['today-doses', activeProfileId],
-        (
-          old:
-            | { doses: EnrichedDoseEvent[]; medicines: Medicine[]; asNeededMeds: Medicine[] }
-            | undefined,
-        ) => {
+        (old: { doses: EnrichedDoseEvent[]; medicines: Medicine[]; asNeededMeds: Medicine[] } | undefined) => {
           if (!old) return old;
           return {
             ...old,
@@ -221,11 +211,7 @@ export default function TodayPage() {
       // Optimistic update
       queryClient.setQueryData(
         ['today-doses', activeProfileId],
-        (
-          old:
-            | { doses: EnrichedDoseEvent[]; medicines: Medicine[]; asNeededMeds: Medicine[] }
-            | undefined,
-        ) => {
+        (old: { doses: EnrichedDoseEvent[]; medicines: Medicine[]; asNeededMeds: Medicine[] } | undefined) => {
           if (!old) return old;
           return {
             ...old,
@@ -257,11 +243,7 @@ export default function TodayPage() {
       // Optimistic update
       queryClient.setQueryData(
         ['today-doses', activeProfileId],
-        (
-          old:
-            | { doses: EnrichedDoseEvent[]; medicines: Medicine[]; asNeededMeds: Medicine[] }
-            | undefined,
-        ) => {
+        (old: { doses: EnrichedDoseEvent[]; medicines: Medicine[]; asNeededMeds: Medicine[] } | undefined) => {
           if (!old) return old;
           return {
             ...old,
@@ -463,7 +445,11 @@ export default function TodayPage() {
                   const foodRule = dose.schedule_time?.food;
 
                   return (
-                    <article key={dose.id} className={styles.doseCard} data-status="due">
+                    <article
+                      key={dose.id}
+                      className={styles.doseCard}
+                      data-status="due"
+                    >
                       <div className={styles.doseCardTop}>
                         <div>
                           <h3 className={styles.medName}>
@@ -491,7 +477,9 @@ export default function TodayPage() {
 
                       <div className={styles.metaRow}>
                         {foodRule && foodRule !== 'any' && (
-                          <span className={styles.foodBadge}>{FOOD_RULE_LABELS[foodRule]}</span>
+                          <span className={styles.foodBadge}>
+                            {FOOD_RULE_LABELS[foodRule]}
+                          </span>
                         )}
                         {dose.schedule?.instructions && (
                           <span className={styles.instructionNote}>
@@ -563,7 +551,10 @@ export default function TodayPage() {
                   const isSnoozed = dose.is_snoozed;
 
                   return (
-                    <article key={dose.id} className={styles.doseCard}>
+                    <article
+                      key={dose.id}
+                      className={styles.doseCard}
+                    >
                       <div className={styles.doseCardTop}>
                         <div>
                           <h3 className={styles.medName}>
@@ -596,7 +587,9 @@ export default function TodayPage() {
                           </span>
                         )}
                         {foodRule && foodRule !== 'any' && (
-                          <span className={styles.foodBadge}>{FOOD_RULE_LABELS[foodRule]}</span>
+                          <span className={styles.foodBadge}>
+                            {FOOD_RULE_LABELS[foodRule]}
+                          </span>
                         )}
                         {dose.schedule?.instructions && (
                           <span className={styles.instructionNote}>
@@ -660,7 +653,11 @@ export default function TodayPage() {
                   const isActionBusy = activeActionId === dose.id;
 
                   return (
-                    <article key={dose.id} className={styles.doseCard} data-status="missed">
+                    <article
+                      key={dose.id}
+                      className={styles.doseCard}
+                      data-status="missed"
+                    >
                       <div className={styles.doseCardTop}>
                         <div>
                           <h3 className={styles.medName}>
@@ -729,7 +726,11 @@ export default function TodayPage() {
                   const hasShortfall = dose.stock_shortfall && dose.stock_shortfall > 0;
 
                   return (
-                    <article key={dose.id} className={styles.doseCard} data-status="taken">
+                    <article
+                      key={dose.id}
+                      className={styles.doseCard}
+                      data-status="taken"
+                    >
                       <div className={styles.doseCardTop}>
                         <div>
                           <h3 className={styles.medName} style={{ opacity: 0.9 }}>
@@ -866,7 +867,9 @@ export default function TodayPage() {
                 step="any"
                 className={medStyles.input}
                 value={prnAmount}
-                onChange={(e) => setPrnAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                onChange={(e) =>
+                  setPrnAmount(e.target.value === '' ? '' : Number(e.target.value))
+                }
                 required
                 autoFocus
               />
