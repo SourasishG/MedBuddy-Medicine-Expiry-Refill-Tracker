@@ -181,10 +181,7 @@ interface SwWindowClient {
 }
 
 interface SwClients {
-  matchAll(options?: {
-    type?: string;
-    includeUncontrolled?: boolean;
-  }): Promise<SwWindowClient[]>;
+  matchAll(options?: { type?: string; includeUncontrolled?: boolean }): Promise<SwWindowClient[]>;
   openWindow?(url: string): Promise<SwWindowClient | null>;
 }
 
@@ -245,4 +242,3 @@ self.addEventListener('notificationclick', ((event: SwNotificationEvent) => {
       }),
   );
 }) as EventListener);
-

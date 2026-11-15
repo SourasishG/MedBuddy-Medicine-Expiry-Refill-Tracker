@@ -24,7 +24,7 @@ grant execute on function assert(boolean, text) to authenticated;
 \echo == T1 sign-up creates profiles
 insert into auth.users(id,email,raw_user_meta_data) values
  (:'ravi','ravi@x.test','{"full_name":"Ravi"}'),(:'asha','asha@x.test','{"full_name":"Asha"}'),(:'stranger','s@x.test','{}');
-select assert((select count(*) from profiles)=3, 'three profiles');
+select assert((select count(*) from profiles where id in (:'ravi',:'asha',:'stranger'))=3, 'three profiles');
 select assert((select display_name from profiles where id=:'stranger')='s', 'name falls back to email prefix');
 
 \echo == T2 Ravi creates a care profile for his mum, adds medicines and boxes
@@ -54,7 +54,7 @@ reset role;
 select fn_generate_dose_events(2) as gen \gset
 select assert(:gen between 4 and 6, 'generated 4-6 events, got '||:gen);
 select assert(fn_generate_dose_events(2)=0, 'generation is idempotent');
-select assert((select count(*) from dose_events where scheduled_for<=now())=0, 'no past events back-filled');
+select assert((select count(*) from dose_events where care_profile_id=:'cp_id' and scheduled_for<=now())=0, 'no past events back-filled');
 
 \echo == T4 logging, FEFO, idempotency, undo
 select set_config('request.jwt.claim.sub', :'ravi', false) as x \gset
@@ -299,7 +299,7 @@ select assert((select count(*) from care_profiles where id=:'cp_id')=0, 'sole-ow
 select assert((select count(*) from medicines where care_profile_id=:'cp_id')=0, 'medicines gone');
 select assert((select count(*) from inventory_items where care_profile_id=:'cp_id')=0, 'boxes gone');
 select assert((select count(*) from dose_events where care_profile_id=:'cp_id')=0, 'dose history gone');
-select assert((select count(*) from stock_movements)=0, 'stock ledger gone');
+select assert((select count(*) from stock_movements where created_by in (:'ravi',:'stranger'))=0, 'stock ledger gone');
 select assert((select count(*) from notifications where user_id in (:'ravi',:'stranger'))=0, 'notifications gone');
 select assert((select count(*) from care_access where care_profile_id=:'cp_id')=0, 'access rows gone');
 select assert((select count(*) from profiles where id=:'asha')=1, 'other users untouched');

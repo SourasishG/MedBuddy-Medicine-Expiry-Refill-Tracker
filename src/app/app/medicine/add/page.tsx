@@ -69,9 +69,7 @@ export default function AddMedicinePage() {
   const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>([1, 2, 3, 4, 5, 6, 7]);
   const [intervalDays, setIntervalDays] = useState<number | ''>(2);
   const [doseAmount, setDoseAmount] = useState<number | ''>(1);
-  const [times, setTimes] = useState<ScheduleTimeItem[]>([
-    { time: '08:00', food: 'any' },
-  ]);
+  const [times, setTimes] = useState<ScheduleTimeItem[]>([{ time: '08:00', food: 'any' }]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [instructions, setInstructions] = useState('');
@@ -182,15 +180,11 @@ export default function AddMedicinePage() {
   };
 
   const handleTimeChange = (index: number, newTime: string) => {
-    setTimes((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, time: newTime } : item)),
-    );
+    setTimes((prev) => prev.map((item, i) => (i === index ? { ...item, time: newTime } : item)));
   };
 
   const handleFoodChange = (index: number, food: FoodRule) => {
-    setTimes((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, food } : item)),
-    );
+    setTimes((prev) => prev.map((item, i) => (i === index ? { ...item, food } : item)));
   };
 
   const handleSaveMedicine = async (skipSchedule = false) => {
@@ -405,8 +399,8 @@ export default function AddMedicinePage() {
           <div>
             <h1 className={styles.heading}>Add a medicine</h1>
             <p className={styles.subheading}>
-              Enter the basic medicine info. In the next steps you will record your first box and set
-              optional schedules.
+              Enter the basic medicine info. In the next steps you will record your first box and
+              set optional schedules.
             </p>
           </div>
 
@@ -504,7 +498,9 @@ export default function AddMedicinePage() {
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
             />
-            <span className={styles.helperText}>How remaining doses or quantities are measured.</span>
+            <span className={styles.helperText}>
+              How remaining doses or quantities are measured.
+            </span>
           </div>
 
           {/* Purpose */}
@@ -558,7 +554,8 @@ export default function AddMedicinePage() {
               }
             />
             <span className={styles.helperText}>
-              If specified, opened boxes will expire after this many days if earlier than printed date.
+              If specified, opened boxes will expire after this many days if earlier than printed
+              date.
             </span>
           </div>
 
@@ -636,7 +633,8 @@ export default function AddMedicinePage() {
               onChange={(e) => setExpiryInput(e.target.value)}
             />
             <span className={styles.helperText}>
-              Printed date on the box or blister pack. Month &amp; year (e.g. 2027-08) is treated as the end of that month.
+              Printed date on the box or blister pack. Month &amp; year (e.g. 2027-08) is treated as
+              the end of that month.
             </span>
           </div>
 
@@ -662,7 +660,8 @@ export default function AddMedicinePage() {
                 <strong>This date has already passed.</strong>
               </div>
               <div>
-                According to the date entered, this box has already expired. If this is an existing expired item you are tracking, please confirm below.
+                According to the date entered, this box has already expired. If this is an existing
+                expired item you are tracking, please confirm below.
               </div>
               <label className={styles.confirmCheckbox}>
                 <input
@@ -825,7 +824,8 @@ export default function AddMedicinePage() {
               <div className={styles.modeCardContent}>
                 <span className={styles.modeCardTitle}>As needed (PRN)</span>
                 <span className={styles.modeCardDesc}>
-                  No set schedule or clock reminders. Easily logged from the Today screen when taken.
+                  No set schedule or clock reminders. Easily logged from the Today screen when
+                  taken.
                 </span>
               </div>
             </label>
@@ -987,11 +987,7 @@ export default function AddMedicinePage() {
                     </div>
                   ))}
 
-                  <button
-                    type="button"
-                    className={styles.addTimeBtn}
-                    onClick={handleAddTime}
-                  >
+                  <button type="button" className={styles.addTimeBtn} onClick={handleAddTime}>
                     <svg
                       width="16"
                       height="16"
@@ -1072,9 +1068,7 @@ export default function AddMedicinePage() {
                 step="any"
                 className={styles.input}
                 value={doseAmount}
-                onChange={(e) =>
-                  setDoseAmount(e.target.value === '' ? '' : Number(e.target.value))
-                }
+                onChange={(e) => setDoseAmount(e.target.value === '' ? '' : Number(e.target.value))}
               />
               <span className={styles.helperText}>
                 Amount pre-filled when logging an as-needed dose.
