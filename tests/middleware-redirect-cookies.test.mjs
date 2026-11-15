@@ -30,7 +30,11 @@ const redirect = redirectWithCookies(redirectUrl, source);
 
 // 3. Verify status & location
 assert.equal(redirect.status, 307, 'Must be temporary redirect (307)');
-assert.equal(redirect.headers.get('location'), redirectUrl, 'Location header must match target URL');
+assert.equal(
+  redirect.headers.get('location'),
+  redirectUrl,
+  'Location header must match target URL',
+);
 
 // 4. Verify all cookies survived onto the redirect response
 const redirectCookies = redirect.cookies.getAll();

@@ -13,9 +13,6 @@ function simulateGuard({
   consents = [],
   careAccess = [],
 }) {
-  const request = {
-    nextUrl: new URL(`http://localhost:3000${pathname}`),
-  };
   const isSignIn = pathname === '/app/sign-in';
   const isAuthCallback = pathname === '/app/auth/callback';
   const isConsent = pathname === '/app/consent';
@@ -94,7 +91,7 @@ function simulateGuard({
     }
 
     return { action: 'next', response: supabaseResponse };
-  } catch (err) {
+  } catch {
     if (pathname === '/app/sign-in') return { action: 'next', response: supabaseResponse };
     const redirectUrl = new URL('http://localhost:3000/app/sign-in?error=service_unavailable');
     return {
