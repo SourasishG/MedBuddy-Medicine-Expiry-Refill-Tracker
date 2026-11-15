@@ -18,6 +18,7 @@ function SetupContent() {
 
   const [isMe, setIsMe] = useState(true);
   const [name, setName] = useState('');
+  const [enableReminders, setEnableReminders] = useState(true);
   const [timezone, setTimezone] = useState(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
@@ -82,6 +83,17 @@ function SetupContent() {
 
       await refetchProfiles();
       setActiveProfileId(profileId);
+
+      // Offer browser notification permission if requested
+      if (enableReminders && typeof window !== 'undefined' && 'Notification' in window) {
+        try {
+          if (Notification.permission === 'default') {
+            await Notification.requestPermission();
+          }
+        } catch {
+          // Non-blocking notification permission error
+        }
+      }
 
       // Invalidate cached state so middleware recognizes setup is complete
       document.cookie = 'medbuddy_app_state=; path=/app; max-age=0';
@@ -201,6 +213,26 @@ function SetupContent() {
               <option value="UTC">UTC</option>
             </select>
           </div>
+
+          {!isAddingNew && (
+            <div className={styles.checkboxGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={enableReminders}
+                  onChange={(e) => setEnableReminders(e.target.checked)}
+                  className={styles.checkbox}
+                />
+                <div>
+                  <div className={styles.checkboxTitle}>Turn on dose reminders</div>
+                  <div className={styles.checkboxDesc}>
+                    Receive calm notifications when doses are due (optional, can be turned off
+                    anytime in Settings)
+                  </div>
+                </div>
+              </label>
+            </div>
+          )}
 
           <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
             {isSubmitting ? 'Creating profile…' : 'Continue'}

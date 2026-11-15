@@ -9,9 +9,12 @@ export default function TodayPage() {
 
   if (isLoading) {
     return (
-      <div className={styles.todayContainer}>
-        <div className={styles.emptyState}>
-          <div className={styles.emptyTitle}>Loading schedule…</div>
+      <div className={styles.skeletonContainer} aria-busy="true" aria-label="Loading schedule">
+        <div className={styles.skeletonBanner}>
+          <div className={styles.shimmer} />
+        </div>
+        <div className={styles.skeletonCard}>
+          <div className={styles.shimmer} />
         </div>
       </div>
     );
