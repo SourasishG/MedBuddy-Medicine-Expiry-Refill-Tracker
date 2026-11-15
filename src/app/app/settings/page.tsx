@@ -23,6 +23,7 @@ import {
   type NotificationPermissionStatus,
 } from '@/features/notifications/push-utils';
 import { InstallCard } from '@/features/install/InstallCard';
+import { DeleteAccountModal } from '@/features/data-rights/DeleteAccountModal';
 import styles from './settings.module.scss';
 
 export default function SettingsPage() {
@@ -66,6 +67,12 @@ export default function SettingsPage() {
   } | null>(null);
   const [isBusyNotif, setIsBusyNotif] = useState(false);
 
+  // Data Rights & Account states (Phase A6)
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportFeedback, setExportFeedback] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   // Load notification settings and preferences
   useEffect(() => {
     async function loadNotificationSettings() {
@@ -81,11 +88,12 @@ export default function SettingsPage() {
         }
       }
 
-      // 2. Fetch user profile preferences (hide_names_in_notifications)
+      // 2. Fetch user profile preferences (hide_names_in_notifications & email)
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
+      setUserEmail(user.email || null);
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -251,6 +259,36 @@ export default function SettingsPage() {
     }
   };
 
+  const handleExportData = async () => {
+    setIsExporting(true);
+    setExportFeedback(null);
+    try {
+      const { data, error } = await supabase.rpc('fn_export_my_data');
+      if (error) {
+        setExportFeedback(`Export failed: ${error.message}`);
+        setIsExporting(false);
+        return;
+      }
+
+      const jsonStr = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `medbuddy-data-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setExportFeedback('Export complete! Your data has been downloaded as JSON.');
+    } catch {
+      setExportFeedback('A network error occurred while generating your export.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const startEditing = (profile: CareProfileWithRole) => {
     // Edit form is strictly permitted for profile owners only
     if (profile.role !== 'owner') return;
@@ -390,18 +428,10 @@ export default function SettingsPage() {
                 <span
                   className={styles.statusBadge}
                   data-status={
-                    permissionStatus === 'denied'
-                      ? 'blocked'
-                      : isSubscribed
-                        ? 'active'
-                        : 'off'
+                    permissionStatus === 'denied' ? 'blocked' : isSubscribed ? 'active' : 'off'
                   }
                 >
-                  {permissionStatus === 'denied'
-                    ? 'Blocked'
-                    : isSubscribed
-                      ? 'Active'
-                      : 'Off'}
+                  {permissionStatus === 'denied' ? 'Blocked' : isSubscribed ? 'Active' : 'Off'}
                 </span>
               </div>
               <div className={styles.rowDesc}>
@@ -712,13 +742,172 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* Privacy & Data Rights (Phase A6) */}
+      <section id="data-rights" className={styles.section}>
+        <div className={styles.sectionTitle}>Privacy &amp; Data Rights</div>
+        <div className={styles.card}>
+          {/* Download My Data */}
+          <div className={styles.row}>
+            <div>
+              <div className={styles.rowLabel}>Export your health data</div>
+              <div className={styles.rowDesc}>
+                Download a structured JSON file containing all your care profiles, medicines,
+                inventory, schedules, dose history, and consent records.
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className={styles.exportBtn}
+            onClick={handleExportData}
+            disabled={isExporting}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span>{isExporting ? 'Generating export…' : 'Download my data (JSON)'}</span>
+          </button>
+          {exportFeedback && (
+            <div className={styles.feedbackBox} data-variant="success">
+              {exportFeedback}
+            </div>
+          )}
+
+          {/* Delete Account & Data */}
+          <div className={styles.prefGroup}>
+            <div className={styles.prefGroupTitle} style={{ color: '#ff94a5' }}>
+              Permanent Account Erasure
+            </div>
+            <div className={styles.rowDesc}>
+              Permanently erase your account, login credentials, care profiles, medication
+              inventory, and entire dose history. This action cannot be reversed.
+            </div>
+            <button
+              type="button"
+              className={styles.dangerBtn}
+              onClick={() => setIsDeleteModalOpen(true)}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3 6h18" />
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+              </svg>
+              <span>Delete my account and data</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* About MedBuddy (Phase A6) */}
+      <section id="about" className={styles.section}>
+        <div className={styles.sectionTitle}>About MedBuddy</div>
+        <div className={styles.card}>
+          <div className={styles.aboutList}>
+            <div className={styles.aboutRow}>
+              <span className={styles.aboutLabel}>Application Version</span>
+              <span className={styles.aboutValue}>v1.0.0 (Build 2026.11)</span>
+            </div>
+
+            <div className={styles.aboutRow}>
+              <span className={styles.aboutLabel}>Privacy Documentation</span>
+              <Link href="/app/privacy" className={styles.aboutLink}>
+                <span>App Privacy Notice</span>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </Link>
+            </div>
+
+            <div className={styles.aboutRow}>
+              <span className={styles.aboutLabel}>Contact &amp; Support</span>
+              <a href="mailto:support@medbuddy.internal" className={styles.aboutLink}>
+                <span>support@medbuddy.internal</span>
+              </a>
+            </div>
+          </div>
+
+          <div className={styles.medicalDisclaimer}>
+            <div className={styles.disclaimerHeading}>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>Medical Disclaimer</span>
+            </div>
+            <p className={styles.disclaimerText}>
+              MedBuddy is an adherence and expiry tracking tool, not a substitute for professional
+              medical advice, clinical diagnosis, or treatment. Always consult your doctor or
+              pharmacist regarding your medications.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Account */}
       <section className={styles.section}>
         <div className={styles.sectionTitle}>Account</div>
-        <button type="button" className={styles.signOutBtn} onClick={handleSignOut}>
-          Sign out of MedBuddy
-        </button>
+        <div className={styles.card}>
+          {userEmail && (
+            <div className={styles.row}>
+              <div>
+                <div className={styles.rowLabel}>Signed in as</div>
+                <div className={styles.userEmailText}>{userEmail}</div>
+              </div>
+            </div>
+          )}
+          <button type="button" className={styles.signOutBtn} onClick={handleSignOut}>
+            Sign out of MedBuddy
+          </button>
+        </div>
       </section>
+
+      {/* Delete Account Modal */}
+      <DeleteAccountModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} />
     </div>
   );
 }
