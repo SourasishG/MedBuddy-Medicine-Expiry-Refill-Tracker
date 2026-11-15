@@ -44,7 +44,9 @@ Deno.serve(async (req: Request) => {
   const vapidSubject = Deno.env.get('VAPID_SUBJECT') || '';
 
   if (!vapidPublicKey || !vapidPrivateKey || !vapidSubject) {
-    console.error('Push sender aborted: Missing VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, or VAPID_SUBJECT');
+    console.error(
+      'Push sender aborted: Missing VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, or VAPID_SUBJECT',
+    );
     return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
@@ -163,12 +165,15 @@ Deno.serve(async (req: Request) => {
               console.warn(`Configuration/auth status (${statusCode}) for sub:`, sub.id);
             } else {
               // Transient failure (429, 5xx, network error): record failure
-              console.warn(`Transient delivery failure (${statusCode || 'network'}) for sub:`, sub.id);
+              console.warn(
+                `Transient delivery failure (${statusCode || 'network'}) for sub:`,
+                sub.id,
+              );
               await supabase.rpc('fn_record_push_failure', { p_id: sub.id });
             }
             return false;
           }
-        })
+        }),
       );
 
       if (results.some((res) => res === true)) {
@@ -207,6 +212,6 @@ Deno.serve(async (req: Request) => {
     {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
-    }
+    },
   );
 });

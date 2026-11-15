@@ -5,37 +5,37 @@ Target: Supabase (PostgreSQL 15+), free tier. No frontend is designed here.
 
 ## 1. Key design decisions
 
-| Decision | Why |
-|---|---|
-| **A "care profile" is separate from a user account.** A user can manage several care profiles (self, mother, child), and a care profile does not need an account. | An elderly parent may never install the app. A caregiver still needs to track their medicines. |
-| **Access is one table, `care_access`, with three roles:** owner (full control), caregiver (edit and log doses), viewer (read-only). | Family sharing, caregiver alerts and removal all become simple rows. No separate "family group" concept. |
+| Decision                                                                                                                                                                                  | Why                                                                                                                                              |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **A "care profile" is separate from a user account.** A user can manage several care profiles (self, mother, child), and a care profile does not need an account.                         | An elderly parent may never install the app. A caregiver still needs to track their medicines.                                                   |
+| **Access is one table, `care_access`, with three roles:** owner (full control), caregiver (edit and log doses), viewer (read-only).                                                       | Family sharing, caregiver alerts and removal all become simple rows. No separate "family group" concept.                                         |
 | **Medicine, box and schedule are three different things.** `medicines` = what it is. `inventory_items` = a physical box with its own quantity and expiry. `schedules` = when it is taken. | A household often holds two boxes of the same medicine with different expiry dates. Doses are taken from the earliest-expiring usable box first. |
-| **Dose events are generated ahead of time (7 days) from schedules.** | The scheduler only has to ask "which pending doses are due?". Missed doses and caregiver alerts become simple queries. |
-| **Stock changes go through a ledger (`stock_movements`).** | Undo is exact, and every change is traceable. Remaining quantity is a cached sum. |
-| **Notifications use an outbox table with a `dedupe_key`.** | If a job runs twice, nobody gets two reminders. A sender can retry failures safely. |
-| **Users cannot write dose or stock data directly.** They call functions that check permissions. | Stock can't be edited by hand, and a viewer can't log doses, even with a modified client. |
-| **Row-level security on every table.** | The database itself enforces "only my data, plus what was shared with me". |
+| **Dose events are generated ahead of time (7 days) from schedules.**                                                                                                                      | The scheduler only has to ask "which pending doses are due?". Missed doses and caregiver alerts become simple queries.                           |
+| **Stock changes go through a ledger (`stock_movements`).**                                                                                                                                | Undo is exact, and every change is traceable. Remaining quantity is a cached sum.                                                                |
+| **Notifications use an outbox table with a `dedupe_key`.**                                                                                                                                | If a job runs twice, nobody gets two reminders. A sender can retry failures safely.                                                              |
+| **Users cannot write dose or stock data directly.** They call functions that check permissions.                                                                                           | Stock can't be edited by hand, and a viewer can't log doses, even with a modified client.                                                        |
+| **Row-level security on every table.**                                                                                                                                                    | The database itself enforces "only my data, plus what was shared with me".                                                                       |
 
 Improvements over the first sketch: care profiles for people without accounts, multiple boxes per medicine, the stock ledger, the notification outbox, invite links instead of phone matching (safer and works for Google users), and lock-screen privacy.
 
 ## 2. Features and where they live
 
-| Feature | Release | Tables and functions |
-|---|---|---|
-| Sign-in, consent | v1 | `profiles`, `consents`, Supabase Auth |
-| Cabinet with expiry colours | v1 | `medicines`, `inventory_items`, view `inventory_status` |
-| Dose schedules (daily, chosen weekdays, every N days, as needed) | v1 | `schedules`, `schedule_times`, `fn_generate_dose_events`, `fn_resync_schedule` |
-| Taken / Skipped / Snoozed, undo | v1 | `dose_events`, `fn_log_dose`, `fn_undo_dose`, `fn_snooze_dose` |
-| Stock updates automatically | v1 | `stock_movements`, `_deduct_stock` |
-| Reminders and re-nudge | v1 | `notifications`, `push_subscriptions`, `fn_enqueue_due_notifications` |
-| Expiry alerts (30, 15, 7 days, expired) | v1 | `fn_enqueue_expiry_notifications` |
-| Refill prediction | v1 | view `medicine_supply` |
-| Large-text mode, hide names on lock screen | v1 | `profiles` columns |
-| Download and delete my data | v1 | `fn_export_my_data`, `fn_delete_my_data` |
-| Family sharing, invites | v1.1 | `care_access`, `invites`, `fn_create_invite`, `fn_accept_invite`, view `care_members` |
-| Caregiver missed-dose alerts | v1.1 | `care_access.notify_missed`, `dose_missed` notifications |
-| Opened-date tracking | v1.1 | `inventory_items.opened_on`, `medicines.shelf_life_after_opening_days` |
-| Scanning, doctor PDF, disposal guidance | v1.2 | App-side work, plus `medicine_catalog` for autocomplete |
+| Feature                                                          | Release | Tables and functions                                                                  |
+| ---------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------- |
+| Sign-in, consent                                                 | v1      | `profiles`, `consents`, Supabase Auth                                                 |
+| Cabinet with expiry colours                                      | v1      | `medicines`, `inventory_items`, view `inventory_status`                               |
+| Dose schedules (daily, chosen weekdays, every N days, as needed) | v1      | `schedules`, `schedule_times`, `fn_generate_dose_events`, `fn_resync_schedule`        |
+| Taken / Skipped / Snoozed, undo                                  | v1      | `dose_events`, `fn_log_dose`, `fn_undo_dose`, `fn_snooze_dose`                        |
+| Stock updates automatically                                      | v1      | `stock_movements`, `_deduct_stock`                                                    |
+| Reminders and re-nudge                                           | v1      | `notifications`, `push_subscriptions`, `fn_enqueue_due_notifications`                 |
+| Expiry alerts (30, 15, 7 days, expired)                          | v1      | `fn_enqueue_expiry_notifications`                                                     |
+| Refill prediction                                                | v1      | view `medicine_supply`                                                                |
+| Large-text mode, hide names on lock screen                       | v1      | `profiles` columns                                                                    |
+| Download and delete my data                                      | v1      | `fn_export_my_data`, `fn_delete_my_data`                                              |
+| Family sharing, invites                                          | v1.1    | `care_access`, `invites`, `fn_create_invite`, `fn_accept_invite`, view `care_members` |
+| Caregiver missed-dose alerts                                     | v1.1    | `care_access.notify_missed`, `dose_missed` notifications                              |
+| Opened-date tracking                                             | v1.1    | `inventory_items.opened_on`, `medicines.shelf_life_after_opening_days`                |
+| Scanning, doctor PDF, disposal guidance                          | v1.2    | App-side work, plus `medicine_catalog` for autocomplete                               |
 
 The schema already contains the v1.1 and v1.2 tables, so no migration is needed later.
 
@@ -76,12 +76,12 @@ The schema already contains the v1.1 and v1.2 tables, so no migration is needed 
 
 ## 6. Scheduler and push
 
-| Job | When | What |
-|---|---|---|
-| `fn_enqueue_due_notifications` | Every minute | Due, re-nudge, snooze and missed alerts |
-| `fn_generate_dose_events(7)` | Daily | Keeps 7 days of upcoming doses ready |
-| `fn_enqueue_expiry_notifications` | Daily | Expiry and low-stock alerts |
-| Sender (Supabase Edge Function) | Every minute | Sends queued notifications with Web Push, marks them sent or failed, and removes dead subscriptions |
+| Job                               | When         | What                                                                                                |
+| --------------------------------- | ------------ | --------------------------------------------------------------------------------------------------- |
+| `fn_enqueue_due_notifications`    | Every minute | Due, re-nudge, snooze and missed alerts                                                             |
+| `fn_generate_dose_events(7)`      | Daily        | Keeps 7 days of upcoming doses ready                                                                |
+| `fn_enqueue_expiry_notifications` | Daily        | Expiry and low-stock alerts                                                                         |
+| Sender (Supabase Edge Function)   | Every minute | Sends queued notifications with Web Push, marks them sent or failed, and removes dead subscriptions |
 
 The three database jobs run with `pg_cron` (commented SQL is at the end of the schema file). The sender is not written yet.
 

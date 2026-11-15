@@ -115,15 +115,16 @@
    - Fixed `QRCodeSVG` SVG accessible title (`svg-img-alt`) and `MotionToggle` spacing/label conformance (`label-content-name-mismatch`), bringing both Mobile and Desktop Lighthouse Accessibility scores to **100**.
    - Added full `openGraph`, `twitter`, `robots`, canonical `metadataBase`, dynamic `src/app/opengraph-image.tsx`, `src/app/robots.ts`, `src/app/sitemap.ts`, and `README.md`.
 
-
 ## Backend Architecture & Build Phases (Supabase)
 
 ### Phase B0: Environment & Cloud Project Setup
+
 1. **Cloud Project Configuration:**
    - Hosted on Supabase Cloud in Mumbai (`ap-south-1`) for Indian latency and data residency standards.
    - Comprehensive checklist prepared in `docs/SETUP_CHECKLIST.md` detailing Google OAuth, passwordless 6-digit email OTP, Web Push VAPID key pairs, and Supabase Vault secrets.
 
 ### Phase B1: Schema Application & Portability
+
 1. **Portable PostgreSQL Tooling:**
    - On Windows development environments lacking native PostgreSQL installations, standalone portable PostgreSQL 16.6 binaries were placed in `C:\Users\Sourasish\pgsql\bin` and registered in the user PATH.
 2. **Idempotent Test Execution (`scripts/db-test.mjs`):**
@@ -132,15 +133,17 @@
    - Generated `src/lib/supabase/database.types.ts` (791 lines) directly from the live remote PostgreSQL schema via `supabase gen types typescript`.
 
 ### Phase B2: Notification Sender & Service Role Privileges
+
 1. **Service Role Explicit Grants in Migration 2 (`20261114000001_notification_sender.sql`):**
-   - *PostgreSQL Nuance:* In PostgreSQL, `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM public` revokes privileges from all non-owner roles, including Supabase's `service_role`.
-   - *Resolution:* Migration 2 explicitly granted table, sequence, and routine privileges to `service_role` while leaving `anon` and `authenticated` locked down. This restored backend worker privileges without weakening the client security boundary.
+   - _PostgreSQL Nuance:_ In PostgreSQL, `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM public` revokes privileges from all non-owner roles, including Supabase's `service_role`.
+   - _Resolution:_ Migration 2 explicitly granted table, sequence, and routine privileges to `service_role` while leaving `anon` and `authenticated` locked down. This restored backend worker privileges without weakening the client security boundary.
 2. **Atomic Queue Claim with Visibility Timeout:**
    - `fn_claim_notifications(p_limit int)` claims up to 50 pending notifications using `FOR UPDATE SKIP LOCKED`, advancing `send_after` by 2 minutes as a visibility timeout to prevent duplicate dispatch during concurrent or crashed runs.
 3. **Deno vs Next.js TypeScript Boundaries:**
    - Edge Functions in `supabase/functions/` run on Deno with URL imports. Excluded `supabase/functions` from root `tsconfig.json` and ESLint flat config, configuring `supabase/functions/deno.json` for independent type checking and deployment.
 
 ### Phase B3: Scheduler (pg_cron & pg_net)
+
 1. **Dynamic Vault Secret Lookup:**
    - In Migration 3 (`20261114000002_scheduler.sql`), the `medbuddy-send` job reads `CRON_SECRET` dynamically from `vault.decrypted_secrets` using a subquery:
      ```sql
@@ -153,6 +156,7 @@
    - Verified automated execution of 5 cron jobs (`medbuddy-enqueue-due`, `medbuddy-send`, `medbuddy-generate-doses`, `medbuddy-expiry`, `medbuddy-cleanup`), achieving full dispatch in under 25 seconds.
 
 ### Phase B4: Security Verification & Audit
+
 1. **Isolated Real-Stack Client Testing (`scripts/smoke-test.mjs`):**
    - Configured separate client instances for `anonClient` (never authenticated), `clientA`, and `clientB` to ensure sessions do not bleed across client objects in memory.
    - Enforced `ALLOW_TEST_USERS=true` guard to protect production data.
@@ -161,6 +165,7 @@
    - Documented and justified client-callable `SECURITY DEFINER` RPC functions (`fn_log_dose`, `fn_create_care_profile`, etc.) as the core security model preventing direct table manipulation.
 
 ### Phase B5: Handover & Typed SSR Client Helpers
+
 1. **Next.js 16 SSR & Async Cookie Storage:**
    - In Next.js 16 App Router, `cookies()` is an asynchronous function returning a Promise.
    - `src/lib/supabase/server.ts` uses `await cookies()` with safe `try/catch` cookie writing to permit read operations in Server Components while enabling seamless session refresh in Server Actions and Route Handlers.
@@ -170,3 +175,61 @@
    - `src/lib/supabase/client.ts` wraps `createBrowserClient<Database>` for type-safe client-side queries.
 3. **Comprehensive API Reference:**
    - Authored `docs/API.md` providing exact specifications, schemas, error codes, and TypeScript examples for every RPC function and table.
+
+## Review Fixes & Hardening (Phases F0 to F4)
+
+### Phase F0: Vault Secrets & Configuration
+
+- Stored `project_url` and `cron_secret` in Supabase Vault (`vault.create_secret`) to decouple database triggers and pg_cron from static project URLs.
+- Standardized passwordless 6-digit OTP email template and Cloudflare Turnstile bot protection guidance.
+
+### Phase F1: Database Robustness & Health (`20261114000003_review_fixes.sql`)
+
+1. **Push Subscription Resilience:**
+   - Added `first_failure_at` and `last_failure_at` columns to `push_subscriptions`.
+   - Created `eligible_push_subscriptions` view implementing the 1-hour cool-down rule (`failure_count < 5 OR last_failure_at < now() - interval '1 hour'`) and automatically pruning subscriptions that fail continuously for > 7 days.
+   - Implemented `fn_record_push_failure` and `fn_record_push_success` (`service_role` only).
+2. **Scheduler Observability & Dynamic Invocation:**
+   - Added `fn_scheduler_health() returns jsonb` to inspect Vault secrets status (booleans only), cron job run details, and overdue notifications without exposing secrets.
+   - Refactored `fn_trigger_notification_sender()` to read `project_url` and `cron_secret` dynamically from Vault, raising explicit errors upon missing configuration.
+   - Rescheduled `medbuddy-cleanup` to call `fn_cleanup_old_notifications()`.
+3. **Search Path Hardening:**
+   - Enforced fixed immutable search paths on `is_valid_tz` and `trg_inventory_init` (`SET search_path = public`).
+
+### Phase F2: Notification Sender Edge Function Hardening
+
+1. **Upfront VAPID Validation:**
+   - Added strict validation returning 500 before claiming notifications if `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, or `VAPID_SUBJECT` is absent. Removed placeholder `admin@example.com` default.
+2. **Subscription Error Classification:**
+   - 200 OK: calls `fn_record_push_success`.
+   - 404 / 410 Gone: immediately deletes stale subscription.
+   - 400 / 401 / 403: logs status without penalizing subscription.
+   - 429 / 5xx / Network error: calls `fn_record_push_failure` to trigger cool-down.
+3. **Concurrency Limiting:**
+   - Dispatches notifications to a user's subscriptions in parallel batches limited to 5 concurrent requests.
+
+### Phase F3: Website Privacy & Security Boundary
+
+1. **Service Worker Privacy:**
+   - Replaced `defaultCache` with explicit same-origin static caching rules (`/_next/static/`, fonts, images, icons).
+   - Strictly excluded `Authorization` headers, cross-origin requests, `*.supabase.co`, `/auth/`, `/rest/`, `/functions/`, and `/api/`.
+2. **Mutually Exclusive CSP:**
+   - Configured separate CSP headers in `next.config.ts`:
+     - Marketing routes (`/`, `/privacy`, `/offline`): `connect-src 'self'`.
+     - App routes (`/app/:path*`): `connect-src 'self' https://<ref>.supabase.co wss://<ref>.supabase.co`.
+3. **Service Role Key Isolation:**
+   - Created automated audit guard `scripts/check-no-service-key.mjs` verifying that `SUPABASE_SERVICE_ROLE_KEY` is never imported under `src/` or bundled in `.next/static`.
+4. **Persistent Motion Preference:**
+   - Persisted `medbuddy-motion` in `localStorage` inside `try/catch` with fallback to `prefers-reduced-motion`.
+   - Updated `src/app/privacy/page.tsx` table to detail both device storage keys (motion choice and intro seen) while maintaining zero cookies affirmation.
+
+### Phase F4: Hygiene & Dependency Assurance
+
+1. **Formatting:**
+   - Added `src/lib/supabase/database.types.ts` to `.prettierignore` and formatted all project code cleanly with Prettier.
+2. **Smoke Test Assertions:**
+   - Added explicit assertions in `scripts/smoke-test.mjs` validating `fn_log_dose` response data and ensuring direct updates of `quantity_remaining` are blocked.
+3. **Seed File Configuration:**
+   - Disabled `[db.seed]` in `supabase/config.toml` (`enabled = false`) and provided an empty `supabase/seed.sql` with explanatory comments.
+4. **Dependency Audit Scope:**
+   - Documented build-time isolation of `@serwist/next` dependencies (`glob`, `zod`, `minimatch`) in `SECURITY.md`, prohibiting `--force` downgrades.

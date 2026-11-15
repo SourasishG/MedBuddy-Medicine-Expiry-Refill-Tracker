@@ -83,7 +83,7 @@ function runPsqlCommand(sql) {
   return spawnSync(
     psqlBin,
     ['-h', host, '-p', port, '-U', user, '-d', database, '-c', sql.replace(/\n/g, ' ')],
-    { env, encoding: 'utf8' }
+    { env, encoding: 'utf8' },
   );
 }
 
@@ -94,7 +94,10 @@ console.log(`Running database scenario tests via psql against ${host}:${port}/${
 
 const testFiles = [
   { name: 'Schema Scenario', path: resolve(process.cwd(), 'supabase/tests/schema_scenario.sql') },
-  { name: 'Review Fixes Scenario', path: resolve(process.cwd(), 'supabase/tests/review_fixes_scenario.sql') },
+  {
+    name: 'Review Fixes Scenario',
+    path: resolve(process.cwd(), 'supabase/tests/review_fixes_scenario.sql'),
+  },
 ];
 
 for (const tf of testFiles) {
@@ -106,7 +109,7 @@ for (const tf of testFiles) {
       env,
       encoding: 'utf8',
       maxBuffer: 10 * 1024 * 1024,
-    }
+    },
   );
 
   if (res.stdout) {

@@ -175,7 +175,9 @@ async function run() {
     const toggledOff = JSON.parse(evalToggledOff.result.value);
     console.log('Toggled Off State:', toggledOff);
     if (toggledOff.storage !== 'off' || toggledOff.dataset !== 'off') {
-      throw new Error(`Expected storage and dataset to be 'off', got: ${JSON.stringify(toggledOff)}`);
+      throw new Error(
+        `Expected storage and dataset to be 'off', got: ${JSON.stringify(toggledOff)}`,
+      );
     }
 
     console.log('\n=== Step 5: Reloading Page to verify persistence ===');
@@ -194,14 +196,17 @@ async function run() {
     console.log('After Reload State:', reloaded);
     if (reloaded.storage !== 'off' || reloaded.dataset !== 'off') {
       throw new Error(
-        `Persistence failed after reload: expected 'off', got ${JSON.stringify(reloaded)}`
+        `Persistence failed after reload: expected 'off', got ${JSON.stringify(reloaded)}`,
       );
     }
 
     console.log('\n=== Step 6: Opening NEW Tab to verify cross-tab persistence ===');
-    const newTargetRes = await fetch('http://127.0.0.1:9222/json/new?http://localhost:3000/privacy', {
-      method: 'PUT',
-    });
+    const newTargetRes = await fetch(
+      'http://127.0.0.1:9222/json/new?http://localhost:3000/privacy',
+      {
+        method: 'PUT',
+      },
+    );
     const newTarget = await newTargetRes.json();
     const client2 = createCdpClient(newTarget.webSocketDebuggerUrl);
     await client2.ready;
@@ -220,7 +225,7 @@ async function run() {
     console.log('New Tab State:', newTab);
     if (newTab.storage !== 'off' || newTab.dataset !== 'off') {
       throw new Error(
-        `Cross-tab persistence failed: expected 'off', got ${JSON.stringify(newTab)}`
+        `Cross-tab persistence failed: expected 'off', got ${JSON.stringify(newTab)}`,
       );
     }
 
@@ -247,9 +252,7 @@ async function run() {
     const toggledOn = JSON.parse(evalToggledOn.result.value);
     console.log('Toggled Back ON State:', toggledOn);
     if (toggledOn.storage !== 'on' || toggledOn.dataset !== 'on') {
-      throw new Error(
-        `Expected storage and dataset to be 'on', got: ${JSON.stringify(toggledOn)}`
-      );
+      throw new Error(`Expected storage and dataset to be 'on', got: ${JSON.stringify(toggledOn)}`);
     }
 
     await client.send('Page.reload');
@@ -267,7 +270,7 @@ async function run() {
     console.log('After Second Reload State:', reloadedOn);
     if (reloadedOn.storage !== 'on' || reloadedOn.dataset !== 'on') {
       throw new Error(
-        `Persistence failed after second reload: expected 'on', got ${JSON.stringify(reloadedOn)}`
+        `Persistence failed after second reload: expected 'on', got ${JSON.stringify(reloadedOn)}`,
       );
     }
 
