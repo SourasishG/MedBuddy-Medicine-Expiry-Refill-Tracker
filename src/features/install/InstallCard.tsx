@@ -5,26 +5,23 @@ import { getDeviceInstallState, type DeviceInstallState } from '../notifications
 import { IosInstallGuideModal } from './IosInstallGuideModal';
 import styles from './InstallCard.module.scss';
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 export function InstallCard() {
-  const [deviceState, setDeviceState] = useState<DeviceInstallState>({
-    isStandalone: false,
-    isIos: false,
-    isIosSafari: false,
-    isAndroid: false,
-    needsIosInstallForPush: false,
-  });
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deviceState] = useState<DeviceInstallState>(() => getDeviceInstallState());
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIosModalOpen, setIsIosModalOpen] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? getDeviceInstallState().isStandalone : false,
+  );
 
   useEffect(() => {
-    const state = getDeviceInstallState();
-    setDeviceState(state);
-    setIsInstalled(state.isStandalone);
-
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
     const handleAppInstalled = () => {
@@ -139,8 +136,8 @@ export function InstallCard() {
           </>
         ) : (
           <p className={styles.description}>
-            To install MedBuddy, tap your browser&apos;s menu (or the install icon in the address bar)
-            and select &ldquo;Install MedBuddy&rdquo; or &ldquo;Add to Home screen&rdquo;.
+            To install MedBuddy, tap your browser&apos;s menu (or the install icon in the address
+            bar) and select &ldquo;Install MedBuddy&rdquo; or &ldquo;Add to Home screen&rdquo;.
           </p>
         )}
       </div>
