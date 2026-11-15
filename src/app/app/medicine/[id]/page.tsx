@@ -97,6 +97,10 @@ export default function MedicineDetailPage({ params }: PageProps) {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
+  const [pageFeedback, setPageFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
   const profileTz = activeCareProfile?.timezone || 'Asia/Kolkata';
@@ -505,13 +509,40 @@ export default function MedicineDetailPage({ params }: PageProps) {
           .eq('id', schedule.id);
 
         if (updErr) {
-          setModalFeedback({ type: 'error', message: 'Could not update schedule.' });
+          setModalFeedback({
+            type: 'error',
+            message: 'Could not update schedule details. Please try again.',
+          });
           setIsActionLoading(false);
           return;
         }
 
-        // Replace schedule_times
-        await supabase.from('schedule_times').delete().eq('schedule_id', schedule.id);
+        // Atomically replace schedule times (insert new first, update existing, delete obsolete only after insert succeeds, and resync)
+        const targetTimes =
+          schedFrequency !== 'as_needed'
+            ? schedTimes.map((t) => ({
+                time: t.time,
+                food: t.food,
+                dose_amount: cleanDoseAmt,
+              }))
+            : [];
+
+        const replaceResult = await replaceScheduleTimesAtomic({
+          supabase,
+          scheduleId: schedule.id,
+          careProfileId: activeCareProfile.id,
+          targetTimes,
+          defaultDoseAmount: cleanDoseAmt,
+        });
+
+        if (!replaceResult.success) {
+          setModalFeedback({
+            type: 'error',
+            message: replaceResult.error || 'Could not update schedule times.',
+          });
+          setIsActionLoading(false);
+          return;
+        }
       } else {
         // Insert new schedule
         const { data: newSched, error: insErr } = await supabase
@@ -532,31 +563,51 @@ export default function MedicineDetailPage({ params }: PageProps) {
           .single();
 
         if (insErr || !newSched) {
-          setModalFeedback({ type: 'error', message: 'Could not create schedule.' });
+          setModalFeedback({
+            type: 'error',
+            message: 'Could not create schedule. Please try again.',
+          });
           setIsActionLoading(false);
           return;
         }
         targetScheduleId = newSched.id;
-      }
 
-      if (schedFrequency !== 'as_needed' && targetScheduleId) {
-        const timesPayload = schedTimes.map((t) => ({
-          schedule_id: targetScheduleId!,
-          care_profile_id: activeCareProfile.id,
-          time_of_day: t.time.length === 5 ? `${t.time}:00` : t.time,
-          dose_amount: cleanDoseAmt,
-          food: t.food,
-        }));
-        await supabase.from('schedule_times').insert(timesPayload);
-        await supabase.rpc('fn_resync_schedule', { p_schedule: targetScheduleId });
+        if (schedFrequency !== 'as_needed' && targetScheduleId) {
+          const targetTimes = schedTimes.map((t) => ({
+            time: t.time,
+            food: t.food,
+            dose_amount: cleanDoseAmt,
+          }));
+
+          const replaceResult = await replaceScheduleTimesAtomic({
+            supabase,
+            scheduleId: targetScheduleId,
+            careProfileId: activeCareProfile.id,
+            targetTimes,
+            defaultDoseAmount: cleanDoseAmt,
+          });
+
+          if (!replaceResult.success) {
+            setModalFeedback({
+              type: 'error',
+              message: replaceResult.error || 'Could not save schedule times.',
+            });
+            setIsActionLoading(false);
+            return;
+          }
+        }
       }
 
       await queryClient.invalidateQueries({ queryKey: ['medicine-detail', medicineId] });
       await queryClient.invalidateQueries({ queryKey: ['today-doses'] });
       setIsActionLoading(false);
       setIsEditScheduleOpen(false);
+      setPageFeedback({ type: 'success', message: 'Schedule updated successfully.' });
     } catch {
-      setModalFeedback({ type: 'error', message: 'An error occurred while saving the schedule.' });
+      setModalFeedback({
+        type: 'error',
+        message: 'An unexpected error occurred while saving the schedule. Please try again.',
+      });
       setIsActionLoading(false);
     }
   };
@@ -564,24 +615,51 @@ export default function MedicineDetailPage({ params }: PageProps) {
   const handleTogglePauseSchedule = async () => {
     if (!schedule) return;
     setIsActionLoading(true);
+    setPageFeedback(null);
     try {
       const newActive = !schedule.active;
-      const { error } = await supabase
+      const { error: updErr } = await supabase
         .from('schedules')
         .update({ active: newActive })
         .eq('id', schedule.id);
 
-      if (error) {
-        alert('Could not update schedule status.');
+      if (updErr) {
+        setPageFeedback({
+          type: 'error',
+          message: 'Could not update schedule status. Please try again.',
+        });
         setIsActionLoading(false);
         return;
       }
 
-      await supabase.rpc('fn_resync_schedule', { p_schedule: schedule.id });
+      const { error: rpcErr } = await supabase.rpc('fn_resync_schedule', {
+        p_schedule: schedule.id,
+      });
+
+      if (rpcErr) {
+        setPageFeedback({
+          type: 'error',
+          message:
+            'Schedule status was updated, but could not refresh upcoming doses. Please click "Resync future doses".',
+        });
+        setIsActionLoading(false);
+        return;
+      }
+
       await queryClient.invalidateQueries({ queryKey: ['medicine-detail', medicineId] });
       await queryClient.invalidateQueries({ queryKey: ['today-doses'] });
+      setPageFeedback({
+        type: 'success',
+        message: newActive
+          ? 'Schedule resumed and future doses refreshed.'
+          : 'Schedule paused and upcoming doses removed.',
+      });
       setIsActionLoading(false);
     } catch {
+      setPageFeedback({
+        type: 'error',
+        message: 'An unexpected error occurred. Please try again.',
+      });
       setIsActionLoading(false);
     }
   };
@@ -589,13 +667,33 @@ export default function MedicineDetailPage({ params }: PageProps) {
   const handleResyncSchedule = async () => {
     if (!schedule) return;
     setIsActionLoading(true);
+    setPageFeedback(null);
     try {
-      await supabase.rpc('fn_resync_schedule', { p_schedule: schedule.id });
+      const { error: rpcErr } = await supabase.rpc('fn_resync_schedule', {
+        p_schedule: schedule.id,
+      });
+
+      if (rpcErr) {
+        setPageFeedback({
+          type: 'error',
+          message: 'Could not refresh upcoming doses. Please try again.',
+        });
+        setIsActionLoading(false);
+        return;
+      }
+
       await queryClient.invalidateQueries({ queryKey: ['medicine-detail', medicineId] });
       await queryClient.invalidateQueries({ queryKey: ['today-doses'] });
-      alert('Schedule resynced. Future doses refreshed.');
+      setPageFeedback({
+        type: 'success',
+        message: 'Schedule resynced. Future doses refreshed.',
+      });
       setIsActionLoading(false);
     } catch {
+      setPageFeedback({
+        type: 'error',
+        message: 'An unexpected error occurred while resyncing.',
+      });
       setIsActionLoading(false);
     }
   };
@@ -678,6 +776,25 @@ export default function MedicineDetailPage({ params }: PageProps) {
           <span>Cabinet</span>
         </Link>
       </nav>
+
+      {pageFeedback && (
+        <div
+          className={styles.feedbackBox}
+          data-variant={pageFeedback.type}
+          role={pageFeedback.type === 'error' ? 'alert' : 'status'}
+          aria-live="polite"
+        >
+          <span>{pageFeedback.message}</span>
+          <button
+            type="button"
+            className={styles.feedbackDismissBtn}
+            onClick={() => setPageFeedback(null)}
+            aria-label="Dismiss message"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Medicine Header Card */}
       <section className={styles.medHeaderCard}>

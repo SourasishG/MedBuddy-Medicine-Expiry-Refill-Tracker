@@ -326,24 +326,46 @@ export default function AddMedicinePage() {
           .select('id')
           .single();
 
-        if (!schedError && schedData) {
-          // Insert schedule_times
-          const timesPayload = times.map((t) => ({
-            schedule_id: schedData.id,
-            care_profile_id: activeCareProfile.id,
-            time_of_day: t.time.length === 5 ? `${t.time}:00` : t.time,
-            dose_amount: cleanDoseAmount,
-            food: t.food,
-          }));
+        if (schedError || !schedData) {
+          setErrorFeedback(
+            'Medicine was saved, but the schedule could not be created. Please configure the schedule on the medicine page.',
+          );
+          setIsSubmitting(false);
+          return;
+        }
 
-          await supabase.from('schedule_times').insert(timesPayload);
+        // Insert schedule_times
+        const timesPayload = times.map((t) => ({
+          schedule_id: schedData.id,
+          care_profile_id: activeCareProfile.id,
+          time_of_day: t.time.length === 5 ? `${t.time}:00` : t.time,
+          dose_amount: cleanDoseAmount,
+          food: t.food,
+        }));
 
-          // Resync schedule to generate future dose events
-          await supabase.rpc('fn_resync_schedule', { p_schedule: schedData.id });
+        const { error: timesError } = await supabase.from('schedule_times').insert(timesPayload);
+        if (timesError) {
+          setErrorFeedback(
+            'Medicine was saved, but schedule dose times could not be added. Please configure dose times on the medicine page.',
+          );
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Resync schedule to generate future dose events
+        const { error: resyncError } = await supabase.rpc('fn_resync_schedule', {
+          p_schedule: schedData.id,
+        });
+        if (resyncError) {
+          setErrorFeedback(
+            'Medicine and schedule were saved, but upcoming doses could not be generated. Please resync the schedule on the medicine page.',
+          );
+          setIsSubmitting(false);
+          return;
         }
       } else if (isPrn) {
         // Record as-needed schedule
-        await supabase.from('schedules').insert({
+        const { error: prnError } = await supabase.from('schedules').insert({
           care_profile_id: activeCareProfile.id,
           medicine_id: medData.id,
           frequency: 'as_needed',
@@ -352,6 +374,14 @@ export default function AddMedicinePage() {
           instructions: instructions.trim() || null,
           active: true,
         });
+
+        if (prnError) {
+          setErrorFeedback(
+            'Medicine was saved, but as-needed schedule could not be created. Please configure it on the medicine page.',
+          );
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       // Success: redirect to medicine details
