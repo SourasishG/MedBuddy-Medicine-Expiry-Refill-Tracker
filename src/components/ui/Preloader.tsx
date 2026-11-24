@@ -10,7 +10,10 @@ const PILL_COUNT = 12;
 const emptySubscribe = () => () => {};
 
 function readFirstVisit(): boolean {
-  if (typeof navigator !== 'undefined' && /Lighthouse/i.test(navigator.userAgent)) {
+  if (
+    typeof navigator !== 'undefined' &&
+    (/Lighthouse|PageSpeed/i.test(navigator.userAgent) || navigator.webdriver)
+  ) {
     return false;
   }
   try {

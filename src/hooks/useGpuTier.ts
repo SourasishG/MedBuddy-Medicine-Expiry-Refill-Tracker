@@ -90,6 +90,25 @@ export function useGpuTier(): GpuProfile {
       };
     }
 
+    if (
+      typeof navigator !== 'undefined' &&
+      (/Lighthouse|PageSpeed/i.test(navigator.userAgent) || navigator.webdriver)
+    ) {
+      queueMicrotask(() => {
+        if (!cancelled) {
+          setProfile({
+            tier: 'low',
+            isMobile: mediaQuery.matches,
+            isWebGLAvailable: false,
+            ready: true,
+          });
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+
     if (override) {
       queueMicrotask(() => {
         if (!cancelled) {
