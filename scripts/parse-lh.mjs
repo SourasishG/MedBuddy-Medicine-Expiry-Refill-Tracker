@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 
-const report = JSON.parse(fs.readFileSync('./lighthouse-landing.json', 'utf8'));
+const filePath = process.argv[2] || './lighthouse-landing.json';
+const report = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 const perf = report.categories.performance;
 console.log('Performance Score:', Math.round(perf.score * 100));
 console.log('\nKey Core Web Vitals:');
