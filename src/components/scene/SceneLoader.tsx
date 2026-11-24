@@ -58,21 +58,33 @@ export function SceneLoader({ onSceneReadyChange }: SceneLoaderProps) {
       return;
     }
 
+    const cleanupTriggers = () => {
+      window.removeEventListener('load', startScene);
+      window.removeEventListener('scroll', startScene);
+      window.removeEventListener('pointermove', startScene);
+      window.removeEventListener('touchstart', startScene);
+    };
+
     const startScene = () => {
       if (cancelled) return;
+      cleanupTriggers();
       if (typeof window.requestIdleCallback === 'function') {
         idleId = window.requestIdleCallback(
           () => {
             if (!cancelled) setAfterPaint(true);
           },
-          { timeout: 3000 },
+          { timeout: 5000 },
         );
       } else {
         timerId = setTimeout(() => {
           if (!cancelled) setAfterPaint(true);
-        }, 1500);
+        }, 3000);
       }
     };
+
+    window.addEventListener('scroll', startScene, { once: true, passive: true });
+    window.addEventListener('pointermove', startScene, { once: true, passive: true });
+    window.addEventListener('touchstart', startScene, { once: true, passive: true });
 
     if (document.readyState === 'complete') {
       startScene();
@@ -82,7 +94,7 @@ export function SceneLoader({ onSceneReadyChange }: SceneLoaderProps) {
 
     return () => {
       cancelled = true;
-      window.removeEventListener('load', startScene);
+      cleanupTriggers();
       if (idleId !== undefined && typeof window.cancelIdleCallback === 'function') {
         window.cancelIdleCallback(idleId);
       }

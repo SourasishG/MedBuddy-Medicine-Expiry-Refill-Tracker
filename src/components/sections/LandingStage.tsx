@@ -55,7 +55,14 @@ export function LandingStage({ children }: { children?: ReactNode }) {
     let idleId: number | undefined;
     let timerId: ReturnType<typeof setTimeout> | undefined;
 
+    const cleanupEvents = () => {
+      window.removeEventListener('wheel', scheduleScroll);
+      window.removeEventListener('scroll', scheduleScroll);
+      window.removeEventListener('touchstart', scheduleScroll);
+    };
+
     const scheduleScroll = () => {
+      cleanupEvents();
       void import('@/lib/scrollTimeline').then(({ initScrollChoreography }) => {
         if (cancelled) return;
         cleanup = initScrollChoreography({
@@ -64,14 +71,19 @@ export function LandingStage({ children }: { children?: ReactNode }) {
       });
     };
 
+    window.addEventListener('wheel', scheduleScroll, { once: true, passive: true });
+    window.addEventListener('scroll', scheduleScroll, { once: true, passive: true });
+    window.addEventListener('touchstart', scheduleScroll, { once: true, passive: true });
+
     if (typeof window.requestIdleCallback === 'function') {
-      idleId = window.requestIdleCallback(scheduleScroll, { timeout: 1500 });
+      idleId = window.requestIdleCallback(scheduleScroll, { timeout: 5000 });
     } else {
-      timerId = setTimeout(scheduleScroll, 100);
+      timerId = setTimeout(scheduleScroll, 3000);
     }
 
     return () => {
       cancelled = true;
+      cleanupEvents();
       if (idleId !== undefined && typeof window.cancelIdleCallback === 'function') {
         window.cancelIdleCallback(idleId);
       }
