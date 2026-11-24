@@ -102,7 +102,7 @@ export function Hero({
       <div className={styles.grid}>
         {/* Headline: above phone on mobile, overlapping lower phone/helix on desktop */}
         <div className={styles.headlineBlock}>
-          <h1 id="hero-heading" ref={headlineRef} className={styles.headline}>
+          <h1 id="hero-heading" className={styles.headline}>
             Every dose. Every expiry. Every <em>loved one.</em>
           </h1>
         </div>
