@@ -8,7 +8,7 @@ import { BottomNav } from './BottomNav';
 import { ProfileSwitcherSheet } from './ProfileSwitcherSheet';
 import styles from './AppShell.module.scss';
 
-const loadMotionFeatures = () => import('framer-motion').then((mod) => mod.domMax);
+const loadMotionFeatures = () => import('framer-motion').then((mod) => mod.domAnimation);
 
 export function AppShellClient({ children }: { children: ReactNode }) {
   const pathname = usePathname();

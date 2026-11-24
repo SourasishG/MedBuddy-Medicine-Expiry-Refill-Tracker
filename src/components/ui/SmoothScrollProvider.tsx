@@ -4,7 +4,7 @@ import { useEffect, type ReactNode } from 'react';
 import { LazyMotion } from 'framer-motion';
 import { useMotionPreference } from '@/hooks/useMotionPreference';
 
-const loadMotionFeatures = () => import('framer-motion').then((mod) => mod.domMax);
+const loadMotionFeatures = () => import('framer-motion').then((mod) => mod.domAnimation);
 
 export function SmoothScrollProvider({ children }: { children: ReactNode }) {
   const { motionEnabled, isHydrated } = useMotionPreference();
