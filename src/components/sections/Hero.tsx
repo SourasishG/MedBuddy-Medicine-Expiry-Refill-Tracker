@@ -85,40 +85,53 @@ export function Hero({
     if (!finePointer.matches) return;
 
     let cancelled = false;
-    let cleanupListeners: (() => void) | undefined;
+    let gsapLoaded = false;
+    let xTo: ((val: number) => void) | null = null;
+    let yTo: ((val: number) => void) | null = null;
+    let gsapInstance: any = null;
 
-    void import('@/lib/gsap').then(({ ensureGsapRegistered, gsap }) => {
-      if (cancelled) return;
-      ensureGsapRegistered();
-      const xTo = gsap.quickTo(poster, 'x', { duration: 1.1, ease: 'power3.out' });
-      const yTo = gsap.quickTo(poster, 'y', { duration: 1.1, ease: 'power3.out' });
+    const onEnter = (event: PointerEvent) => {
+      if (event.pointerType !== 'mouse') return;
+      if (!gsapLoaded) {
+        gsapLoaded = true;
+        void import('@/lib/gsap').then(({ ensureGsapRegistered, gsap }) => {
+          if (cancelled) return;
+          ensureGsapRegistered();
+          gsapInstance = gsap;
+          xTo = gsap.quickTo(poster, 'x', { duration: 1.1, ease: 'power3.out' });
+          yTo = gsap.quickTo(poster, 'y', { duration: 1.1, ease: 'power3.out' });
+        });
+      }
+    };
 
-      const onMove = (event: PointerEvent) => {
-        const rect = section.getBoundingClientRect();
-        const nx = (event.clientX - rect.left) / rect.width - 0.5;
-        const ny = (event.clientY - rect.top) / rect.height - 0.5;
-        xTo(nx * -18);
-        yTo(ny * -14);
-      };
+    const onMove = (event: PointerEvent) => {
+      if (event.pointerType !== 'mouse' || !xTo || !yTo) return;
+      const rect = section.getBoundingClientRect();
+      const nx = (event.clientX - rect.left) / rect.width - 0.5;
+      const ny = (event.clientY - rect.top) / rect.height - 0.5;
+      xTo(nx * -18);
+      yTo(ny * -14);
+    };
 
-      const onLeave = () => {
+    const onLeave = () => {
+      if (xTo && yTo) {
         xTo(0);
         yTo(0);
-      };
+      }
+    };
 
-      section.addEventListener('pointermove', onMove, { passive: true });
-      section.addEventListener('pointerleave', onLeave);
-
-      cleanupListeners = () => {
-        section.removeEventListener('pointermove', onMove);
-        section.removeEventListener('pointerleave', onLeave);
-        gsap.set(poster, { x: 0, y: 0 });
-      };
-    });
+    section.addEventListener('pointerenter', onEnter, { passive: true });
+    section.addEventListener('pointermove', onMove, { passive: true });
+    section.addEventListener('pointerleave', onLeave);
 
     return () => {
       cancelled = true;
-      cleanupListeners?.();
+      section.removeEventListener('pointerenter', onEnter);
+      section.removeEventListener('pointermove', onMove);
+      section.removeEventListener('pointerleave', onLeave);
+      if (gsapInstance) {
+        gsapInstance.set(poster, { x: 0, y: 0 });
+      }
     };
   }, [hasCanvas, isHydrated, motionEnabled]);
 
