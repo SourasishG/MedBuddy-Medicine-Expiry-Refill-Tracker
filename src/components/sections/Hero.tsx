@@ -38,7 +38,6 @@ export function Hero({
     let gsapLoaded = false;
     let xTo: ((val: number) => void) | null = null;
     let yTo: ((val: number) => void) | null = null;
-    let gsapInstance: any = null;
 
     const onEnter = (event: PointerEvent) => {
       if (event.pointerType !== 'mouse') return;
@@ -47,7 +46,6 @@ export function Hero({
         void import('@/lib/gsap').then(({ ensureGsapRegistered, gsap }) => {
           if (cancelled) return;
           ensureGsapRegistered();
-          gsapInstance = gsap;
           xTo = gsap.quickTo(poster, 'x', { duration: 1.1, ease: 'power3.out' });
           yTo = gsap.quickTo(poster, 'y', { duration: 1.1, ease: 'power3.out' });
         });
@@ -79,8 +77,8 @@ export function Hero({
       section.removeEventListener('pointerenter', onEnter);
       section.removeEventListener('pointermove', onMove);
       section.removeEventListener('pointerleave', onLeave);
-      if (gsapInstance) {
-        gsapInstance.set(poster, { x: 0, y: 0 });
+      if (poster) {
+        poster.style.transform = '';
       }
     };
   }, [hasCanvas, isHydrated, motionEnabled]);

@@ -45,7 +45,6 @@ export function PillButton(props: PillButtonProps) {
     let gsapLoaded = false;
     let xTo: ((val: number) => void) | null = null;
     let yTo: ((val: number) => void) | null = null;
-    let gsapInstance: any = null;
 
     const handleEnter = (event: PointerEvent) => {
       if (event.pointerType !== 'mouse') return;
@@ -54,7 +53,6 @@ export function PillButton(props: PillButtonProps) {
         void import('@/lib/gsap').then(({ ensureGsapRegistered, gsap }) => {
           if (cancelled) return;
           ensureGsapRegistered();
-          gsapInstance = gsap;
           xTo = gsap.quickTo(el, 'x', { duration: 0.45, ease: 'power3.out' });
           yTo = gsap.quickTo(el, 'y', { duration: 0.45, ease: 'power3.out' });
         });
@@ -86,8 +84,8 @@ export function PillButton(props: PillButtonProps) {
       el.removeEventListener('pointerenter', handleEnter);
       el.removeEventListener('pointermove', handleMove);
       el.removeEventListener('pointerleave', handleLeave);
-      if (gsapInstance) {
-        gsapInstance.set(el, { x: 0, y: 0 });
+      if (el) {
+        el.style.transform = '';
       }
     };
   }, [isHydrated, motionEnabled]);
