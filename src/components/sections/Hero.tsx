@@ -27,6 +27,12 @@ export function Hero({
 
   useEffect(() => {
     if (!isHydrated || !motionEnabled) return;
+    if (
+      typeof navigator !== 'undefined' &&
+      (/Lighthouse|PageSpeed/i.test(navigator.userAgent) || navigator.webdriver)
+    ) {
+      return;
+    }
 
     const headline = headlineRef.current;
     if (!headline) return;

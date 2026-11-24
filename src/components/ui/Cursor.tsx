@@ -17,48 +17,51 @@ export function Cursor() {
     if (!finePointer.matches) return;
 
     let cancelled = false;
-    let cleanupListeners: (() => void) | undefined;
+    let gsapLoaded = false;
+    let xTo: ((val: number) => void) | null = null;
+    let yTo: ((val: number) => void) | null = null;
 
-    void import('@/lib/gsap').then(({ ensureGsapRegistered, gsap }) => {
-      if (cancelled) return;
-      ensureGsapRegistered();
-      const ring = ringRef.current;
-      if (!ring) return;
+    const onPointerMove = (event: PointerEvent) => {
+      if (event.pointerType !== 'mouse') return;
+      setIsVisible(true);
 
-      const xTo = gsap.quickTo(ring, 'x', { duration: 0.32, ease: 'power3.out' });
-      const yTo = gsap.quickTo(ring, 'y', { duration: 0.32, ease: 'power3.out' });
-
-      const onPointerMove = (event: PointerEvent) => {
-        if (event.pointerType !== 'mouse') return;
-        setIsVisible(true);
+      if (!gsapLoaded) {
+        gsapLoaded = true;
+        void import('@/lib/gsap').then(({ ensureGsapRegistered, gsap }) => {
+          if (cancelled) return;
+          ensureGsapRegistered();
+          const ring = ringRef.current;
+          if (!ring) return;
+          xTo = gsap.quickTo(ring, 'x', { duration: 0.32, ease: 'power3.out' });
+          yTo = gsap.quickTo(ring, 'y', { duration: 0.32, ease: 'power3.out' });
+          xTo(event.clientX);
+          yTo(event.clientY);
+        });
+      } else if (xTo && yTo) {
         xTo(event.clientX);
         yTo(event.clientY);
+      }
 
-        const target = event.target instanceof Element ? event.target : null;
-        const interactive = Boolean(
-          target?.closest(
-            'a, button, [role="button"], input, summary, [data-cursor="interactive"]',
-          ),
-        );
-        setIsActive(interactive);
-      };
+      const target = event.target instanceof Element ? event.target : null;
+      const interactive = Boolean(
+        target?.closest(
+          'a, button, [role="button"], input, summary, [data-cursor="interactive"]',
+        ),
+      );
+      setIsActive(interactive);
+    };
 
-      const onPointerLeave = () => {
-        setIsVisible(false);
-      };
+    const onPointerLeave = () => {
+      setIsVisible(false);
+    };
 
-      window.addEventListener('pointermove', onPointerMove, { passive: true });
-      document.addEventListener('mouseleave', onPointerLeave);
-
-      cleanupListeners = () => {
-        window.removeEventListener('pointermove', onPointerMove);
-        document.removeEventListener('mouseleave', onPointerLeave);
-      };
-    });
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    document.addEventListener('mouseleave', onPointerLeave);
 
     return () => {
       cancelled = true;
-      cleanupListeners?.();
+      window.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('mouseleave', onPointerLeave);
     };
   }, [isHydrated, motionEnabled]);
 

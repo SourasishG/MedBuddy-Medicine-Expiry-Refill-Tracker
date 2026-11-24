@@ -42,41 +42,53 @@ export function PillButton(props: PillButtonProps) {
     if (!finePointer.matches) return;
 
     let cancelled = false;
-    let cleanupListeners: (() => void) | undefined;
+    let gsapLoaded = false;
+    let xTo: ((val: number) => void) | null = null;
+    let yTo: ((val: number) => void) | null = null;
+    let gsapInstance: any = null;
 
-    void import('@/lib/gsap').then(({ ensureGsapRegistered, gsap }) => {
-      if (cancelled) return;
-      ensureGsapRegistered();
-      const xTo = gsap.quickTo(el, 'x', { duration: 0.45, ease: 'power3.out' });
-      const yTo = gsap.quickTo(el, 'y', { duration: 0.45, ease: 'power3.out' });
+    const handleEnter = (event: PointerEvent) => {
+      if (event.pointerType !== 'mouse') return;
+      if (!gsapLoaded) {
+        gsapLoaded = true;
+        void import('@/lib/gsap').then(({ ensureGsapRegistered, gsap }) => {
+          if (cancelled) return;
+          ensureGsapRegistered();
+          gsapInstance = gsap;
+          xTo = gsap.quickTo(el, 'x', { duration: 0.45, ease: 'power3.out' });
+          yTo = gsap.quickTo(el, 'y', { duration: 0.45, ease: 'power3.out' });
+        });
+      }
+    };
 
-      const handleMove = (event: PointerEvent) => {
-        if (event.pointerType !== 'mouse') return;
-        const rect = el.getBoundingClientRect();
-        const relX = (event.clientX - rect.left) / rect.width - 0.5;
-        const relY = (event.clientY - rect.top) / rect.height - 0.5;
-        xTo(relX * 12);
-        yTo(relY * 8);
-      };
+    const handleMove = (event: PointerEvent) => {
+      if (event.pointerType !== 'mouse' || !xTo || !yTo) return;
+      const rect = el.getBoundingClientRect();
+      const relX = (event.clientX - rect.left) / rect.width - 0.5;
+      const relY = (event.clientY - rect.top) / rect.height - 0.5;
+      xTo(relX * 12);
+      yTo(relY * 8);
+    };
 
-      const handleLeave = () => {
+    const handleLeave = () => {
+      if (xTo && yTo) {
         xTo(0);
         yTo(0);
-      };
+      }
+    };
 
-      el.addEventListener('pointermove', handleMove);
-      el.addEventListener('pointerleave', handleLeave);
-
-      cleanupListeners = () => {
-        el.removeEventListener('pointermove', handleMove);
-        el.removeEventListener('pointerleave', handleLeave);
-        gsap.set(el, { x: 0, y: 0 });
-      };
-    });
+    el.addEventListener('pointerenter', handleEnter, { passive: true });
+    el.addEventListener('pointermove', handleMove, { passive: true });
+    el.addEventListener('pointerleave', handleLeave);
 
     return () => {
       cancelled = true;
-      cleanupListeners?.();
+      el.removeEventListener('pointerenter', handleEnter);
+      el.removeEventListener('pointermove', handleMove);
+      el.removeEventListener('pointerleave', handleLeave);
+      if (gsapInstance) {
+        gsapInstance.set(el, { x: 0, y: 0 });
+      }
     };
   }, [isHydrated, motionEnabled]);
 

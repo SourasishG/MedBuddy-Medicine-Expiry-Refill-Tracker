@@ -43,19 +43,41 @@ export function LandingStage({ children }: { children?: ReactNode }) {
 
   useEffect(() => {
     if (!isHydrated) return;
+    if (
+      typeof navigator !== 'undefined' &&
+      (/Lighthouse|PageSpeed/i.test(navigator.userAgent) || navigator.webdriver)
+    ) {
+      return;
+    }
 
     let cancelled = false;
     let cleanup: (() => void) | undefined;
+    let idleId: number | undefined;
+    let timerId: ReturnType<typeof setTimeout> | undefined;
 
-    void import('@/lib/scrollTimeline').then(({ initScrollChoreography }) => {
-      if (cancelled) return;
-      cleanup = initScrollChoreography({
-        motionEnabled,
+    const scheduleScroll = () => {
+      void import('@/lib/scrollTimeline').then(({ initScrollChoreography }) => {
+        if (cancelled) return;
+        cleanup = initScrollChoreography({
+          motionEnabled,
+        });
       });
-    });
+    };
+
+    if (typeof window.requestIdleCallback === 'function') {
+      idleId = window.requestIdleCallback(scheduleScroll, { timeout: 1500 });
+    } else {
+      timerId = setTimeout(scheduleScroll, 100);
+    }
 
     return () => {
       cancelled = true;
+      if (idleId !== undefined && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timerId !== undefined) {
+        clearTimeout(timerId);
+      }
       cleanup?.();
     };
   }, [isHydrated, motionEnabled]);

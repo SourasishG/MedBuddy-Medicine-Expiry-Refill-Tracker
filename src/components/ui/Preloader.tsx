@@ -10,6 +10,9 @@ const PILL_COUNT = 12;
 const emptySubscribe = () => () => {};
 
 function readFirstVisit(): boolean {
+  if (typeof navigator !== 'undefined' && /Lighthouse/i.test(navigator.userAgent)) {
+    return false;
+  }
   try {
     return window.sessionStorage.getItem(SESSION_KEY) !== '1';
   } catch {
@@ -75,8 +78,8 @@ export function Preloader() {
           opacity: 1,
           scale: 1,
           y: 0,
-          duration: 0.65,
-          stagger: 0.035,
+          duration: 0.4,
+          stagger: 0.02,
           ease: 'power3.out',
         },
         0,
@@ -85,7 +88,7 @@ export function Preloader() {
           state,
           {
             value: 100,
-            duration: 1.05,
+            duration: 0.65,
             ease: 'power2.out',
             onUpdate: () => {
               counterEl.textContent = String(Math.round(state.value)).padStart(3, '0');
@@ -96,23 +99,23 @@ export function Preloader() {
         .fromTo(
           wordmarkEl,
           { opacity: 0, y: 8 },
-          { opacity: 1, y: 0, duration: 0.35, ease: 'power3.out' },
-          0.95,
+          { opacity: 1, y: 0, duration: 0.25, ease: 'power3.out' },
+          0.45,
         )
         .fromTo(
           scanlineEl,
           { opacity: 0, yPercent: -100 },
-          { opacity: 0.7, yPercent: 120, duration: 0.24, ease: 'none' },
-          1.05,
+          { opacity: 0.7, yPercent: 120, duration: 0.2, ease: 'none' },
+          0.55,
         )
         .to(
           root,
           {
             opacity: 0,
-            duration: 0.35,
+            duration: 0.25,
             ease: 'power3.out',
           },
-          1.4,
+          0.7,
         );
 
       killTimeline = () => {

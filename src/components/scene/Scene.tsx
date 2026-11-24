@@ -21,7 +21,7 @@ export interface SceneProps {
 export default function Scene({ initialTier, isMobile, onReady, onFallbackToPoster }: SceneProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [tier, setTier] = useState<QualityTier>(initialTier);
-  const [bloomEnabled, setBloomEnabled] = useState(initialTier === 'high');
+  const [bloomEnabled, setBloomEnabled] = useState(initialTier === 'high' && !isMobile);
   const [useBakedScreen, setUseBakedScreen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [isTabActive, setIsTabActive] = useState(true);

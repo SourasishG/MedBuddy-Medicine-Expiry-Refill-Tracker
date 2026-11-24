@@ -38,37 +38,52 @@ export function Problem() {
     let cancelled = false;
     let revertCtx: (() => void) | undefined;
 
-    void Promise.all([
-      import('@/lib/gsap').then(({ loadGsapPlugins }) => loadGsapPlugins()),
-      document.fonts?.ready ?? Promise.resolve(),
-    ]).then(([{ gsap, SplitText }]) => {
-      if (cancelled || !sectionRef.current) return;
-      const ctx = gsap.context(() => {
-        const headings = section.querySelectorAll<HTMLElement>('[data-problem-heading]');
-        headings.forEach((heading) => {
-          const split = SplitText.create(heading, { type: 'lines', mask: 'lines' });
-          gsap.from(split.lines, {
-            yPercent: 105,
-            opacity: 0,
-            duration: 0.95,
-            stagger: 0.06,
-            ease: 'power3.out',
-            clearProps: 'transform,opacity',
-            onComplete: () => split.revert(),
-            scrollTrigger: {
-              trigger: heading,
-              start: 'top 82%',
-              once: true,
-            },
+    const initAnimation = () => {
+      void Promise.all([
+        import('@/lib/gsap').then(({ loadGsapPlugins }) => loadGsapPlugins()),
+        document.fonts?.ready ?? Promise.resolve(),
+      ]).then(([{ gsap, SplitText }]) => {
+        if (cancelled || !sectionRef.current) return;
+        const ctx = gsap.context(() => {
+          const headings = section.querySelectorAll<HTMLElement>('[data-problem-heading]');
+          headings.forEach((heading) => {
+            const split = SplitText.create(heading, { type: 'lines', mask: 'lines' });
+            gsap.from(split.lines, {
+              yPercent: 105,
+              opacity: 0,
+              duration: 0.95,
+              stagger: 0.06,
+              ease: 'power3.out',
+              clearProps: 'transform,opacity',
+              onComplete: () => split.revert(),
+              scrollTrigger: {
+                trigger: heading,
+                start: 'top 82%',
+                once: true,
+              },
+            });
           });
-        });
-      }, section);
+        }, section);
 
-      revertCtx = () => ctx.revert();
-    });
+        revertCtx = () => ctx.revert();
+      });
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          observer.disconnect();
+          initAnimation();
+        }
+      },
+      { rootMargin: '300px' },
+    );
+
+    observer.observe(section);
 
     return () => {
       cancelled = true;
+      observer.disconnect();
       revertCtx?.();
     };
   }, [isHydrated, motionEnabled]);

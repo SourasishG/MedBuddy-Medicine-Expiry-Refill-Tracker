@@ -139,9 +139,9 @@ export function useGpuTier(): GpuProfile {
     };
 
     if (typeof window.requestIdleCallback === 'function') {
-      idleHandle = window.requestIdleCallback(detectTier, { timeout: 600 });
+      idleHandle = window.requestIdleCallback(detectTier, { timeout: 2000 });
     } else {
-      timeoutHandle = setTimeout(detectTier, 120);
+      timeoutHandle = setTimeout(detectTier, 800);
     }
 
     return () => {
